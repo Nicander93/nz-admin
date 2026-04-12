@@ -1,0 +1,14 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:nz-test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  sql:
+    init:
+      schema-locations: classpath:db/schema.sql
+      mode: always
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true

@@ -1,0 +1,29 @@
+# 任务：创建项目基础框架
+
+## 目标
+
+创建项目基础框架，并完成一个基础的用户管理 CRUD。
+
+## 实施结果
+
+### 后端 nz-server
+
+- [x] Spring Boot 3.3 + Java 21 项目骨架（pom.xml、启动类、application.yml）
+- [x] 通用基础设施：R 响应体、BaseEntity、PageQuery、全局异常处理
+- [x] MyBatis-Plus 分页配置 + Sa-Token 认证拦截 + CORS 配置
+- [x] 用户管理模块：SysUser Entity/Mapper/Service/Controller（增删改查 + 分页）
+- [x] 登录认证：login / logout / info 接口（BCrypt 密码校验）
+- [x] 数据初始化器：首次启动自动创建 admin 账号
+
+### 前端 nz-web
+
+- [x] Vite + Vue3 + TypeScript 项目，UnoCSS + Element Plus 按需引入
+- [x] 基础 Layout（侧边栏 + 顶栏 + 内容区）
+- [x] vue-router 路由 + 登录守卫
+- [x] Axios 封装（token 注入、统一错误处理、401 跳转）
+- [x] 登录页
+- [x] 用户管理 CRUD 页面（列表 + 搜索 + 分页 + 新增/编辑弹窗 + 删除）
+
+## 状态
+
+已完成
