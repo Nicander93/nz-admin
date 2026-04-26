@@ -11,7 +11,12 @@
     </parent>
 
     <artifactId>nz-module</artifactId>
+    <packaging>pom</packaging>
     <name>nz-module</name>
+
+    <modules>
+        <module>nz-system</module>
+    </modules>
 
     <dependencies>
         <dependency>

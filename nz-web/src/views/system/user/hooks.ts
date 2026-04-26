@@ -18,6 +18,13 @@ function createUserCrudState() {
       delete: (ids: number[]) => userApi.deleteUser(ids[0]),
     },
     defaultForm: () => ({
+      username: '',
+      nickname: '',
+      email: '',
+      phone: '',
+      password: '',
+      deptId: undefined as unknown as number,
+      roleIds: [],
       status: 0,
     }),
     immediate: false,

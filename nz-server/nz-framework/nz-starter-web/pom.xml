@@ -7,7 +7,7 @@
     <parent>
         <groupId>com.nz</groupId>
         <artifactId>nz-framework</artifactId>
-        <version>${revision}</version>
+        <version>0.0.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>nz-starter-web</artifactId>

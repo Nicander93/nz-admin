@@ -50,3 +50,4 @@ cobertura.ser
 
 # Maven
 .m2/
+.flattened-pom.xml

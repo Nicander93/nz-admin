@@ -1,6 +1,37 @@
 import { describe, it, expect, vi } from 'vitest'
 import { useDictCrud } from '@/views/system/dict/hooks'
 
+// Mock the external dependency @nz-js-toolkit/crud
+vi.mock('@nz-js-toolkit/crud', () => ({
+  createCrudFactory: () => ({
+    useTable: () => ({
+      data: [],
+      loading: false,
+      query: {},
+      pagination: { current: 1, size: 10, total: 0 },
+      refresh: vi.fn(),
+      handleResetQuery: vi.fn(),
+    }),
+    useCrud: (config: any) => ({
+      data: [],
+      loading: false,
+      query: {},
+      pagination: { current: 1, size: 10, total: 0 },
+      refresh: vi.fn(),
+      resetQuery: vi.fn(function(this: any) { this.pagination.current = 1 }),
+    }),
+    useForm: (config: any) => ({
+      visible: { value: false },
+      mode: { value: 'add' },
+      form: config.defaultForm ? config.defaultForm() : {},
+      openAdd: vi.fn(),
+      openEdit: vi.fn(),
+      close: vi.fn(),
+      submit: vi.fn().mockResolvedValue({ ok: true }),
+    }),
+  }),
+}))
+
 vi.mock('@/api/system/dict', () => ({
   pageDictTypes: vi.fn().mockResolvedValue({
     code: 200,

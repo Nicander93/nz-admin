@@ -109,7 +109,7 @@ CREATE TABLE sys_oper_log
     business_type  SMALLINT,
     oper_content   VARCHAR(255),
     method         VARCHAR(255),
-    request_method VARCHAR(16),
+    request_method VARCHAR(50),
     oper_name      VARCHAR(64),
     oper_url       VARCHAR(255),
     oper_ip        VARCHAR(128),

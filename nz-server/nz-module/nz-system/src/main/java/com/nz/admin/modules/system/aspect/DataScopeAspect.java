@@ -1,5 +1,6 @@
 package com.nz.admin.modules.system.aspect;
 
+import cn.dev33.satoken.exception.NotWebContextException;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.util.StrUtil;
 import com.nz.admin.framework.auth.datascope.DataScope;
@@ -33,7 +34,7 @@ public class DataScopeAspect {
      */
     @Around("@annotation(dataScope)")
     public Object around(ProceedingJoinPoint joinPoint, DataScope dataScope) throws Throwable {
-        if (!StpUtil.isLogin()) {
+        if (!isLogin()) {
             return joinPoint.proceed();
         }
         Long userId = StpUtil.getLoginIdAsLong();
@@ -44,6 +45,15 @@ public class DataScopeAspect {
             }
         }
         return joinPoint.proceed();
+    }
+
+    private boolean isLogin() {
+        try {
+            return StpUtil.isLogin();
+        } catch (NotWebContextException e) {
+            // 非 Web 上下文（如单元测试），跳过数据权限检查
+            return false;
+        }
     }
 
     private String buildDataScopeSql(Long userId, DataScope dataScope) {
