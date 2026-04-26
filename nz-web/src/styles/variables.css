@@ -1,0 +1,68 @@
+:root {
+  color-scheme: light;
+  --nz-font-family-base:
+    "MiSans", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei UI",
+    "Microsoft YaHei", sans-serif;
+  --nz-color-primary: #6f9b76;
+  --nz-color-primary-hover: #638b69;
+  --nz-color-primary-active: #537559;
+  --nz-color-primary-soft: #e6efe5;
+  --nz-color-success: #5f8f69;
+  --nz-color-warning: #c59743;
+  --nz-color-danger: #c67467;
+  --nz-color-info: #7c8f80;
+  --nz-color-bg-app: #f4f7f2;
+  --nz-color-bg-page: #f8fbf7;
+  --nz-color-bg-elevated: rgba(255, 255, 255, 0.92);
+  --nz-color-bg-sidebar: #eef4ec;
+  --nz-color-bg-sidebar-active: #dfeadc;
+  --nz-color-border: #d7e2d4;
+  --nz-color-border-strong: #c8d6c5;
+  --nz-color-text-1: #2f3b31;
+  --nz-color-text-2: #5d6b60;
+  --nz-color-text-3: #859286;
+  --nz-shadow-soft: 0 8px 24px rgba(77, 102, 79, 0.06);
+  --nz-shadow-card: 0 16px 40px rgba(77, 102, 79, 0.08);
+  --nz-radius-sm: 10px;
+  --nz-radius-md: 14px;
+  --nz-radius-lg: 18px;
+  --nz-radius-xl: 24px;
+  --nz-space-page: 24px;
+  --nz-header-height: 64px;
+  --nz-sidebar-width: 220px;
+  --nz-transition-base: 180ms ease;
+}
+
+body {
+  --el-font-family: var(--nz-font-family-base);
+  --el-color-primary: var(--nz-color-primary);
+  --el-color-primary-light-3: #8fb192;
+  --el-color-primary-light-5: #a8c2aa;
+  --el-color-primary-light-7: #c3d6c4;
+  --el-color-primary-light-8: #d2e0d2;
+  --el-color-primary-light-9: #e8f0e8;
+  --el-color-primary-dark-2: var(--nz-color-primary-active);
+  --el-color-success: var(--nz-color-success);
+  --el-color-warning: var(--nz-color-warning);
+  --el-color-danger: var(--nz-color-danger);
+  --el-color-info: var(--nz-color-info);
+  --el-text-color-primary: var(--nz-color-text-1);
+  --el-text-color-regular: var(--nz-color-text-2);
+  --el-text-color-secondary: var(--nz-color-text-3);
+  --el-border-color: var(--nz-color-border);
+  --el-border-color-light: #e5ede2;
+  --el-border-color-lighter: #edf3ea;
+  --el-border-radius-base: var(--nz-radius-md);
+  --el-border-radius-small: var(--nz-radius-sm);
+  --el-border-radius-round: 999px;
+  --el-fill-color-blank: rgba(255, 255, 255, 0.9);
+  --el-fill-color-light: #f5f8f3;
+  --el-fill-color-lighter: #f8fbf7;
+  --el-bg-color: rgba(255, 255, 255, 0.92);
+  --el-bg-color-page: var(--nz-color-bg-page);
+  --el-box-shadow-light: var(--nz-shadow-soft);
+  --el-box-shadow: var(--nz-shadow-card);
+  --el-menu-bg-color: transparent;
+  --el-menu-hover-bg-color: rgba(111, 155, 118, 0.08);
+  --el-menu-active-color: var(--nz-color-text-1);
+}

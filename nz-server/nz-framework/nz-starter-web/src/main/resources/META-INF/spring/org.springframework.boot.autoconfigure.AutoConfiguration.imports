@@ -1,0 +1,2 @@
+com.nz.admin.framework.web.config.NzWebAutoConfiguration
+com.nz.admin.framework.web.config.SwaggerAutoConfiguration

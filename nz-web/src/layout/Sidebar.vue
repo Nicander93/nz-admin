@@ -1,42 +1,43 @@
 <template>
-  <el-aside width="220px" class="border-r border-gray-200">
-    <div class="h-14 flex items-center justify-center font-bold text-lg border-b border-gray-200">
-      NZ Admin
+  <el-aside width="220px" class="app-sidebar">
+    <div class="app-sidebar__brand">
+      <span class="app-sidebar__brand-mark">NZ</span>
+      <div class="app-sidebar__brand-copy">
+        <span class="app-sidebar__title">NZ Admin</span>
+        <span class="app-sidebar__subtitle">System Console</span>
+      </div>
     </div>
-    <el-menu :default-active="route.path" router>
-      <el-sub-menu index="/system">
-        <template #title>
-          <el-icon><Setting /></el-icon>
-          <span>系统管理</span>
-        </template>
-        <el-menu-item index="/system/user">
-          <el-icon><User /></el-icon>
-          <span>用户管理</span>
-        </el-menu-item>
-        <el-menu-item index="/system/role">
-          <el-icon><UserFilled /></el-icon>
-          <span>角色管理</span>
-        </el-menu-item>
-        <el-menu-item index="/system/dept">
-          <el-icon><OfficeBuilding /></el-icon>
-          <span>部门管理</span>
-        </el-menu-item>
-        <el-menu-item index="/system/menu">
-          <el-icon><Menu /></el-icon>
-          <span>菜单管理</span>
-        </el-menu-item>
-        <el-menu-item index="/system/dict">
-          <el-icon><Collection /></el-icon>
-          <span>字典管理</span>
-        </el-menu-item>
-      </el-sub-menu>
-    </el-menu>
+    <el-scrollbar class="flex-1">
+      <el-menu
+        class="app-menu"
+        :default-active="route.path"
+        @select="handleSelect"
+      >
+        <SidebarMenuItem
+          v-for="menu in menuTree"
+          :key="menu.id"
+          :menu="menu"
+        />
+      </el-menu>
+    </el-scrollbar>
   </el-aside>
 </template>
 
 <script setup lang="ts">
-import { useRoute } from 'vue-router'
-import { User, UserFilled, OfficeBuilding, Setting, Menu, Collection } from '@element-plus/icons-vue'
+import { computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/user'
+import { buildTree, type MenuRouteItem } from '@/utils/routeHelper'
+import SidebarMenuItem from '@/layout/SidebarMenuItem.vue'
 
 const route = useRoute()
+const router = useRouter()
+const userStore = useUserStore()
+
+const menuTree = computed(() => buildTree(userStore.menus as MenuRouteItem[]))
+
+function handleSelect(index: string) {
+  if (!index || index === route.path) return
+  router.push(index)
+}
 </script>

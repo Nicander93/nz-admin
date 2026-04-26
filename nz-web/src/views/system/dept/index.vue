@@ -60,7 +60,7 @@
 
 <script setup lang="ts">
 import { onMounted } from 'vue'
-import { useDeptCrud } from '@/hooks/useDeptCrud'
+import { useDeptCrud } from './hooks'
 import { ElMessageBox } from 'element-plus'
 
 const {

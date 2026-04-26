@@ -9,6 +9,7 @@
 - `docs/index.md`：文档入口与使用约定
 - `docs/architecture.md`：monorepo 结构、包职责、依赖关系、变更落点
 - `docs/api-convention.md`：API 接口命名规范（URL、Method、前后端类型对应）
+- `docs/nz-web-ui-design-guide.md`：`nz-web` 的 UI 风格、主题变量与组件设计约定
 - `docs/harness-engineering.md`：结合本仓库的 harness 实践建议
 - `docs/exec-plans/README.md`：执行计划的存放规则
 

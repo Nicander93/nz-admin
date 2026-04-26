@@ -13,23 +13,24 @@
 
     <groupId>com.nz</groupId>
     <artifactId>nz-server</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>${revision}</version>
     <packaging>pom</packaging>
     <name>nz-server</name>
 
     <modules>
         <module>nz-common</module>
         <module>nz-framework</module>
-        <module>nz-system</module>
         <module>nz-module</module>
         <module>nz-app</module>
     </modules>
 
     <properties>
-        <java.version>21</java.version>
+        <revision>0.0.1-SNAPSHOT</revision>
+        <java.version>17</java.version>
         <mybatis-plus.version>3.5.7</mybatis-plus.version>
         <sa-token.version>1.38.0</sa-token.version>
         <hutool.version>5.8.28</hutool.version>
+        <springdoc-openapi.version>2.6.0</springdoc-openapi.version>
     </properties>
 
     <dependencyManagement>
@@ -41,17 +42,42 @@
             </dependency>
             <dependency>
                 <groupId>com.nz</groupId>
-                <artifactId>nz-framework</artifactId>
+                <artifactId>nz-starter-web</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.nz</groupId>
+                <artifactId>nz-starter-mybatis</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.nz</groupId>
+                <artifactId>nz-starter-sa-token</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.nz</groupId>
+                <artifactId>nz-starter-auth</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.nz</groupId>
+                <artifactId>nz-starter-log</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.nz</groupId>
+                <artifactId>nz-starter-test</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.nz</groupId>
+                <artifactId>nz-starter-biz</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.nz</groupId>
                 <artifactId>nz-system</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.nz</groupId>
-                <artifactId>nz-module</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -79,6 +105,11 @@
                 <artifactId>hutool-core</artifactId>
                 <version>${hutool.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                <version>${springdoc-openapi.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -89,4 +120,14 @@
             <optional>true</optional>
         </dependency>
     </dependencies>
+
+
+    <!-- 使用 aliyun 的 Maven 源，提升下载速度 -->
+    <repositories>
+        <repository>
+            <id>aliyunmaven</id>
+            <name>aliyun</name>
+            <url>https://maven.aliyun.com/repository/public</url>
+        </repository>
+    </repositories>
 </project>

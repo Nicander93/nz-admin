@@ -1,17 +1,34 @@
 <template>
-  <div class="h-full flex items-center justify-center bg-gray-100">
-    <el-card class="w-400px">
+  <div class="auth-shell">
+    <el-card class="auth-panel" shadow="never">
       <template #header>
-        <h2 class="text-center m-0">NZ Admin 登录</h2>
+        <div class="auth-header">
+          <p class="auth-eyebrow">NZ Admin</p>
+          <h1 class="auth-title">登录后台控制台</h1>
+          <p class="auth-caption">统一管理用户、角色、部门、菜单与字典配置。</p>
+        </div>
       </template>
-      <el-form :model="form" @submit.prevent="handleLogin">
+      <el-form
+        :model="form"
+        label-position="top"
+        class="auth-form"
+        @submit.prevent="handleLogin"
+      >
         <el-form-item label="用户名">
-          <el-input v-model="form.username" placeholder="请输入用户名" />
+          <el-input
+            v-model="form.username"
+            name="username"
+            autocomplete="username"
+            placeholder="请输入用户名"
+            spellcheck="false"
+          />
         </el-form-item>
         <el-form-item label="密码">
           <el-input
             v-model="form.password"
+            name="current-password"
             type="password"
+            autocomplete="current-password"
             placeholder="请输入密码"
             show-password
           />
@@ -19,7 +36,7 @@
         <el-form-item>
           <el-button
             type="primary"
-            class="w-full"
+            class="w-full auth-submit"
             :loading="loading"
             native-type="submit"
           >
@@ -48,7 +65,7 @@ async function handleLogin() {
   try {
     const res = await login(form)
     userStore.setToken(res.data)
-    await userStore.fetchUserInfo()
+    await userStore.initAuthData()
     router.push('/')
     ElMessage.success('登录成功')
   } catch {

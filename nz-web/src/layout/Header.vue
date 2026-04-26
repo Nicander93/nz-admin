@@ -1,11 +1,14 @@
 <template>
-  <el-header class="flex items-center justify-between border-b border-gray-200">
-    <span class="text-base">后台管理系统</span>
+  <el-header class="app-header">
+    <div class="app-header__meta">
+      <span class="app-header__title">NZ Admin</span>
+      <span class="app-header__subtitle">极简淡绿色后台界面基线</span>
+    </div>
     <el-dropdown @command="handleCommand">
-      <span class="flex items-center cursor-pointer">
-        {{ userStore.userInfo?.nickname || '用户' }}
-        <el-icon class="ml-1"><ArrowDown /></el-icon>
-      </span>
+      <button type="button" class="app-user-trigger" aria-label="打开用户菜单">
+        <span>{{ userStore.userInfo?.nickname || '用户' }}</span>
+        <el-icon><ArrowDown /></el-icon>
+      </button>
       <template #dropdown>
         <el-dropdown-menu>
           <el-dropdown-item command="logout">退出登录</el-dropdown-item>

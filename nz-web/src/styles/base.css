@@ -1,0 +1,61 @@
+html,
+body,
+#app {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: var(--nz-font-family-base);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--nz-color-bg-app);
+  scroll-behavior: smooth;
+}
+
+body {
+  background:
+    radial-gradient(circle at top left, rgba(111, 155, 118, 0.1), transparent 28%),
+    linear-gradient(180deg, #f8fbf7 0%, var(--nz-color-bg-app) 100%);
+  color: var(--nz-color-text-1);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: inherit;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+::selection {
+  background: rgba(111, 155, 118, 0.18);
+}
+
+.el-dialog,
+.el-card {
+  border-radius: var(--nz-radius-lg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

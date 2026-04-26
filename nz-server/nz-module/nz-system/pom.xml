@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.nz</groupId>
+        <artifactId>nz-module</artifactId>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>nz-system</artifactId>
+    <name>nz-system</name>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.nz</groupId>
+            <artifactId>nz-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.nz</groupId>
+            <artifactId>nz-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.nz</groupId>
+            <artifactId>nz-starter-mybatis</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.nz</groupId>
+            <artifactId>nz-starter-auth</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.nz</groupId>
+            <artifactId>nz-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>

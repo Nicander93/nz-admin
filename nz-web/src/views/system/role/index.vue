@@ -20,7 +20,7 @@
     </el-form>
 
     <div class="mb-4">
-      <el-button type="primary" @click="toAdd">新增</el-button>
+      <el-button v-permission="'system:role:add'" type="primary" @click="toAdd">新增</el-button>
     </div>
 
     <el-table :data="data" v-loading="loading" border>
@@ -38,9 +38,9 @@
       <el-table-column prop="createTime" label="创建时间" width="180" />
       <el-table-column label="操作" width="240" fixed="right">
         <template #default="{ row }">
-          <el-button link type="primary" @click="toEdit(row)">编辑</el-button>
+          <el-button v-permission="'system:role:edit'" link type="primary" @click="toEdit(row)">编辑</el-button>
           <el-button link type="primary" @click="openMenuDialog(row, k => menuTreeRef?.setCheckedKeys(k))">菜单权限</el-button>
-          <el-button link type="danger" @click="remove(row.id)">删除</el-button>
+          <el-button v-permission="'system:role:remove'" link type="danger" @click="remove(row.id)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -77,7 +77,13 @@
       </el-form>
       <template #footer>
         <el-button @click="close">取消</el-button>
-        <el-button type="primary" @click="submit">确定</el-button>
+        <el-button
+          v-permission="[form.id ? 'system:role:edit' : 'system:role:add']"
+          type="primary"
+          @click="submit"
+        >
+          确定
+        </el-button>
       </template>
     </el-dialog>
 
@@ -103,7 +109,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useRoleCrud } from '@/hooks/useRoleCrud'
+import { useRoleCrud } from './hooks'
 import type { ElTree } from 'element-plus'
 
 const menuTreeRef = ref<InstanceType<typeof ElTree>>()

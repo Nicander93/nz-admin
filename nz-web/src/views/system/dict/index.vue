@@ -131,7 +131,7 @@
 
 <script setup lang="ts">
 import { onMounted } from 'vue'
-import { useDictCrud } from '@/hooks/useDictCrud'
+import { useDictCrud } from './hooks'
 
 const {
   typeCrud,

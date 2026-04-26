@@ -81,3 +81,31 @@ CREATE TABLE IF NOT EXISTS sys_role_menu (
     menu_id     BIGINT NOT NULL,
     PRIMARY KEY (role_id, menu_id)
 );
+
+CREATE TABLE IF NOT EXISTS sys_oper_log (
+    id             BIGSERIAL PRIMARY KEY,
+    title          VARCHAR(128) NOT NULL,
+    business_type  SMALLINT,
+    oper_content   VARCHAR(255),
+    method         VARCHAR(255),
+    request_method VARCHAR(16),
+    oper_name      VARCHAR(64),
+    oper_url       VARCHAR(255),
+    oper_ip        VARCHAR(128),
+    user_agent     VARCHAR(500),
+    oper_param     TEXT,
+    json_result    TEXT,
+    status         SMALLINT DEFAULT 0,
+    error_msg      TEXT,
+    oper_time      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS sys_login_log (
+    id          BIGSERIAL PRIMARY KEY,
+    user_id     BIGINT,
+    username    VARCHAR(64),
+    ip          VARCHAR(128),
+    status      SMALLINT DEFAULT 0,
+    msg         VARCHAR(255),
+    login_time  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

@@ -1,10 +1,12 @@
 package com.nz.admin.modules.system.controller;
 
-import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.nz.admin.framework.auth.annotation.SaCheckPermission;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.digest.BCrypt;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.nz.admin.common.R;
+import com.nz.admin.framework.log.annotation.BusinessType;
+import com.nz.admin.framework.log.annotation.Log;
 import com.nz.admin.modules.system.entity.SysUser;
 import com.nz.admin.modules.system.query.SysUserQuery;
 import com.nz.admin.modules.system.service.SysPermissionService;
@@ -24,6 +26,7 @@ public class SysUserController {
     private SysPermissionService permissionService;
 
     @SaCheckPermission("system:user:list")
+    @Log(title = "用户管理", businessType = BusinessType.QUERY)
     @GetMapping("/page")
     public R<Page<SysUser>> page(SysUserQuery query) {
         Page<SysUser> page = userService.listPage(query);
@@ -32,6 +35,7 @@ public class SysUserController {
     }
 
     @SaCheckPermission("system:user:query")
+    @Log(title = "用户管理", businessType = BusinessType.QUERY)
     @GetMapping("/{id}")
     public R<SysUser> getById(@PathVariable Long id) {
         SysUser user = userService.getById(id);
@@ -40,6 +44,7 @@ public class SysUserController {
     }
 
     @SaCheckPermission("system:user:add")
+    @Log(title = "用户管理", businessType = BusinessType.INSERT)
     @PostMapping
     public R<Void> add(@RequestBody SysUser user) {
         user.setPassword(BCrypt.hashpw(user.getPassword()));
@@ -48,6 +53,7 @@ public class SysUserController {
     }
 
     @SaCheckPermission("system:user:edit")
+    @Log(title = "用户管理", businessType = BusinessType.UPDATE)
     @PutMapping
     public R<Void> update(@RequestBody SysUser user) {
         if (StrUtil.isNotBlank(user.getPassword())) {
@@ -60,6 +66,7 @@ public class SysUserController {
     }
 
     @SaCheckPermission("system:user:remove")
+    @Log(title = "用户管理", businessType = BusinessType.DELETE)
     @DeleteMapping("/{id}")
     public R<Void> delete(@PathVariable Long id) {
         userService.removeById(id);

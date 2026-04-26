@@ -36,12 +36,15 @@ nz-admin/
 │   ├── pom.xml                                 # 父 POM（版本管理 + 模块声明）
 │   ├── nz-common/                              # 通用模块
 │   │   └── src/.../com/nz/admin/common/        # R、BaseEntity、PageQuery
-│   ├── nz-framework/                           # 框架配置模块
-│   │   └── src/.../com/nz/admin/config/        # MyBatis-Plus、Sa-Token、全局异常处理
-│   ├── nz-system/                              # 系统管理模块
-│   │   └── src/.../com/nz/admin/modules/system/ # entity / mapper / service
-│   ├── nz-module/                              # 业务模块（新业务放这里）
-│   │   └── src/.../com/nz/admin/modules/       # 按业务领域建子包
+│   ├── nz-framework/                           # 框架父模块
+│   │   ├── pom.xml                             # 聚合框架 starter
+│   │   ├── nz-starter-web/                     # Web starter（CORS、全局异常、Swagger）
+│   │   ├── nz-starter-mybatis/                 # MyBatis-Plus starter
+│   │   └── nz-starter-sa-token/                # Sa-Token starter
+│   ├── nz-module/                              # 业务模块根目录
+│   │   ├── nz-system/                          # 系统管理模块
+│   │   │   └── src/.../com/nz/admin/modules/system/ # entity / mapper / service
+│   │   └── src/.../com/nz/admin/modules/       # 业务代码按领域建子包
 │   └── nz-app/                                 # 启动模块
 │       └── src/main/
 │           ├── java/com/nz/admin/
@@ -69,12 +72,14 @@ nz-admin/
 ```text
 nz-common          ← mybatis-plus-extension, lombok
     ↑
-nz-framework       ← nz-common, spring-boot-starter-web, mybatis-plus-starter,
-                      sa-token-starter, validation
+nz-starter-web     ← nz-common, spring-boot-starter-web, validation, springdoc
+nz-starter-mybatis ← mybatis-plus-starter
+nz-starter-sa-token ← sa-token-starter, spring-webmvc
 nz-system          ← nz-common, hutool-core
 nz-module          ← nz-common
     ↑
-nz-app             ← nz-framework, nz-system, nz-module, hutool-all, postgresql
+nz-app             ← nz-starter-web, nz-starter-mybatis, nz-starter-sa-token,
+                      nz-system, nz-module, hutool-all, postgresql
 ```
 
 ## 后端分层规则
@@ -95,9 +100,12 @@ nz-app             ← nz-framework, nz-system, nz-module, hutool-all, postgresq
 - 密码使用 BCrypt 加密（hutool）
 - API 路径统一以 `/api/` 开头
 - Sa-Token 拦截 `/api/**`，放行 `/api/auth/login`
-- 系统管理相关模块放 `nz-system`，业务模块放 `nz-module`
-- 框架级配置（MyBatis-Plus、Sa-Token、全局异常等）放 `nz-framework`
+- 系统管理相关模块放 `nz-module/nz-system`（artifactId 仍是 `nz-system`），业务模块放 `nz-module`
+- Web 通用能力（CORS、全局异常、Swagger）放 `nz-starter-web`
+- MyBatis-Plus 配置放 `nz-starter-mybatis`
+- Sa-Token 拦截与鉴权异常处理放 `nz-starter-sa-token`
 - Controller 和应用级配置（DataInitializer 等）放 `nz-app`
+- Swagger 默认地址为 `/swagger-ui/index.html`
 
 ## 前端约定
 

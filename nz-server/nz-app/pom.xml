@@ -7,7 +7,7 @@
     <parent>
         <groupId>com.nz</groupId>
         <artifactId>nz-server</artifactId>
-        <version>0.0.1-SNAPSHOT</version>
+        <version>${revision}</version>
     </parent>
 
     <artifactId>nz-app</artifactId>
@@ -16,15 +16,27 @@
     <dependencies>
         <dependency>
             <groupId>com.nz</groupId>
-            <artifactId>nz-framework</artifactId>
+            <artifactId>nz-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.nz</groupId>
+            <artifactId>nz-starter-mybatis</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.nz</groupId>
+            <artifactId>nz-starter-sa-token</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.nz</groupId>
+            <artifactId>nz-starter-auth</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.nz</groupId>
+            <artifactId>nz-starter-log</artifactId>
         </dependency>
         <dependency>
             <groupId>com.nz</groupId>
             <artifactId>nz-system</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.nz</groupId>
-            <artifactId>nz-module</artifactId>
         </dependency>
         <dependency>
             <groupId>cn.hutool</groupId>
@@ -34,6 +46,11 @@
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

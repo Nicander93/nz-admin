@@ -1,4 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useUserStore } from '@/stores/user'
+import { buildDynamicChildrenRoutes, resolveFirstRoutePath } from '@/utils/routeHelper'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -9,46 +11,65 @@ const router = createRouter({
     },
     {
       path: '/',
+      name: 'Root',
       component: () => import('@/layout/index.vue'),
-      redirect: '/system/user',
-      children: [
-        {
-          path: 'system/user',
-          component: () => import('@/views/system/user/index.vue'),
-          meta: { title: '用户管理' },
-        },
-        {
-          path: 'system/role',
-          component: () => import('@/views/system/role/index.vue'),
-          meta: { title: '角色管理' },
-        },
-        {
-          path: 'system/dept',
-          component: () => import('@/views/system/dept/index.vue'),
-          meta: { title: '部门管理' },
-        },
-        {
-          path: 'system/menu',
-          component: () => import('@/views/system/menu/index.vue'),
-          meta: { title: '菜单管理' },
-        },
-        {
-          path: 'system/dict',
-          component: () => import('@/views/system/dict/index.vue'),
-          meta: { title: '字典管理' },
-        },
-      ],
+      children: [],
     },
   ],
 })
 
-router.beforeEach((to, _from, next) => {
+router.beforeEach(async (to, _from, next) => {
+  const userStore = useUserStore()
   const token = localStorage.getItem('token')
   if (to.path !== '/login' && !token) {
     next('/login')
-  } else {
-    next()
+    return
   }
+
+  if (to.path === '/login' && token) {
+    next('/')
+    return
+  }
+
+  if (!token) {
+    next()
+    return
+  }
+
+  if (!userStore.routesLoaded) {
+    try {
+      if (!userStore.userInfo) {
+        await userStore.initAuthData()
+      } else if (!userStore.menus.length) {
+        await userStore.fetchUserMenus()
+      }
+      const childrenRoutes = buildDynamicChildrenRoutes(userStore.menus)
+      childrenRoutes.forEach((route) => {
+        const name = route.name
+        if (typeof name === 'string' && !router.hasRoute(name)) {
+          router.addRoute('Root', route)
+        }
+      })
+      userStore.setRoutesLoaded(true)
+      next({ ...to, replace: true })
+      return
+    } catch {
+      userStore.logout()
+      next('/login')
+      return
+    }
+  }
+
+  if (to.path === '/') {
+    next(resolveFirstRoutePath(userStore.menus))
+    return
+  }
+
+  next()
+})
+
+router.onError((error) => {
+  console.error('[router]', error)
 })
 
 export default router

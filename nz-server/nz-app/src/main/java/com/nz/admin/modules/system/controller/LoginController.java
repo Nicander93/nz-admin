@@ -2,13 +2,19 @@ package com.nz.admin.modules.system.controller;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.crypto.digest.BCrypt;
+import cn.hutool.extra.servlet.ServletUtil;
 import com.nz.admin.common.R;
+import com.nz.admin.modules.system.entity.SysLoginLog;
+import com.nz.admin.modules.system.entity.SysMenu;
 import com.nz.admin.modules.system.entity.SysUser;
+import com.nz.admin.modules.system.service.SysLoginLogService;
 import com.nz.admin.modules.system.service.SysPermissionService;
 import com.nz.admin.modules.system.service.SysUserService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 @RestController
@@ -19,11 +25,13 @@ public class LoginController {
     private SysUserService userService;
     @Autowired
     private SysPermissionService permissionService;
+    @Autowired
+    private SysLoginLogService loginLogService;
 
     public record LoginBody(String username, String password) {}
 
     @PostMapping("/login")
-    public R<String> login(@RequestBody LoginBody body) {
+    public R<String> login(@RequestBody LoginBody body, HttpServletRequest request) {
         SysUser user = userService.getByUsername(body.username());
         if (user == null || !BCrypt.checkpw(body.password(), user.getPassword())) {
             return R.fail("用户名或密码错误");
@@ -32,6 +40,14 @@ public class LoginController {
             return R.fail("账号已被禁用");
         }
         StpUtil.login(user.getId());
+        SysLoginLog loginLog = new SysLoginLog();
+        loginLog.setUserId(user.getId());
+        loginLog.setUsername(user.getUsername());
+        loginLog.setIp(ServletUtil.getClientIP(request));
+        loginLog.setStatus(0);
+        loginLog.setMsg("登录成功");
+        loginLog.setLoginTime(LocalDateTime.now());
+        loginLogService.saveAsync(loginLog);
         return R.ok(StpUtil.getTokenValue());
     }
 
@@ -53,4 +69,61 @@ public class LoginController {
         result.put("permissions", permissionService.getPermsByUserId(userId));
         return R.ok(result);
     }
+
+    @GetMapping("/menus")
+    public R<List<UserMenu>> menus() {
+        long userId = StpUtil.getLoginIdAsLong();
+        List<SysMenu> userMenus = permissionService.getMenusByUserId(userId).stream()
+                .filter(this::isMenuVisibleForRoute)
+                .toList();
+
+        Map<Long, UserMenu> menuMap = new LinkedHashMap<>();
+        for (SysMenu menu : userMenus) {
+            Map<String, Object> meta = new LinkedHashMap<>();
+            meta.put("title", menu.getName());
+            if (menu.getIcon() != null && !menu.getIcon().isBlank()) {
+                meta.put("icon", menu.getIcon());
+            }
+            menuMap.put(menu.getId(), new UserMenu(
+                    menu.getId(),
+                    menu.getName(),
+                    menu.getPath(),
+                    menu.getComponent(),
+                    menu.getParentId(),
+                    meta,
+                    new ArrayList<>()
+            ));
+        }
+
+        List<UserMenu> roots = new ArrayList<>();
+        for (UserMenu menu : menuMap.values()) {
+            Long parentId = menu.parentId();
+            if (parentId != null && parentId != 0L && menuMap.containsKey(parentId)) {
+                menuMap.get(parentId).children().add(menu);
+            } else {
+                roots.add(menu);
+            }
+        }
+        return R.ok(roots);
+    }
+
+    private boolean isMenuVisibleForRoute(SysMenu menu) {
+        boolean enabled = menu.getStatus() == null || menu.getStatus() == 0;
+        boolean visible = menu.getVisible() == null || menu.getVisible() == 0;
+        boolean notButton = !"F".equalsIgnoreCase(menu.getType());
+        return enabled && visible && notButton;
+    }
+
+    /**
+     * 登录态返回给前端的菜单节点。
+     */
+    public record UserMenu(
+            Long id,
+            String name,
+            String path,
+            String component,
+            Long parentId,
+            Map<String, Object> meta,
+            List<UserMenu> children
+    ) {}
 }

@@ -95,7 +95,7 @@
 
 <script setup lang="ts">
 import { onMounted } from 'vue'
-import { useMenuCrud } from '@/hooks/useMenuCrud'
+import { useMenuCrud } from './hooks'
 import { ElMessageBox } from 'element-plus'
 
 const {

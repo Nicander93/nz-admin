@@ -1,10 +1,12 @@
 <template>
-  <el-container class="h-full">
+  <el-container class="app-shell app-layout">
     <Sidebar />
-    <el-container>
+    <el-container class="min-w-0">
       <Header />
-      <el-main>
-        <router-view />
+      <el-main class="app-main">
+        <div class="app-page">
+          <router-view />
+        </div>
       </el-main>
     </el-container>
   </el-container>

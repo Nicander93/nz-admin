@@ -25,6 +25,19 @@ export type UserInfo = {
   permissions: string[]
 }
 
+export type UserMenu = {
+  id: number
+  name: string
+  path: string
+  component?: string
+  parentId?: number | null
+  meta?: {
+    title?: string
+    icon?: string
+    [key: string]: unknown
+  }
+}
+
 export function pageUsers(params: UserQuery) {
   return request.get<PageResult<SysUser>>('/api/system/user/page', { params })
 }
@@ -63,4 +76,8 @@ export function logout() {
 
 export function getUserInfo() {
   return request.get<UserInfo>('/api/auth/info')
+}
+
+export function getUserMenus() {
+  return request.get<UserMenu[]>('/api/auth/menus')
 }

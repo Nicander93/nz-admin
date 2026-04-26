@@ -1,8 +1,11 @@
 package com.nz.admin.modules.system.controller;
 
-import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.nz.admin.framework.auth.annotation.SaCheckPermission;
+import com.nz.admin.framework.auth.annotation.PermissionMode;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.nz.admin.common.R;
+import com.nz.admin.framework.log.annotation.BusinessType;
+import com.nz.admin.framework.log.annotation.Log;
 import com.nz.admin.modules.system.entity.SysRole;
 import com.nz.admin.modules.system.query.SysRoleQuery;
 import com.nz.admin.modules.system.service.SysRoleService;
@@ -19,6 +22,7 @@ public class SysRoleController {
     private SysRoleService roleService;
 
     @SaCheckPermission("system:role:list")
+    @Log(title = "角色管理", businessType = BusinessType.QUERY)
     @GetMapping("/page")
     public R<Page<SysRole>> page(SysRoleQuery query) {
         return R.ok(roleService.listPage(query));
@@ -30,12 +34,14 @@ public class SysRoleController {
     }
 
     @SaCheckPermission("system:role:query")
+    @Log(title = "角色管理", businessType = BusinessType.QUERY)
     @GetMapping("/{id}")
     public R<SysRole> getById(@PathVariable Long id) {
         return R.ok(roleService.getById(id));
     }
 
     @SaCheckPermission("system:role:add")
+    @Log(title = "角色管理", businessType = BusinessType.INSERT)
     @PostMapping
     public R<Void> add(@RequestBody SysRole role) {
         roleService.save(role);
@@ -43,6 +49,7 @@ public class SysRoleController {
     }
 
     @SaCheckPermission("system:role:edit")
+    @Log(title = "角色管理", businessType = BusinessType.UPDATE)
     @PutMapping
     public R<Void> update(@RequestBody SysRole role) {
         roleService.updateById(role);
@@ -50,19 +57,22 @@ public class SysRoleController {
     }
 
     @SaCheckPermission("system:role:remove")
+    @Log(title = "角色管理", businessType = BusinessType.DELETE)
     @DeleteMapping("/{id}")
     public R<Void> delete(@PathVariable Long id) {
         roleService.removeById(id);
         return R.ok();
     }
 
-    @SaCheckPermission("system:role:edit")
+    @SaCheckPermission(value = {"system:role:edit", "system:role:query"}, mode = PermissionMode.OR)
+    @Log(title = "角色管理", businessType = BusinessType.QUERY)
     @GetMapping("/{roleId}/menuIds")
     public R<List<Long>> getMenuIds(@PathVariable Long roleId) {
         return R.ok(roleService.getMenuIdsByRoleId(roleId));
     }
 
     @SaCheckPermission("system:role:edit")
+    @Log(title = "角色管理", businessType = BusinessType.UPDATE)
     @PutMapping("/{roleId}/menus")
     public R<Void> assignMenus(@PathVariable Long roleId, @RequestBody List<Long> menuIds) {
         roleService.assignMenus(roleId, menuIds);

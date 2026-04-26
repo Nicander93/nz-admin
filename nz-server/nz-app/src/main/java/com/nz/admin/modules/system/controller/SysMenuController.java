@@ -1,6 +1,6 @@
 package com.nz.admin.modules.system.controller;
 
-import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.nz.admin.framework.auth.annotation.SaCheckPermission;
 import com.nz.admin.common.R;
 import com.nz.admin.modules.system.entity.SysMenu;
 import com.nz.admin.modules.system.service.SysMenuService;

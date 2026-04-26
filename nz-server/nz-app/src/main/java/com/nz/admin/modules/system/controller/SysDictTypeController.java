@@ -1,6 +1,6 @@
 package com.nz.admin.modules.system.controller;
 
-import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.nz.admin.framework.auth.annotation.SaCheckPermission;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.nz.admin.common.R;
 import com.nz.admin.modules.system.entity.SysDictType;
