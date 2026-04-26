@@ -1,4 +1,4 @@
-package com.nz.admin.framework.auth.aspect;
+package com.nz.admin.modules.system.aspect;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.util.StrUtil;
