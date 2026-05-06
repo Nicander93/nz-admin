@@ -13,7 +13,33 @@ const router = createRouter({
       path: '/',
       name: 'Root',
       component: () => import('@/layout/index.vue'),
-      children: [],
+      children: [
+        {
+          path: '/notice',
+          name: 'Notice',
+          component: () => import('@/views/notice/index.vue'),
+        },
+        {
+          path: '/file',
+          name: 'File',
+          component: () => import('@/views/file/index.vue'),
+        },
+        {
+          path: '/system/post',
+          name: 'SystemPost',
+          component: () => import('@/views/system/post/index.vue'),
+        },
+        {
+          path: '/system/config',
+          name: 'SystemConfig',
+          component: () => import('@/views/system/config/index.vue'),
+        },
+        {
+          path: '/system/notice',
+          name: 'SystemNotice',
+          component: () => import('@/views/system/notice/index.vue'),
+        },
+      ],
     },
   ],
 })

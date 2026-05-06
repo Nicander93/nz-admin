@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue'
+import { ref, computed, reactive } from 'vue'
 import { useForm } from '@/utils/CRUD'
 import { listMenus, addMenu, updateMenu, deleteMenu } from '@/api/system/menu'
 import type { SysMenu } from '@/api/system/menu'
@@ -10,7 +10,6 @@ import { ElMessage } from 'element-plus'
  */
 export function useMenuCrud() {
   const loading = ref(false)
-  const allMenus = ref<SysMenu[]>([])
   const treeData = ref<SysMenu[]>([])
   const isExpand = ref(true)
 
@@ -30,19 +29,16 @@ export function useMenuCrud() {
     updateApi: (data) => updateMenu(data),
   })
 
-  // 拉菜单列表，并构造成树结构给表格和下拉共用。
   async function loadData() {
     loading.value = true
     try {
       const res = await listMenus()
-      allMenus.value = res.data
       treeData.value = buildTree(res.data)
     } finally {
       loading.value = false
     }
   }
 
-  // 切换展开状态后，重新拉一遍数据。
   function toggleExpand() {
     isExpand.value = !isExpand.value
     loadData()
@@ -56,7 +52,6 @@ export function useMenuCrud() {
     }
   }
 
-  // 提交表单，成功后提示并刷新列表。
   async function handleSubmit() {
     const result = await formState.submit()
     if (result.ok) {
@@ -67,20 +62,26 @@ export function useMenuCrud() {
     return result
   }
 
-  // 删除菜单后刷新列表。
   async function handleDelete(id: number) {
     await deleteMenu(id)
     ElMessage.success('删除成功')
     await loadData()
   }
 
+  const formView = reactive({
+    model: formState.form,
+    visible: formState.visible,
+    title: formState.title,
+    close: formState.close,
+    openEdit: formState.openEdit,
+  })
+
   return {
     loading,
-    allMenus,
     treeData,
     isExpand,
     menuSelectTree,
-    ...formState,
+    form: formView,
     loadData,
     toggleExpand,
     openAdd,

@@ -36,6 +36,7 @@ export type UserMenu = {
     icon?: string
     [key: string]: unknown
   }
+  children?: UserMenu[]
 }
 
 export function pageUsers(params: UserQuery) {

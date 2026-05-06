@@ -27,14 +27,14 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { buildTree, type MenuRouteItem } from '@/utils/routeHelper'
+import type { MenuRouteItem } from '@/utils/routeHelper'
 import SidebarMenuItem from '@/layout/SidebarMenuItem.vue'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 
-const menuTree = computed(() => buildTree(userStore.menus as MenuRouteItem[]))
+const menuTree = computed(() => userStore.menus as MenuRouteItem[])
 
 function handleSelect(index: string) {
   if (!index || index === route.path) return

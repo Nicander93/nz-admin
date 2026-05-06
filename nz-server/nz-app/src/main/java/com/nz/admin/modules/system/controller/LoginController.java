@@ -2,7 +2,6 @@ package com.nz.admin.modules.system.controller;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.crypto.digest.BCrypt;
-import cn.hutool.extra.servlet.ServletUtil;
 import com.nz.admin.common.R;
 import com.nz.admin.modules.system.entity.SysLoginLog;
 import com.nz.admin.modules.system.entity.SysMenu;
@@ -43,7 +42,7 @@ public class LoginController {
         SysLoginLog loginLog = new SysLoginLog();
         loginLog.setUserId(user.getId());
         loginLog.setUsername(user.getUsername());
-        loginLog.setIp(ServletUtil.getClientIP(request));
+        loginLog.setIp(getClientIp(request));
         loginLog.setStatus(0);
         loginLog.setMsg("登录成功");
         loginLog.setLoginTime(LocalDateTime.now());
@@ -112,6 +111,30 @@ public class LoginController {
         boolean visible = menu.getVisible() == null || menu.getVisible() == 0;
         boolean notButton = !"F".equalsIgnoreCase(menu.getType());
         return enabled && visible && notButton;
+    }
+
+    /**
+     * 获取客户端真实 IP 地址。
+     */
+    private String getClientIp(HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip == null || ip.isBlank() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("Proxy-Client-IP");
+        }
+        if (ip == null || ip.isBlank() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("WL-Proxy-Client-IP");
+        }
+        if (ip == null || ip.isBlank() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("X-Real-IP");
+        }
+        if (ip == null || ip.isBlank() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        }
+        // 多个代理时，取第一个 IP
+        if (ip != null && ip.contains(",")) {
+            ip = ip.split(",")[0].trim();
+        }
+        return ip;
     }
 
     /**

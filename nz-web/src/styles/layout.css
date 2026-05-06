@@ -1,19 +1,26 @@
 .app-shell {
-  min-height: 100%;
+  height: 100%;
+  overflow: hidden;
 }
 
 .app-layout {
-  min-height: 100%;
-  background: transparent;
+  position: relative;
+  background:
+    radial-gradient(circle at 10% 8%, rgba(111, 155, 118, 0.12), transparent 26%),
+    radial-gradient(circle at 90% 0%, rgba(191, 210, 181, 0.22), transparent 28%),
+    linear-gradient(135deg, #f7faf4 0%, #edf4ea 100%);
 }
 
 .app-sidebar {
   display: flex;
   flex-direction: column;
   width: var(--nz-sidebar-width);
-  background: rgba(238, 244, 236, 0.86);
-  border-right: 1px solid rgba(200, 214, 197, 0.72);
-  backdrop-filter: blur(14px);
+  height: 100%;
+  flex-shrink: 0;
+  background: rgba(244, 249, 241, 0.9);
+  border-right: 1px solid rgba(203, 219, 198, 0.84);
+  box-shadow: 18px 0 44px rgba(78, 107, 82, 0.06);
+  backdrop-filter: blur(18px);
 }
 
 .app-sidebar__brand {
@@ -59,30 +66,42 @@
 
 .app-menu {
   flex: 1;
-  padding: 14px 12px;
+  padding: 16px 12px;
   border-right: 0;
 }
 
 .app-menu .el-sub-menu__title,
 .app-menu .el-menu-item {
-  height: 42px;
-  margin-bottom: 6px;
-  border-radius: 12px;
+  height: 40px;
+  margin-bottom: 8px;
+  border-radius: 14px;
   color: var(--nz-color-text-2);
+  font-size: 14px;
   transition:
     background-color var(--nz-transition-base),
-    color var(--nz-transition-base);
+    color var(--nz-transition-base),
+    transform var(--nz-transition-base);
 }
 
 .app-menu .el-sub-menu__title:hover,
 .app-menu .el-menu-item:hover {
   color: var(--nz-color-text-1);
+  transform: translateX(2px);
 }
 
 .app-menu .el-menu-item.is-active {
-  background: var(--nz-color-bg-sidebar-active);
+  background: linear-gradient(135deg, rgba(111, 155, 118, 0.18), rgba(111, 155, 118, 0.08));
   color: var(--nz-color-text-1);
   font-weight: 600;
+  box-shadow: inset 0 0 0 1px rgba(111, 155, 118, 0.08);
+}
+
+.app-workspace {
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+  padding: 16px 18px;
+  gap: 14px;
 }
 
 .app-header {
@@ -90,12 +109,12 @@
   align-items: center;
   justify-content: space-between;
   height: var(--nz-header-height);
-  margin: 16px 20px 0;
-  padding: 0 20px;
+  flex-shrink: 0;
+  padding: 0 22px;
   border: 1px solid rgba(215, 226, 212, 0.88);
-  border-radius: var(--nz-radius-lg);
-  background: var(--nz-color-bg-elevated);
-  box-shadow: var(--nz-shadow-soft);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.76);
+  box-shadow: 0 14px 34px rgba(78, 107, 82, 0.08);
   backdrop-filter: blur(18px);
 }
 
@@ -141,17 +160,50 @@
 }
 
 .app-main {
-  padding: 20px;
+  min-height: 0;
+  flex: 1;
+  padding: 0;
+  overflow: hidden;
   background: transparent;
 }
 
 .app-page {
-  min-height: calc(100vh - 120px);
+  height: 100%;
+  min-height: 0;
   padding: var(--nz-space-page);
   border: 1px solid rgba(215, 226, 212, 0.88);
   border-radius: var(--nz-radius-xl);
-  background: var(--nz-color-bg-elevated);
-  box-shadow: var(--nz-shadow-card);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(250, 253, 248, 0.94));
+  box-shadow: 0 20px 50px rgba(78, 107, 82, 0.1);
+  overflow: auto;
+  scrollbar-gutter: stable;
+}
+
+.app-page::-webkit-scrollbar,
+.app-sidebar .el-scrollbar__bar.is-vertical {
+  width: 8px;
+}
+
+.app-page::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(111, 155, 118, 0.28);
+}
+
+.app-page::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.app-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 34px;
+  flex-shrink: 0;
+  padding: 0 8px;
+  color: var(--nz-color-text-3);
+  font-size: 12px;
+  line-height: 1;
 }
 
 .app-page .el-form--inline {
@@ -246,16 +298,17 @@
 }
 
 @media (max-width: 960px) {
-  .app-header {
-    margin: 12px 12px 0;
+  .app-workspace {
+    padding: 12px;
+    gap: 10px;
   }
 
-  .app-main {
-    padding: 12px;
+  .app-header {
+    height: 58px;
+    border-radius: var(--nz-radius-lg);
   }
 
   .app-page {
-    min-height: auto;
     padding: 18px;
     border-radius: var(--nz-radius-lg);
   }

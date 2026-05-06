@@ -5,6 +5,7 @@ export interface R<T = unknown> {
 }
 
 export interface PageQuery {
+  [key: string]: unknown
   pageNum?: number
   pageSize?: number
 }

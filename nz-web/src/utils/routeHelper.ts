@@ -20,13 +20,16 @@ const viewModules = import.meta.glob('/src/views/**/*.vue')
 
 function normalizeComponentPath(componentPath?: string): string {
   if (!componentPath) return ''
-  if (componentPath.startsWith('@/')) {
-    return componentPath.replace('@/', '/src/')
+  let p = componentPath
+  if (p.startsWith('@/')) {
+    p = p.replace('@/', '/src/')
+  } else if (!p.startsWith('/src/')) {
+    p = `/src/views/${p.replace(/^\/+/, '')}`
   }
-  if (componentPath.startsWith('/src/')) {
-    return componentPath
+  if (!p.endsWith('.vue')) {
+    p = `${p}.vue`
   }
-  return componentPath.startsWith('/') ? componentPath : `/src/${componentPath}`
+  return p
 }
 
 function normalizeSegment(path: string): string {
@@ -69,8 +72,7 @@ export function flattenRouteMenus(
 }
 
 export function buildDynamicChildrenRoutes(menuList: MenuRouteItem[]): RouteRecordRaw[] {
-  const tree = buildTree(menuList)
-  return flattenRouteMenus(tree)
+  return flattenRouteMenus(menuList)
     .map(({ menu, fullPath }) => {
       const componentPath = normalizeComponentPath(menu.component)
       const component = viewModules[componentPath]
@@ -92,8 +94,7 @@ export function buildDynamicChildrenRoutes(menuList: MenuRouteItem[]): RouteReco
 }
 
 export function resolveFirstRoutePath(menuList: MenuRouteItem[]): string {
-  const tree = buildTree(menuList)
-  const first = flattenRouteMenus(tree).find((item) => Boolean(item.menu.component))
+  const first = flattenRouteMenus(menuList).find((item) => Boolean(item.menu.component))
   if (!first) return '/'
   return first.fullPath.startsWith('/') ? first.fullPath : `/${first.fullPath}`
 }

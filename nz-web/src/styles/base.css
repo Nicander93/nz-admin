@@ -21,6 +21,7 @@ body {
     radial-gradient(circle at top left, rgba(111, 155, 118, 0.1), transparent 28%),
     linear-gradient(180deg, #f8fbf7 0%, var(--nz-color-bg-app) 100%);
   color: var(--nz-color-text-1);
+  overflow: hidden;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

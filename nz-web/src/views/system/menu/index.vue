@@ -29,17 +29,17 @@
       <el-table-column label="操作" width="200" fixed="right">
         <template #default="{ row }">
           <el-button link type="primary" v-if="row.type !== 'F'" @click="openAdd(row.id)">新增</el-button>
-          <el-button link type="primary" @click="openEdit(row)">编辑</el-button>
+          <el-button link type="primary" @click="form.openEdit(row)">编辑</el-button>
           <el-button link type="danger" @click="onDelete(row.id)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
 
-    <el-dialog v-model="visible" :title="title" width="600px">
-      <el-form :model="form" label-width="100px">
+    <el-dialog v-model="form.visible" :title="form.title" width="600px">
+      <el-form :model="form.model" label-width="100px">
         <el-form-item label="上级菜单">
           <el-tree-select
-            v-model="form.parentId"
+            v-model="form.model.parentId"
             :data="menuSelectTree"
             :props="{ label: 'name', value: 'id', children: 'children' }"
             check-strictly
@@ -48,45 +48,45 @@
           />
         </el-form-item>
         <el-form-item label="菜单类型">
-          <el-radio-group v-model="form.type">
+          <el-radio-group v-model="form.model.type">
             <el-radio value="M">目录</el-radio>
             <el-radio value="C">菜单</el-radio>
             <el-radio value="F">按钮</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item label="菜单名称">
-          <el-input v-model="form.name" />
+          <el-input v-model="form.model.name" />
         </el-form-item>
-        <el-form-item label="路由路径" v-if="form.type !== 'F'">
-          <el-input v-model="form.path" />
+        <el-form-item label="路由路径" v-if="form.model.type !== 'F'">
+          <el-input v-model="form.model.path" />
         </el-form-item>
-        <el-form-item label="组件路径" v-if="form.type === 'C'">
-          <el-input v-model="form.component" />
+        <el-form-item label="组件路径" v-if="form.model.type === 'C'">
+          <el-input v-model="form.model.component" />
         </el-form-item>
-        <el-form-item label="权限标识" v-if="form.type !== 'M'">
-          <el-input v-model="form.perm" placeholder="如 system:user:list" />
+        <el-form-item label="权限标识" v-if="form.model.type !== 'M'">
+          <el-input v-model="form.model.perm" placeholder="如 system:user:list" />
         </el-form-item>
-        <el-form-item label="图标" v-if="form.type !== 'F'">
-          <el-input v-model="form.icon" />
+        <el-form-item label="图标" v-if="form.model.type !== 'F'">
+          <el-input v-model="form.model.icon" />
         </el-form-item>
         <el-form-item label="排序">
-          <el-input-number v-model="form.sort" :min="0" />
+          <el-input-number v-model="form.model.sort" :min="0" />
         </el-form-item>
-        <el-form-item label="是否可见" v-if="form.type !== 'F'">
-          <el-radio-group v-model="form.visible">
+        <el-form-item label="是否可见" v-if="form.model.type !== 'F'">
+          <el-radio-group v-model="form.model.visible">
             <el-radio :value="0">显示</el-radio>
             <el-radio :value="1">隐藏</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item label="状态">
-          <el-radio-group v-model="form.status">
+          <el-radio-group v-model="form.model.status">
             <el-radio :value="0">正常</el-radio>
             <el-radio :value="1">停用</el-radio>
           </el-radio-group>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="close">取消</el-button>
+        <el-button @click="form.close">取消</el-button>
         <el-button type="primary" @click="handleSubmit">确定</el-button>
       </template>
     </el-dialog>
@@ -98,11 +98,7 @@ import { onMounted } from 'vue'
 import { useMenuCrud } from './hooks'
 import { ElMessageBox } from 'element-plus'
 
-const {
-  loading, treeData, isExpand, menuSelectTree,
-  form, visible, title, close,
-  openAdd, openEdit, toggleExpand, handleSubmit, handleDelete, loadData,
-} = useMenuCrud()
+const { loading, treeData, isExpand, menuSelectTree, form, loadData, toggleExpand, openAdd, handleSubmit, handleDelete } = useMenuCrud()
 
 async function onDelete(id: number) {
   await ElMessageBox.confirm('确认删除该菜单？', '提示', { type: 'warning' })

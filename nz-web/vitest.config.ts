@@ -11,6 +11,6 @@ export default defineConfig({
   },
   test: {
     environment: 'happy-dom',
-    include: ['test/unit/**/*.test.ts'],
+    include: ['tests/unit/**/*.test.ts'],
   },
 })

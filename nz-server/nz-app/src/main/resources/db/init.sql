@@ -109,3 +109,82 @@ CREATE TABLE IF NOT EXISTS sys_login_log (
     msg         VARCHAR(255),
     login_time  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS sys_post (
+    id          BIGSERIAL PRIMARY KEY,
+    post_code   VARCHAR(64)  NOT NULL UNIQUE,
+    post_name   VARCHAR(64)  NOT NULL,
+    sort        INT DEFAULT 0,
+    status      SMALLINT DEFAULT 0,
+    remark      VARCHAR(500),
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS sys_user_post (
+    user_id     BIGINT NOT NULL,
+    post_id     BIGINT NOT NULL,
+    PRIMARY KEY (user_id, post_id)
+);
+
+CREATE TABLE IF NOT EXISTS sys_config (
+    id          BIGSERIAL PRIMARY KEY,
+    config_name VARCHAR(128) NOT NULL,
+    config_key  VARCHAR(128) NOT NULL UNIQUE,
+    config_value VARCHAR(500),
+    config_type SMALLINT DEFAULT 2,
+    status      SMALLINT DEFAULT 0,
+    remark      VARCHAR(500),
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS sys_notice (
+    id          BIGSERIAL PRIMARY KEY,
+    title       VARCHAR(128) NOT NULL,
+    content     TEXT,
+    type        SMALLINT DEFAULT 1,
+    status      SMALLINT DEFAULT 0,
+    remark      VARCHAR(500),
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS sys_job (
+    id              BIGSERIAL PRIMARY KEY,
+    job_name        VARCHAR(64)  NOT NULL,
+    job_group       VARCHAR(64)  DEFAULT 'DEFAULT',
+    invoke_target   VARCHAR(500) NOT NULL,
+    cron_expression VARCHAR(64)  NOT NULL,
+    misfire_policy  SMALLINT DEFAULT 1,
+    concurrent      SMALLINT DEFAULT 1,
+    status          SMALLINT DEFAULT 0,
+    remark          VARCHAR(500),
+    create_time     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_time     TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS sys_job_log (
+    id          BIGSERIAL PRIMARY KEY,
+    job_id      BIGINT NOT NULL,
+    job_name    VARCHAR(64),
+    job_group   VARCHAR(64),
+    invoke_target VARCHAR(500),
+    job_message VARCHAR(500),
+    status      SMALLINT DEFAULT 0,
+    exception_info TEXT,
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS sys_file (
+    id          BIGSERIAL PRIMARY KEY,
+    file_name   VARCHAR(128) NOT NULL,
+    original_name VARCHAR(128),
+    file_suffix VARCHAR(32),
+    file_size   BIGINT,
+    file_path   VARCHAR(255),
+    url         VARCHAR(255),
+    storage_type SMALLINT DEFAULT 1,
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
