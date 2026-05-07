@@ -1,10 +1,10 @@
 package com.nz.admin.modules.system.service.impl;
 
 import cn.hutool.core.util.StrUtil;
-import com.nz.admin.modules.system.entity.SysMenu;
-import com.nz.admin.modules.system.entity.SysRole;
-import com.nz.admin.modules.system.entity.SysRoleMenu;
-import com.nz.admin.modules.system.entity.SysUserRole;
+import com.nz.admin.modules.system.entity.po.SysMenuDO;
+import com.nz.admin.modules.system.entity.po.SysRoleDO;
+import com.nz.admin.modules.system.entity.po.SysRoleMenuDO;
+import com.nz.admin.modules.system.entity.po.SysUserRoleDO;
 import com.nz.admin.modules.system.mapper.SysMenuMapper;
 import com.nz.admin.modules.system.mapper.SysRoleMapper;
 import com.nz.admin.modules.system.mapper.SysRoleMenuMapper;
@@ -42,7 +42,7 @@ public class SysPermissionServiceImpl implements SysPermissionService {
         return roleIds.stream()
                 .map(roleMapper::selectById)
                 .filter(Objects::nonNull)
-                .map(SysRole::getRoleKey)
+                .map(SysRoleDO::getRoleKey)
                 .collect(Collectors.toSet());
     }
 
@@ -57,7 +57,7 @@ public class SysPermissionServiceImpl implements SysPermissionService {
         Set<Long> menuIds = new HashSet<>();
         for (Long roleId : roleIds) {
             roleMenuMapper.selectByRoleId(roleId).stream()
-                    .map(SysRoleMenu::getMenuId)
+                    .map(SysRoleMenuDO::getMenuId)
                     .forEach(menuIds::add);
         }
         if (menuIds.isEmpty()) return Collections.emptySet();
@@ -65,7 +65,7 @@ public class SysPermissionServiceImpl implements SysPermissionService {
         return menuIds.stream()
                 .map(menuMapper::selectById)
                 .filter(Objects::nonNull)
-                .map(SysMenu::getPerm)
+                .map(SysMenuDO::getPerm)
                 .filter(StrUtil::isNotBlank)
                 .collect(Collectors.toSet());
     }
@@ -74,22 +74,22 @@ public class SysPermissionServiceImpl implements SysPermissionService {
      * 按用户 id 拿菜单列表。
      */
     @Override
-    public List<SysMenu> getMenusByUserId(Long userId) {
+    public List<SysMenuDO> getMenusByUserId(Long userId) {
         List<Long> roleIds = getRoleIdsByUserId(userId);
         if (roleIds.isEmpty()) return Collections.emptyList();
 
         Set<Long> menuIds = new HashSet<>();
         for (Long roleId : roleIds) {
             roleMenuMapper.selectByRoleId(roleId).stream()
-                    .map(SysRoleMenu::getMenuId)
+                    .map(SysRoleMenuDO::getMenuId)
                     .forEach(menuIds::add);
         }
         if (menuIds.isEmpty()) return Collections.emptyList();
 
         return menuMapper.selectBatchIds(menuIds).stream()
                 .filter(Objects::nonNull)
-                .sorted(Comparator.comparing(SysMenu::getSort, Comparator.nullsLast(Integer::compareTo))
-                        .thenComparing(SysMenu::getId))
+                .sorted(Comparator.comparing(SysMenuDO::getSort, Comparator.nullsLast(Integer::compareTo))
+                        .thenComparing(SysMenuDO::getId))
                 .toList();
     }
 
@@ -99,7 +99,7 @@ public class SysPermissionServiceImpl implements SysPermissionService {
     @Override
     public List<Long> getRoleIdsByUserId(Long userId) {
         return userRoleMapper.selectByUserId(userId).stream()
-                .map(SysUserRole::getRoleId).toList();
+                .map(SysUserRoleDO::getRoleId).toList();
     }
 
     /**
@@ -111,7 +111,7 @@ public class SysPermissionServiceImpl implements SysPermissionService {
         // 这里走覆盖式分配：先清掉旧关系，再写入新关系。
         userRoleMapper.deleteByUserId(userId);
         for (Long roleId : roleIds) {
-            SysUserRole ur = new SysUserRole();
+            SysUserRoleDO ur = new SysUserRoleDO();
             ur.setUserId(userId);
             ur.setRoleId(roleId);
             userRoleMapper.insert(ur);

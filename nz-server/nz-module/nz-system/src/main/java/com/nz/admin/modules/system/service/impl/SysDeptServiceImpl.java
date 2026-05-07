@@ -1,6 +1,6 @@
 package com.nz.admin.modules.system.service.impl;
 
-import com.nz.admin.modules.system.entity.SysDept;
+import com.nz.admin.modules.system.entity.po.SysDeptDO;
 import com.nz.admin.modules.system.mapper.SysDeptMapper;
 import com.nz.admin.modules.system.service.SysDeptService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +21,7 @@ public class SysDeptServiceImpl implements SysDeptService {
      * 把所有部门按排序字段查出来。
      */
     @Override
-    public List<SysDept> listAll() {
+    public List<SysDeptDO> listAll() {
         return deptMapper.selectListOrderBySort();
     }
 
@@ -29,7 +29,7 @@ public class SysDeptServiceImpl implements SysDeptService {
      * 按 id 拿部门详情。
      */
     @Override
-    public SysDept getById(Long id) {
+    public SysDeptDO getById(Long id) {
         return deptMapper.selectById(id);
     }
 
@@ -37,7 +37,7 @@ public class SysDeptServiceImpl implements SysDeptService {
      * 新增一条部门记录。
      */
     @Override
-    public void save(SysDept dept) {
+    public void save(SysDeptDO dept) {
         deptMapper.insert(dept);
     }
 
@@ -45,7 +45,7 @@ public class SysDeptServiceImpl implements SysDeptService {
      * 按 id 更新部门。
      */
     @Override
-    public void updateById(SysDept dept) {
+    public void updateById(SysDeptDO dept) {
         deptMapper.updateById(dept);
     }
 

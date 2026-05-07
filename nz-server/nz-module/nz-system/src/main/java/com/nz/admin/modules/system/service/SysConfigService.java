@@ -1,17 +1,17 @@
 package com.nz.admin.modules.system.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.nz.admin.modules.system.entity.SysConfig;
+import com.nz.admin.modules.system.entity.po.SysConfigDO;
 
 public interface SysConfigService {
 
-    Page<SysConfig> listPage(Integer pageNum, Integer pageSize, String configName, String configKey, Integer status);
+    Page<SysConfigDO> listPage(Integer pageNum, Integer pageSize, String configName, String configKey, Integer status);
 
-    SysConfig getById(Long id);
+    SysConfigDO getById(Long id);
 
-    boolean save(SysConfig config);
+    boolean save(SysConfigDO config);
 
-    boolean updateById(SysConfig config);
+    boolean updateById(SysConfigDO config);
 
     boolean removeById(Long id);
 }

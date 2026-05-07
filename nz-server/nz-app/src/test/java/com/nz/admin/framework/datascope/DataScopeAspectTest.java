@@ -5,7 +5,7 @@ import com.nz.admin.framework.auth.datascope.DataScope;
 import com.nz.admin.framework.auth.datascope.DataScopeParam;
 import com.nz.admin.framework.auth.datascope.DataScopeType;
 import com.nz.admin.framework.auth.aspect.DataScopeAspect;
-import com.nz.admin.modules.system.entity.SysUser;
+import com.nz.admin.modules.system.entity.po.SysUserDO;
 import com.nz.admin.modules.system.service.SysPermissionService;
 import com.nz.admin.modules.system.service.SysUserService;
 import org.junit.jupiter.api.AfterEach;
@@ -65,7 +65,7 @@ class DataScopeAspectTest {
         long userId = 2002L;
         StpUtil.login(userId);
         when(permissionService.getRoleKeysByUserId(userId)).thenReturn(Set.of("normal"));
-        when(userService.getById(userId)).thenReturn(new SysUser().setId(userId).setDeptId(300L));
+        when(userService.getById(userId)).thenReturn(new SysUserDO().setId(userId).setDeptId(300L));
 
         TestDataScopeQuery query = new TestDataScopeQuery();
         dataScopeTargetService.queryByDept(query);
@@ -78,7 +78,7 @@ class DataScopeAspectTest {
         long userId = 2003L;
         StpUtil.login(userId);
         when(permissionService.getRoleKeysByUserId(userId)).thenReturn(Set.of("normal"));
-        when(userService.getById(userId)).thenReturn(new SysUser().setId(userId).setDeptId(301L));
+        when(userService.getById(userId)).thenReturn(new SysUserDO().setId(userId).setDeptId(301L));
 
         TestDataScopeQuery query = new TestDataScopeQuery();
         dataScopeTargetService.queryBySelf(query);

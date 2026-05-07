@@ -1,6 +1,6 @@
 package com.nz.admin.modules.system.service.impl;
 
-import com.nz.admin.modules.system.entity.SysDictData;
+import com.nz.admin.modules.system.entity.po.SysDictDataDO;
 import com.nz.admin.modules.system.mapper.SysDictDataMapper;
 import com.nz.admin.modules.system.service.SysDictDataService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +21,7 @@ public class SysDictDataServiceImpl implements SysDictDataService {
      * 按字典类型把数据列表查出来。
      */
     @Override
-    public List<SysDictData> listByDictType(String dictType) {
+    public List<SysDictDataDO> listByDictType(String dictType) {
         return dictDataMapper.selectByDictType(dictType);
     }
 
@@ -29,7 +29,7 @@ public class SysDictDataServiceImpl implements SysDictDataService {
      * 按 id 拿字典数据详情。
      */
     @Override
-    public SysDictData getById(Long id) {
+    public SysDictDataDO getById(Long id) {
         return dictDataMapper.selectById(id);
     }
 
@@ -37,7 +37,7 @@ public class SysDictDataServiceImpl implements SysDictDataService {
      * 新增一条字典数据。
      */
     @Override
-    public void save(SysDictData dictData) {
+    public void save(SysDictDataDO dictData) {
         dictDataMapper.insert(dictData);
     }
 
@@ -45,7 +45,7 @@ public class SysDictDataServiceImpl implements SysDictDataService {
      * 按 id 更新字典数据。
      */
     @Override
-    public void updateById(SysDictData dictData) {
+    public void updateById(SysDictDataDO dictData) {
         dictDataMapper.updateById(dictData);
     }
 

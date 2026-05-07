@@ -3,9 +3,9 @@ package com.nz.admin.modules.system.service;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.nz.admin.NzSystemTestApplication;
 import com.nz.admin.framework.test.core.ut.BaseDbUnitTest;
-import com.nz.admin.modules.system.entity.SysOperLog;
+import com.nz.admin.modules.system.entity.po.SysOperLogDO;
 import com.nz.admin.modules.system.mapper.SysOperLogMapper;
-import com.nz.admin.modules.system.query.SysOperLogQuery;
+import com.nz.admin.modules.system.entity.query.SysOperLogQuery;
 import com.nz.admin.modules.system.service.impl.SysOperLogServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.Import;
@@ -28,7 +28,7 @@ class SysOperLogServiceImplTest extends BaseDbUnitTest {
 
     @Test
     void testListPage() {
-        SysOperLog operLog1 = randomPojo(SysOperLog.class)
+        SysOperLogDO operLog1 = randomPojo(SysOperLogDO.class)
                 .setId(null)
                 .setTitle("用户管理")
                 .setOperName("alice")
@@ -36,7 +36,7 @@ class SysOperLogServiceImplTest extends BaseDbUnitTest {
                 .setStatus(0);
         operLogMapper.insert(operLog1);
 
-        SysOperLog operLog2 = randomPojo(SysOperLog.class)
+        SysOperLogDO operLog2 = randomPojo(SysOperLogDO.class)
                 .setId(null)
                 .setTitle("角色管理")
                 .setOperName("bob")
@@ -52,7 +52,7 @@ class SysOperLogServiceImplTest extends BaseDbUnitTest {
         query.setBusinessType(1);
         query.setStatus(0);
 
-        Page<SysOperLog> result = operLogService.listPage(query);
+        Page<SysOperLogDO> result = operLogService.listPage(query);
 
         assertEquals(1, result.getTotal());
         assertEquals("用户管理", result.getRecords().get(0).getTitle());
@@ -60,12 +60,12 @@ class SysOperLogServiceImplTest extends BaseDbUnitTest {
 
     @Test
     void testGetById() {
-        SysOperLog operLog = randomPojo(SysOperLog.class)
+        SysOperLogDO operLog = randomPojo(SysOperLogDO.class)
                 .setId(null)
                 .setTitle("按ID查询操作日志");
         operLogMapper.insert(operLog);
 
-        SysOperLog result = operLogService.getById(operLog.getId());
+        SysOperLogDO result = operLogService.getById(operLog.getId());
 
         assertNotNull(result);
         assertEquals("按ID查询操作日志", result.getTitle());
@@ -73,12 +73,12 @@ class SysOperLogServiceImplTest extends BaseDbUnitTest {
 
     @Test
     void testRemoveByIds() {
-        SysOperLog operLog1 = randomPojo(SysOperLog.class)
+        SysOperLogDO operLog1 = randomPojo(SysOperLogDO.class)
                 .setId(null)
                 .setTitle("批量删除1");
         operLogMapper.insert(operLog1);
 
-        SysOperLog operLog2 = randomPojo(SysOperLog.class)
+        SysOperLogDO operLog2 = randomPojo(SysOperLogDO.class)
                 .setId(null)
                 .setTitle("批量删除2");
         operLogMapper.insert(operLog2);

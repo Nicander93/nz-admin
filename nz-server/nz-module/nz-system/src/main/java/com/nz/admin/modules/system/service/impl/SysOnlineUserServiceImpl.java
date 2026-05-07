@@ -2,7 +2,7 @@ package com.nz.admin.modules.system.service.impl;
 
 import cn.hutool.core.util.StrUtil;
 import com.nz.admin.modules.system.service.SysOnlineUserService;
-import com.nz.admin.modules.system.vo.OnlineUserVO;
+import com.nz.admin.modules.system.entity.vo.OnlineUserVO;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;

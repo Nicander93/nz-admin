@@ -43,14 +43,13 @@ nz-admin/
 │   │   └── nz-starter-sa-token/                # Sa-Token starter
 │   ├── nz-module/                              # 业务模块根目录
 │   │   ├── nz-system/                          # 系统管理模块
-│   │   │   └── src/.../com/nz/admin/modules/system/ # entity / mapper / service
+│   │   │   └── src/.../com/nz/admin/modules/system/ # entity（po/query/vo）/ mapper / service / controller
 │   │   └── src/.../com/nz/admin/modules/       # 业务代码按领域建子包
 │   └── nz-app/                                 # 启动模块
 │       └── src/main/
 │           ├── java/com/nz/admin/
 │           │   ├── NzAdminApplication.java     # 启动类
-│           │   ├── config/                     # 应用级配置（DataInitializer）
-│           │   └── modules/system/controller/  # Controller
+│           │   └── config/                     # 应用级配置（DataInitializer 等）
 │           └── resources/
 │               ├── application.yml
 │               └── db/init.sql
@@ -94,7 +93,7 @@ nz-app             ← nz-starter-web, nz-starter-mybatis, nz-starter-sa-token,
 
 ## 后端约定
 
-- 包结构：`com.nz.admin.modules.{模块名}.{entity|mapper|service|controller}`
+- 包结构：`com.nz.admin.modules.{模块名}.{entity|mapper|service|controller}`；`entity` 包内放表对应 `*DO`、分页条件 `*Query`、展示 `*VO`（不再拆 `vo`/`query` 子包）
 - 统一响应体：`R<T>`，code=200 表示成功
 - 分页查询使用 `PageQuery` + MyBatis-Plus `Page`
 - 密码使用 BCrypt 加密（hutool）

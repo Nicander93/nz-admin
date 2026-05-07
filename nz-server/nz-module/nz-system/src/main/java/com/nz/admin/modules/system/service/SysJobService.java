@@ -1,17 +1,17 @@
 package com.nz.admin.modules.system.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.nz.admin.modules.system.entity.SysJob;
+import com.nz.admin.modules.system.entity.po.SysJobDO;
 
 public interface SysJobService {
 
-    Page<SysJob> listPage(Integer pageNum, Integer pageSize, String jobName, String jobGroup, Integer status);
+    Page<SysJobDO> listPage(Integer pageNum, Integer pageSize, String jobName, String jobGroup, Integer status);
 
-    SysJob getById(Long id);
+    SysJobDO getById(Long id);
 
-    void save(SysJob job);
+    void save(SysJobDO job);
 
-    void updateById(SysJob job);
+    void updateById(SysJobDO job);
 
     void removeById(Long id);
 

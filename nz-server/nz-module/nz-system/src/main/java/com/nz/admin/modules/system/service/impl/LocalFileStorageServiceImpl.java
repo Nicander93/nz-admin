@@ -4,7 +4,7 @@ import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
 import com.nz.admin.modules.system.config.SysFileStorageProperties;
-import com.nz.admin.modules.system.entity.SysFile;
+import com.nz.admin.modules.system.entity.po.SysFileDO;
 import com.nz.admin.modules.system.service.FileStorageService;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +26,7 @@ public class LocalFileStorageServiceImpl implements FileStorageService {
     private SysFileStorageProperties properties;
 
     @Override
-    public SysFile upload(MultipartFile file, Long uploaderId) throws IOException {
+    public SysFileDO upload(MultipartFile file, Long uploaderId) throws IOException {
         String originalName = file.getOriginalFilename();
         String fileExt = FileUtil.extName(originalName);
         String fileName = IdUtil.fastSimpleUUID() + (StrUtil.isNotBlank(fileExt) ? "." + fileExt : "");
@@ -36,7 +36,7 @@ public class LocalFileStorageServiceImpl implements FileStorageService {
         FileUtil.mkParentDirs(dest);
         file.transferTo(dest);
 
-        SysFile sysFile = new SysFile();
+        SysFileDO sysFile = new SysFileDO();
         sysFile.setOriginalName(originalName);
         sysFile.setFileName(fileName);
         sysFile.setFilePath(filePath);
@@ -48,14 +48,14 @@ public class LocalFileStorageServiceImpl implements FileStorageService {
     }
 
     @Override
-    public void delete(SysFile sysFile) {
+    public void delete(SysFileDO sysFile) {
         if (sysFile != null && StrUtil.isNotBlank(sysFile.getFilePath())) {
             FileUtil.del(sysFile.getFilePath());
         }
     }
 
     @Override
-    public void download(SysFile sysFile, HttpServletResponse response) throws IOException {
+    public void download(SysFileDO sysFile, HttpServletResponse response) throws IOException {
         if (sysFile == null || StrUtil.isBlank(sysFile.getFilePath())) {
             response.setStatus(404);
             return;

@@ -1,11 +1,11 @@
 package com.nz.admin.modules.system.service.impl;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.nz.admin.modules.system.entity.SysRole;
-import com.nz.admin.modules.system.entity.SysRoleMenu;
+import com.nz.admin.modules.system.entity.po.SysRoleDO;
+import com.nz.admin.modules.system.entity.po.SysRoleMenuDO;
 import com.nz.admin.modules.system.mapper.SysRoleMapper;
 import com.nz.admin.modules.system.mapper.SysRoleMenuMapper;
-import com.nz.admin.modules.system.query.SysRoleQuery;
+import com.nz.admin.modules.system.entity.query.SysRoleQuery;
 import com.nz.admin.modules.system.service.SysRoleService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -28,7 +28,7 @@ public class SysRoleServiceImpl implements SysRoleService {
      * 按分页条件查角色列表。
      */
     @Override
-    public Page<SysRole> listPage(SysRoleQuery query) {
+    public Page<SysRoleDO> listPage(SysRoleQuery query) {
         return roleMapper.selectPageByCondition(query.toPage(), query);
     }
 
@@ -36,7 +36,7 @@ public class SysRoleServiceImpl implements SysRoleService {
      * 把所有角色查出来。
      */
     @Override
-    public List<SysRole> listAll() {
+    public List<SysRoleDO> listAll() {
         return roleMapper.selectList(null);
     }
 
@@ -44,7 +44,7 @@ public class SysRoleServiceImpl implements SysRoleService {
      * 按 id 拿角色详情。
      */
     @Override
-    public SysRole getById(Long id) {
+    public SysRoleDO getById(Long id) {
         return roleMapper.selectById(id);
     }
 
@@ -52,7 +52,7 @@ public class SysRoleServiceImpl implements SysRoleService {
      * 新增一条角色记录。
      */
     @Override
-    public void save(SysRole role) {
+    public void save(SysRoleDO role) {
         roleMapper.insert(role);
     }
 
@@ -60,7 +60,7 @@ public class SysRoleServiceImpl implements SysRoleService {
      * 按 id 更新角色。
      */
     @Override
-    public void updateById(SysRole role) {
+    public void updateById(SysRoleDO role) {
         roleMapper.updateById(role);
     }
 
@@ -80,7 +80,7 @@ public class SysRoleServiceImpl implements SysRoleService {
     @Override
     public List<Long> getMenuIdsByRoleId(Long roleId) {
         return roleMenuMapper.selectByRoleId(roleId).stream()
-                .map(SysRoleMenu::getMenuId).toList();
+                .map(SysRoleMenuDO::getMenuId).toList();
     }
 
     /**
@@ -92,7 +92,7 @@ public class SysRoleServiceImpl implements SysRoleService {
         // 这里走覆盖式分配：先清掉旧关联，再写入新关联。
         roleMenuMapper.deleteByRoleId(roleId);
         for (Long menuId : menuIds) {
-            SysRoleMenu rm = new SysRoleMenu();
+            SysRoleMenuDO rm = new SysRoleMenuDO();
             rm.setRoleId(roleId);
             rm.setMenuId(menuId);
             roleMenuMapper.insert(rm);

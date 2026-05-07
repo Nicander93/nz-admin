@@ -3,7 +3,7 @@ package com.nz.admin.modules.system.service.impl;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.nz.admin.modules.system.entity.SysJobLog;
+import com.nz.admin.modules.system.entity.po.SysJobLogDO;
 import com.nz.admin.modules.system.mapper.SysJobLogMapper;
 import com.nz.admin.modules.system.service.SysJobLogService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,13 +21,13 @@ public class SysJobLogServiceImpl implements SysJobLogService {
     private SysJobLogMapper jobLogMapper;
 
     @Override
-    public Page<SysJobLog> listPage(Integer pageNum, Integer pageSize, String jobName, String jobGroup, Integer status) {
-        Page<SysJobLog> page = new Page<>(pageNum, pageSize);
+    public Page<SysJobLogDO> listPage(Integer pageNum, Integer pageSize, String jobName, String jobGroup, Integer status) {
+        Page<SysJobLogDO> page = new Page<>(pageNum, pageSize);
         return jobLogMapper.selectPageByCondition(page, jobName, jobGroup, status);
     }
 
     @Override
-    public SysJobLog getById(Long id) {
+    public SysJobLogDO getById(Long id) {
         return jobLogMapper.selectById(id);
     }
 
@@ -37,7 +37,7 @@ public class SysJobLogServiceImpl implements SysJobLogService {
     }
 
     @Override
-    public void save(SysJobLog jobLog) {
+    public void save(SysJobLogDO jobLog) {
         jobLogMapper.insert(jobLog);
     }
 }

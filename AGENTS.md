@@ -94,4 +94,3 @@ pnpm build       # 生产构建
 ### 架构原则
 - **框架模块不依赖业务模块**：`nz-starter-*` 不应依赖 `nz-system`
 - **业务模块可依赖框架模块**：`nz-system` 可依赖 `nz-starter-auth`、`nz-starter-log` 等
-- **切面类属于业务层**：`DataScopeAspect`、`SaCheckPermissionAspect`、`LogAspect` 应放在 `nz-system` 模块

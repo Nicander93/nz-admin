@@ -2,7 +2,7 @@ package com.nz.admin.modules.system.service;
 
 import com.nz.admin.NzSystemTestApplication;
 import com.nz.admin.framework.test.core.ut.BaseDbUnitTest;
-import com.nz.admin.modules.system.entity.SysDept;
+import com.nz.admin.modules.system.entity.po.SysDeptDO;
 import com.nz.admin.modules.system.mapper.SysDeptMapper;
 import com.nz.admin.modules.system.service.impl.SysDeptServiceImpl;
 import org.junit.jupiter.api.Test;
@@ -26,17 +26,17 @@ class SysDeptServiceImplTest extends BaseDbUnitTest {
 
     @Test
     void testListAll() {
-        SysDept dept1 = new SysDept()
+        SysDeptDO dept1 = new SysDeptDO()
                 .setName("总公司")
                 .setSort(2);
         deptMapper.insert(dept1);
 
-        SysDept dept2 = new SysDept()
+        SysDeptDO dept2 = new SysDeptDO()
                 .setName("技术部")
                 .setSort(1);
         deptMapper.insert(dept2);
 
-        List<SysDept> result = deptService.listAll();
+        List<SysDeptDO> result = deptService.listAll();
 
         assertEquals(2, result.size());
         assertEquals("技术部", result.get(0).getName());
@@ -45,12 +45,12 @@ class SysDeptServiceImplTest extends BaseDbUnitTest {
 
     @Test
     void testGetById() {
-        SysDept dept = new SysDept()
+        SysDeptDO dept = new SysDeptDO()
                 .setName("总公司")
                 .setSort(1);
         deptMapper.insert(dept);
 
-        SysDept result = deptService.getById(dept.getId());
+        SysDeptDO result = deptService.getById(dept.getId());
 
         assertNotNull(result);
         assertEquals("总公司", result.getName());
@@ -58,20 +58,20 @@ class SysDeptServiceImplTest extends BaseDbUnitTest {
 
     @Test
     void testSave() {
-        SysDept dept = new SysDept()
+        SysDeptDO dept = new SysDeptDO()
                 .setName("新部门")
                 .setSort(10);
         deptService.save(dept);
 
         assertNotNull(dept.getId());
-        SysDept dbDept = deptMapper.selectById(dept.getId());
+        SysDeptDO dbDept = deptMapper.selectById(dept.getId());
         assertNotNull(dbDept);
         assertEquals("新部门", dbDept.getName());
     }
 
     @Test
     void testRemoveById() {
-        SysDept dept = new SysDept()
+        SysDeptDO dept = new SysDeptDO()
                 .setName("待删除部门")
                 .setSort(3);
         deptMapper.insert(dept);

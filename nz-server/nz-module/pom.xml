@@ -17,11 +17,4 @@
     <modules>
         <module>nz-system</module>
     </modules>
-
-    <dependencies>
-        <dependency>
-            <groupId>com.nz</groupId>
-            <artifactId>nz-common</artifactId>
-        </dependency>
-    </dependencies>
 </project>

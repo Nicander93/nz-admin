@@ -9,8 +9,8 @@ import com.aliyun.oss.OSSException;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.nz.admin.common.R;
 import com.nz.admin.framework.auth.annotation.SaCheckPermission;
-import com.nz.admin.modules.system.entity.SysFile;
-import com.nz.admin.modules.system.query.SysFileQuery;
+import com.nz.admin.modules.system.entity.po.SysFileDO;
+import com.nz.admin.modules.system.entity.query.SysFileQuery;
 import com.nz.admin.modules.system.service.SysFileService;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,7 +53,7 @@ public class SysFileController {
      */
     @SaCheckPermission("system:file:upload")
     @PostMapping("/upload")
-    public R<SysFile> upload(@RequestParam("file") MultipartFile file) {
+    public R<SysFileDO> upload(@RequestParam("file") MultipartFile file) {
         try {
             validateFile(file);
             Long uploaderId = StpUtil.getLoginIdAsLong();
@@ -92,7 +92,7 @@ public class SysFileController {
      */
     @SaCheckPermission("system:file:list")
     @GetMapping("/page")
-    public R<Page<SysFile>> page(SysFileQuery query) {
+    public R<Page<SysFileDO>> page(SysFileQuery query) {
         return R.ok(fileService.listPage(query));
     }
 

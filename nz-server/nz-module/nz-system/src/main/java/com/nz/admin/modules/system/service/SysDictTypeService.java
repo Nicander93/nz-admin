@@ -1,18 +1,18 @@
 package com.nz.admin.modules.system.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.nz.admin.modules.system.entity.SysDictType;
-import com.nz.admin.modules.system.query.SysDictTypeQuery;
+import com.nz.admin.modules.system.entity.po.SysDictTypeDO;
+import com.nz.admin.modules.system.entity.query.SysDictTypeQuery;
 
 public interface SysDictTypeService {
 
-    Page<SysDictType> listPage(SysDictTypeQuery query);
+    Page<SysDictTypeDO> listPage(SysDictTypeQuery query);
 
-    SysDictType getById(Long id);
+    SysDictTypeDO getById(Long id);
 
-    void save(SysDictType dictType);
+    void save(SysDictTypeDO dictType);
 
-    void updateById(SysDictType dictType);
+    void updateById(SysDictTypeDO dictType);
 
     void removeById(Long id);
 }

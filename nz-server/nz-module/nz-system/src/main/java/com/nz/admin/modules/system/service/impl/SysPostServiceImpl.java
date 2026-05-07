@@ -1,6 +1,6 @@
 package com.nz.admin.modules.system.service.impl;
 
-import com.nz.admin.modules.system.entity.SysPost;
+import com.nz.admin.modules.system.entity.po.SysPostDO;
 import com.nz.admin.modules.system.mapper.SysPostMapper;
 import com.nz.admin.modules.system.service.SysPostService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +21,7 @@ public class SysPostServiceImpl implements SysPostService {
      * 查询所有岗位，按排序字段升序。
      */
     @Override
-    public List<SysPost> listAll() {
+    public List<SysPostDO> listAll() {
         return postMapper.selectListOrderBySort();
     }
 
@@ -29,7 +29,7 @@ public class SysPostServiceImpl implements SysPostService {
      * 按 id 获取岗位详情。
      */
     @Override
-    public SysPost getById(Long id) {
+    public SysPostDO getById(Long id) {
         return postMapper.selectById(id);
     }
 
@@ -37,7 +37,7 @@ public class SysPostServiceImpl implements SysPostService {
      * 新增岗位。
      */
     @Override
-    public void save(SysPost post) {
+    public void save(SysPostDO post) {
         postMapper.insert(post);
     }
 
@@ -45,7 +45,7 @@ public class SysPostServiceImpl implements SysPostService {
      * 按 id 更新岗位。
      */
     @Override
-    public void updateById(SysPost post) {
+    public void updateById(SysPostDO post) {
         postMapper.updateById(post);
     }
 

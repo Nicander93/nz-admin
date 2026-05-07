@@ -1,18 +1,18 @@
 package com.nz.admin.modules.system.service;
 
-import com.nz.admin.modules.system.entity.SysDictData;
+import com.nz.admin.modules.system.entity.po.SysDictDataDO;
 
 import java.util.List;
 
 public interface SysDictDataService {
 
-    List<SysDictData> listByDictType(String dictType);
+    List<SysDictDataDO> listByDictType(String dictType);
 
-    SysDictData getById(Long id);
+    SysDictDataDO getById(Long id);
 
-    void save(SysDictData dictData);
+    void save(SysDictDataDO dictData);
 
-    void updateById(SysDictData dictData);
+    void updateById(SysDictDataDO dictData);
 
     void removeById(Long id);
 }

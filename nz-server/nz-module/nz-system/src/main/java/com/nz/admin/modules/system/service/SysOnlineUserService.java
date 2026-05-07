@@ -1,6 +1,6 @@
 package com.nz.admin.modules.system.service;
 
-import com.nz.admin.modules.system.vo.OnlineUserVO;
+import com.nz.admin.modules.system.entity.vo.OnlineUserVO;
 
 import java.util.List;
 

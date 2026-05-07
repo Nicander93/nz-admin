@@ -1,18 +1,18 @@
 package com.nz.admin.modules.system.service;
 
-import com.nz.admin.modules.system.entity.SysPost;
+import com.nz.admin.modules.system.entity.po.SysPostDO;
 
 import java.util.List;
 
 public interface SysPostService {
 
-    List<SysPost> listAll();
+    List<SysPostDO> listAll();
 
-    SysPost getById(Long id);
+    SysPostDO getById(Long id);
 
-    void save(SysPost post);
+    void save(SysPostDO post);
 
-    void updateById(SysPost post);
+    void updateById(SysPostDO post);
 
     void removeById(Long id);
 }

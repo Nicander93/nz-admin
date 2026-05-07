@@ -1,6 +1,6 @@
 package com.nz.admin.modules.system.service.impl;
 
-import com.nz.admin.modules.system.entity.SysMenu;
+import com.nz.admin.modules.system.entity.po.SysMenuDO;
 import com.nz.admin.modules.system.mapper.SysMenuMapper;
 import com.nz.admin.modules.system.service.SysMenuService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +21,7 @@ public class SysMenuServiceImpl implements SysMenuService {
      * 把所有菜单按排序字段查出来。
      */
     @Override
-    public List<SysMenu> listAll() {
+    public List<SysMenuDO> listAll() {
         return menuMapper.selectListOrderBySort();
     }
 
@@ -29,7 +29,7 @@ public class SysMenuServiceImpl implements SysMenuService {
      * 按 id 拿菜单详情。
      */
     @Override
-    public SysMenu getById(Long id) {
+    public SysMenuDO getById(Long id) {
         return menuMapper.selectById(id);
     }
 
@@ -37,7 +37,7 @@ public class SysMenuServiceImpl implements SysMenuService {
      * 新增一条菜单记录。
      */
     @Override
-    public void save(SysMenu menu) {
+    public void save(SysMenuDO menu) {
         menuMapper.insert(menu);
     }
 
@@ -45,7 +45,7 @@ public class SysMenuServiceImpl implements SysMenuService {
      * 按 id 更新菜单。
      */
     @Override
-    public void updateById(SysMenu menu) {
+    public void updateById(SysMenuDO menu) {
         menuMapper.updateById(menu);
     }
 

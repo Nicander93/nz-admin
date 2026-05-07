@@ -1,9 +1,9 @@
 package com.nz.admin.modules.system.service.impl;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.nz.admin.modules.system.entity.SysOperLog;
+import com.nz.admin.modules.system.entity.po.SysOperLogDO;
 import com.nz.admin.modules.system.mapper.SysOperLogMapper;
-import com.nz.admin.modules.system.query.SysOperLogQuery;
+import com.nz.admin.modules.system.entity.query.SysOperLogQuery;
 import com.nz.admin.modules.system.service.SysOperLogService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
@@ -24,7 +24,7 @@ public class SysOperLogServiceImpl implements SysOperLogService {
      * 按条件分页查操作日志。
      */
     @Override
-    public Page<SysOperLog> listPage(SysOperLogQuery query) {
+    public Page<SysOperLogDO> listPage(SysOperLogQuery query) {
         return operLogMapper.selectPageByCondition(query.toPage(), query);
     }
 
@@ -32,7 +32,7 @@ public class SysOperLogServiceImpl implements SysOperLogService {
      * 按 id 查操作日志详情。
      */
     @Override
-    public SysOperLog getById(Long id) {
+    public SysOperLogDO getById(Long id) {
         return operLogMapper.selectById(id);
     }
 
@@ -49,7 +49,7 @@ public class SysOperLogServiceImpl implements SysOperLogService {
      */
     @Async
     @Override
-    public void saveAsync(SysOperLog operLog) {
+    public void saveAsync(SysOperLogDO operLog) {
         operLogMapper.insert(operLog);
     }
 }

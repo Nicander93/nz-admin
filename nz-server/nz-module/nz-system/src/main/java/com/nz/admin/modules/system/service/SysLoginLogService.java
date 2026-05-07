@@ -1,14 +1,14 @@
 package com.nz.admin.modules.system.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.nz.admin.modules.system.entity.SysLoginLog;
-import com.nz.admin.modules.system.query.SysLoginLogQuery;
+import com.nz.admin.modules.system.entity.po.SysLoginLogDO;
+import com.nz.admin.modules.system.entity.query.SysLoginLogQuery;
 
 public interface SysLoginLogService {
 
-    Page<SysLoginLog> listPage(SysLoginLogQuery query);
+    Page<SysLoginLogDO> listPage(SysLoginLogQuery query);
 
-    SysLoginLog getById(Long id);
+    SysLoginLogDO getById(Long id);
 
-    void saveAsync(SysLoginLog loginLog);
+    void saveAsync(SysLoginLogDO loginLog);
 }

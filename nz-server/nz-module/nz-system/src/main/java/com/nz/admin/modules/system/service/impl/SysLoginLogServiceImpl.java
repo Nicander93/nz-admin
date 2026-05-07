@@ -1,9 +1,9 @@
 package com.nz.admin.modules.system.service.impl;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.nz.admin.modules.system.entity.SysLoginLog;
+import com.nz.admin.modules.system.entity.po.SysLoginLogDO;
 import com.nz.admin.modules.system.mapper.SysLoginLogMapper;
-import com.nz.admin.modules.system.query.SysLoginLogQuery;
+import com.nz.admin.modules.system.entity.query.SysLoginLogQuery;
 import com.nz.admin.modules.system.service.SysLoginLogService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
@@ -22,7 +22,7 @@ public class SysLoginLogServiceImpl implements SysLoginLogService {
      * 按条件分页查登录日志。
      */
     @Override
-    public Page<SysLoginLog> listPage(SysLoginLogQuery query) {
+    public Page<SysLoginLogDO> listPage(SysLoginLogQuery query) {
         return loginLogMapper.selectPageByCondition(query.toPage(), query);
     }
 
@@ -30,7 +30,7 @@ public class SysLoginLogServiceImpl implements SysLoginLogService {
      * 按 id 查登录日志详情。
      */
     @Override
-    public SysLoginLog getById(Long id) {
+    public SysLoginLogDO getById(Long id) {
         return loginLogMapper.selectById(id);
     }
 
@@ -39,7 +39,7 @@ public class SysLoginLogServiceImpl implements SysLoginLogService {
      */
     @Async
     @Override
-    public void saveAsync(SysLoginLog loginLog) {
+    public void saveAsync(SysLoginLogDO loginLog) {
         loginLogMapper.insert(loginLog);
     }
 }

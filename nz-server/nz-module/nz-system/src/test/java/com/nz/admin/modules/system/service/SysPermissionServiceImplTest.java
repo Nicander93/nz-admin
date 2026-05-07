@@ -2,10 +2,10 @@ package com.nz.admin.modules.system.service;
 
 import com.nz.admin.NzSystemTestApplication;
 import com.nz.admin.framework.test.core.ut.BaseDbUnitTest;
-import com.nz.admin.modules.system.entity.SysMenu;
-import com.nz.admin.modules.system.entity.SysRole;
-import com.nz.admin.modules.system.entity.SysRoleMenu;
-import com.nz.admin.modules.system.entity.SysUserRole;
+import com.nz.admin.modules.system.entity.po.SysMenuDO;
+import com.nz.admin.modules.system.entity.po.SysRoleDO;
+import com.nz.admin.modules.system.entity.po.SysRoleMenuDO;
+import com.nz.admin.modules.system.entity.po.SysUserRoleDO;
 import com.nz.admin.modules.system.mapper.SysMenuMapper;
 import com.nz.admin.modules.system.mapper.SysRoleMapper;
 import com.nz.admin.modules.system.mapper.SysRoleMenuMapper;
@@ -38,12 +38,12 @@ class SysPermissionServiceImplTest extends BaseDbUnitTest {
 
     @Test
     void testGetRoleKeysByUserId() {
-        SysRole role = randomPojo(SysRole.class)
+        SysRoleDO role = randomPojo(SysRoleDO.class)
                 .setId(null)
                 .setRoleKey("admin");
         roleMapper.insert(role);
 
-        SysUserRole userRole = randomPojo(SysUserRole.class)
+        SysUserRoleDO userRole = randomPojo(SysUserRoleDO.class)
                 .setUserId(1L)
                 .setRoleId(role.getId());
         userRoleMapper.insert(userRole);
@@ -62,31 +62,31 @@ class SysPermissionServiceImplTest extends BaseDbUnitTest {
 
     @Test
     void testGetPermsByUserId() {
-        SysRole role = randomPojo(SysRole.class)
+        SysRoleDO role = randomPojo(SysRoleDO.class)
                 .setId(null);
         roleMapper.insert(role);
 
-        SysUserRole userRole = randomPojo(SysUserRole.class)
+        SysUserRoleDO userRole = randomPojo(SysUserRoleDO.class)
                 .setUserId(1L)
                 .setRoleId(role.getId());
         userRoleMapper.insert(userRole);
 
-        SysMenu menu1 = randomPojo(SysMenu.class)
+        SysMenuDO menu1 = randomPojo(SysMenuDO.class)
                 .setId(null)
                 .setPerm("system:user:list");
         menuMapper.insert(menu1);
 
-        SysMenu menu2 = randomPojo(SysMenu.class)
+        SysMenuDO menu2 = randomPojo(SysMenuDO.class)
                 .setId(null)
                 .setPerm("system:user:add");
         menuMapper.insert(menu2);
 
-        SysRoleMenu roleMenu1 = randomPojo(SysRoleMenu.class)
+        SysRoleMenuDO roleMenu1 = randomPojo(SysRoleMenuDO.class)
                 .setRoleId(role.getId())
                 .setMenuId(menu1.getId());
         roleMenuMapper.insert(roleMenu1);
 
-        SysRoleMenu roleMenu2 = randomPojo(SysRoleMenu.class)
+        SysRoleMenuDO roleMenu2 = randomPojo(SysRoleMenuDO.class)
                 .setRoleId(role.getId())
                 .setMenuId(menu2.getId());
         roleMenuMapper.insert(roleMenu2);
@@ -100,21 +100,21 @@ class SysPermissionServiceImplTest extends BaseDbUnitTest {
 
     @Test
     void testGetPermsByUserId_filterBlankPerms() {
-        SysRole role = randomPojo(SysRole.class)
+        SysRoleDO role = randomPojo(SysRoleDO.class)
                 .setId(null);
         roleMapper.insert(role);
 
-        SysUserRole userRole = randomPojo(SysUserRole.class)
+        SysUserRoleDO userRole = randomPojo(SysUserRoleDO.class)
                 .setUserId(1L)
                 .setRoleId(role.getId());
         userRoleMapper.insert(userRole);
 
-        SysMenu menu = randomPojo(SysMenu.class)
+        SysMenuDO menu = randomPojo(SysMenuDO.class)
                 .setId(null)
                 .setPerm("");
         menuMapper.insert(menu);
 
-        SysRoleMenu roleMenu = randomPojo(SysRoleMenu.class)
+        SysRoleMenuDO roleMenu = randomPojo(SysRoleMenuDO.class)
                 .setRoleId(role.getId())
                 .setMenuId(menu.getId());
         roleMenuMapper.insert(roleMenu);
@@ -126,7 +126,7 @@ class SysPermissionServiceImplTest extends BaseDbUnitTest {
 
     @Test
     void testAssignUserRoles() {
-        SysUserRole old = randomPojo(SysUserRole.class)
+        SysUserRoleDO old = randomPojo(SysUserRoleDO.class)
                 .setUserId(1L)
                 .setRoleId(999L);
         userRoleMapper.insert(old);
@@ -134,7 +134,7 @@ class SysPermissionServiceImplTest extends BaseDbUnitTest {
         List<Long> roleIds = List.of(10L, 20L);
         permissionService.assignUserRoles(1L, roleIds);
 
-        List<SysUserRole> dbRows = userRoleMapper.selectByUserId(1L);
+        List<SysUserRoleDO> dbRows = userRoleMapper.selectByUserId(1L);
         assertEquals(2, dbRows.size());
         assertTrue(dbRows.stream().anyMatch(item -> item.getRoleId().equals(10L)));
         assertTrue(dbRows.stream().anyMatch(item -> item.getRoleId().equals(20L)));
@@ -142,12 +142,12 @@ class SysPermissionServiceImplTest extends BaseDbUnitTest {
 
     @Test
     void testGetRoleIdsByUserId() {
-        SysUserRole userRole1 = randomPojo(SysUserRole.class)
+        SysUserRoleDO userRole1 = randomPojo(SysUserRoleDO.class)
                 .setUserId(1L)
                 .setRoleId(10L);
         userRoleMapper.insert(userRole1);
 
-        SysUserRole userRole2 = randomPojo(SysUserRole.class)
+        SysUserRoleDO userRole2 = randomPojo(SysUserRoleDO.class)
                 .setUserId(1L)
                 .setRoleId(20L);
         userRoleMapper.insert(userRole2);

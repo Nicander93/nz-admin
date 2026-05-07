@@ -3,9 +3,9 @@ package com.nz.admin.modules.system.service.impl;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.nz.admin.framework.auth.datascope.DataScope;
 import com.nz.admin.framework.auth.datascope.DataScopeType;
-import com.nz.admin.modules.system.entity.SysUser;
+import com.nz.admin.modules.system.entity.po.SysUserDO;
 import com.nz.admin.modules.system.mapper.SysUserMapper;
-import com.nz.admin.modules.system.query.SysUserQuery;
+import com.nz.admin.modules.system.entity.query.SysUserQuery;
 import com.nz.admin.modules.system.service.SysUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -24,7 +24,7 @@ public class SysUserServiceImpl implements SysUserService {
      */
     @DataScope(value = {DataScopeType.ALL, DataScopeType.DEPT, DataScopeType.SELF}, deptAlias = "dept_id", userAlias = "id")
     @Override
-    public Page<SysUser> listPage(SysUserQuery query) {
+    public Page<SysUserDO> listPage(SysUserQuery query) {
         return userMapper.selectPageByCondition(query.toPage(), query);
     }
 
@@ -32,7 +32,7 @@ public class SysUserServiceImpl implements SysUserService {
      * 按 id 拿用户详情。
      */
     @Override
-    public SysUser getById(Long id) {
+    public SysUserDO getById(Long id) {
         return userMapper.selectById(id);
     }
 
@@ -40,7 +40,7 @@ public class SysUserServiceImpl implements SysUserService {
      * 按用户名查用户。
      */
     @Override
-    public SysUser getByUsername(String username) {
+    public SysUserDO getByUsername(String username) {
         return userMapper.selectByUsername(username);
     }
 
@@ -48,7 +48,7 @@ public class SysUserServiceImpl implements SysUserService {
      * 新增一条用户记录。
      */
     @Override
-    public void save(SysUser user) {
+    public void save(SysUserDO user) {
         userMapper.insert(user);
     }
 
@@ -56,7 +56,7 @@ public class SysUserServiceImpl implements SysUserService {
      * 按 id 更新用户。
      */
     @Override
-    public void updateById(SysUser user) {
+    public void updateById(SysUserDO user) {
         userMapper.updateById(user);
     }
 

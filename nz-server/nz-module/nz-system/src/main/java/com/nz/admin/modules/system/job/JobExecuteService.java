@@ -1,7 +1,7 @@
 package com.nz.admin.modules.system.job;
 
 import cn.hutool.core.util.StrUtil;
-import com.nz.admin.modules.system.entity.SysJobLog;
+import com.nz.admin.modules.system.entity.po.SysJobLogDO;
 import com.nz.admin.modules.system.service.SysJobLogService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -26,7 +26,7 @@ public class JobExecuteService {
      * invokeTarget 格式：beanName.methodName
      */
     public void execute(String invokeTarget) {
-        SysJobLog jobLog = new SysJobLog();
+        SysJobLogDO jobLog = new SysJobLogDO();
         jobLog.setInvokeTarget(invokeTarget);
         jobLog.setCreateTime(LocalDateTime.now());
 

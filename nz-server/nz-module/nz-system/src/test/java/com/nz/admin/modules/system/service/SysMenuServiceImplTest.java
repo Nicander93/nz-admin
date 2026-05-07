@@ -2,7 +2,7 @@ package com.nz.admin.modules.system.service;
 
 import com.nz.admin.NzSystemTestApplication;
 import com.nz.admin.framework.test.core.ut.BaseDbUnitTest;
-import com.nz.admin.modules.system.entity.SysMenu;
+import com.nz.admin.modules.system.entity.po.SysMenuDO;
 import com.nz.admin.modules.system.mapper.SysMenuMapper;
 import com.nz.admin.modules.system.service.impl.SysMenuServiceImpl;
 import org.junit.jupiter.api.Test;
@@ -26,14 +26,14 @@ class SysMenuServiceImplTest extends BaseDbUnitTest {
 
     @Test
     void testListAll() {
-        SysMenu menu1 = randomPojo(SysMenu.class)
+        SysMenuDO menu1 = randomPojo(SysMenuDO.class)
                 .setId(null)
                 .setName("系统管理")
                 .setType("M")
                 .setSort(2);
         menuMapper.insert(menu1);
 
-        SysMenu menu2 = randomPojo(SysMenu.class)
+        SysMenuDO menu2 = randomPojo(SysMenuDO.class)
                 .setId(null)
                 .setName("用户管理")
                 .setType("C")
@@ -41,7 +41,7 @@ class SysMenuServiceImplTest extends BaseDbUnitTest {
                 .setSort(1);
         menuMapper.insert(menu2);
 
-        List<SysMenu> result = menuService.listAll();
+        List<SysMenuDO> result = menuService.listAll();
 
         assertEquals(2, result.size());
         assertEquals("用户管理", result.get(0).getName());
@@ -50,7 +50,7 @@ class SysMenuServiceImplTest extends BaseDbUnitTest {
 
     @Test
     void testSave() {
-        SysMenu menu = randomPojo(SysMenu.class)
+        SysMenuDO menu = randomPojo(SysMenuDO.class)
                 .setId(null)
                 .setName("新菜单")
                 .setType("C");
@@ -63,7 +63,7 @@ class SysMenuServiceImplTest extends BaseDbUnitTest {
 
     @Test
     void testRemoveById() {
-        SysMenu menu = randomPojo(SysMenu.class)
+        SysMenuDO menu = randomPojo(SysMenuDO.class)
                 .setId(null)
                 .setName("待删除菜单");
         menuMapper.insert(menu);

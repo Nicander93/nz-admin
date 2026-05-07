@@ -1,6 +1,6 @@
 package com.nz.admin.modules.system.service;
 
-import com.nz.admin.modules.system.entity.SysMenu;
+import com.nz.admin.modules.system.entity.po.SysMenuDO;
 
 import java.util.List;
 import java.util.Set;
@@ -11,7 +11,7 @@ public interface SysPermissionService {
 
     Set<String> getPermsByUserId(Long userId);
 
-    List<SysMenu> getMenusByUserId(Long userId);
+    List<SysMenuDO> getMenusByUserId(Long userId);
 
     List<Long> getRoleIdsByUserId(Long userId);
 

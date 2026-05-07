@@ -3,11 +3,11 @@ package com.nz.admin.modules.system.service;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.nz.admin.NzSystemTestApplication;
 import com.nz.admin.framework.test.core.ut.BaseDbUnitTest;
-import com.nz.admin.modules.system.entity.SysRole;
-import com.nz.admin.modules.system.entity.SysRoleMenu;
+import com.nz.admin.modules.system.entity.po.SysRoleDO;
+import com.nz.admin.modules.system.entity.po.SysRoleMenuDO;
 import com.nz.admin.modules.system.mapper.SysRoleMapper;
 import com.nz.admin.modules.system.mapper.SysRoleMenuMapper;
-import com.nz.admin.modules.system.query.SysRoleQuery;
+import com.nz.admin.modules.system.entity.query.SysRoleQuery;
 import com.nz.admin.modules.system.service.impl.SysRoleServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.Import;
@@ -33,14 +33,14 @@ class SysRoleServiceImplTest extends BaseDbUnitTest {
 
     @Test
     void testListPage() {
-        SysRole role1 = randomPojo(SysRole.class)
+        SysRoleDO role1 = randomPojo(SysRoleDO.class)
                 .setId(null)
                 .setName("管理员")
                 .setRoleKey("admin_test_key")
                 .setSort(1);
         roleMapper.insert(role1);
 
-        SysRole role2 = randomPojo(SysRole.class)
+        SysRoleDO role2 = randomPojo(SysRoleDO.class)
                 .setId(null)
                 .setName("普通角色")
                 .setRoleKey("normal_test_key")
@@ -52,7 +52,7 @@ class SysRoleServiceImplTest extends BaseDbUnitTest {
         query.setPageSize(10);
         query.setName("管理员");
 
-        Page<SysRole> result = roleService.listPage(query);
+        Page<SysRoleDO> result = roleService.listPage(query);
 
         assertEquals(1, result.getTotal());
         assertEquals("管理员", result.getRecords().get(0).getName());
@@ -60,12 +60,12 @@ class SysRoleServiceImplTest extends BaseDbUnitTest {
 
     @Test
     void testGetById() {
-        SysRole role = randomPojo(SysRole.class)
+        SysRoleDO role = randomPojo(SysRoleDO.class)
                 .setId(null)
                 .setName("角色_查询");
         roleMapper.insert(role);
 
-        SysRole result = roleService.getById(role.getId());
+        SysRoleDO result = roleService.getById(role.getId());
 
         assertNotNull(result);
         assertEquals("角色_查询", result.getName());
@@ -73,7 +73,7 @@ class SysRoleServiceImplTest extends BaseDbUnitTest {
 
     @Test
     void testSave() {
-        SysRole role = randomPojo(SysRole.class)
+        SysRoleDO role = randomPojo(SysRoleDO.class)
                 .setId(null)
                 .setName("测试角色");
 
@@ -85,12 +85,12 @@ class SysRoleServiceImplTest extends BaseDbUnitTest {
 
     @Test
     void testRemoveById_shouldDeleteRoleAndMenus() {
-        SysRole role = randomPojo(SysRole.class)
+        SysRoleDO role = randomPojo(SysRoleDO.class)
                 .setId(null)
                 .setName("待删除角色");
         roleMapper.insert(role);
 
-        SysRoleMenu rm = randomPojo(SysRoleMenu.class)
+        SysRoleMenuDO rm = randomPojo(SysRoleMenuDO.class)
                 .setRoleId(role.getId())
                 .setMenuId(100L);
         roleMenuMapper.insert(rm);
@@ -103,16 +103,16 @@ class SysRoleServiceImplTest extends BaseDbUnitTest {
 
     @Test
     void testGetMenuIdsByRoleId() {
-        SysRole role = randomPojo(SysRole.class)
+        SysRoleDO role = randomPojo(SysRoleDO.class)
                 .setId(null);
         roleMapper.insert(role);
 
-        SysRoleMenu rm1 = randomPojo(SysRoleMenu.class)
+        SysRoleMenuDO rm1 = randomPojo(SysRoleMenuDO.class)
                 .setRoleId(role.getId())
                 .setMenuId(100L);
         roleMenuMapper.insert(rm1);
 
-        SysRoleMenu rm2 = randomPojo(SysRoleMenu.class)
+        SysRoleMenuDO rm2 = randomPojo(SysRoleMenuDO.class)
                 .setRoleId(role.getId())
                 .setMenuId(101L);
         roleMenuMapper.insert(rm2);
@@ -126,11 +126,11 @@ class SysRoleServiceImplTest extends BaseDbUnitTest {
 
     @Test
     void testAssignMenus() {
-        SysRole role = randomPojo(SysRole.class)
+        SysRoleDO role = randomPojo(SysRoleDO.class)
                 .setId(null);
         roleMapper.insert(role);
 
-        SysRoleMenu old = randomPojo(SysRoleMenu.class)
+        SysRoleMenuDO old = randomPojo(SysRoleMenuDO.class)
                 .setRoleId(role.getId())
                 .setMenuId(99L);
         roleMenuMapper.insert(old);
@@ -138,7 +138,7 @@ class SysRoleServiceImplTest extends BaseDbUnitTest {
         List<Long> menuIds = List.of(100L, 101L, 102L);
         roleService.assignMenus(role.getId(), menuIds);
 
-        List<SysRoleMenu> dbRows = roleMenuMapper.selectByRoleId(role.getId());
+        List<SysRoleMenuDO> dbRows = roleMenuMapper.selectByRoleId(role.getId());
         assertEquals(3, dbRows.size());
         assertTrue(dbRows.stream().anyMatch(item -> item.getMenuId().equals(100L)));
         assertTrue(dbRows.stream().anyMatch(item -> item.getMenuId().equals(101L)));

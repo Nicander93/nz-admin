@@ -1,6 +1,6 @@
 package com.nz.admin.modules.system.service;
 
-import com.nz.admin.modules.system.entity.SysFile;
+import com.nz.admin.modules.system.entity.po.SysFileDO;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -14,17 +14,17 @@ public interface FileStorageService {
     /**
      * 上传文件。
      */
-    SysFile upload(MultipartFile file, Long uploaderId) throws IOException;
+    SysFileDO upload(MultipartFile file, Long uploaderId) throws IOException;
 
     /**
      * 删除文件。
      */
-    void delete(SysFile sysFile);
+    void delete(SysFileDO sysFile);
 
     /**
      * 下载文件。
      */
-    void download(SysFile sysFile, HttpServletResponse response) throws IOException;
+    void download(SysFileDO sysFile, HttpServletResponse response) throws IOException;
 
     /**
      * 获取文件访问 URL。

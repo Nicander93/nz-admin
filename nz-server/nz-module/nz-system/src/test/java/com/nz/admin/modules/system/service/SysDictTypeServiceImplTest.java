@@ -3,9 +3,9 @@ package com.nz.admin.modules.system.service;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.nz.admin.NzSystemTestApplication;
 import com.nz.admin.framework.test.core.ut.BaseDbUnitTest;
-import com.nz.admin.modules.system.entity.SysDictType;
+import com.nz.admin.modules.system.entity.po.SysDictTypeDO;
 import com.nz.admin.modules.system.mapper.SysDictTypeMapper;
-import com.nz.admin.modules.system.query.SysDictTypeQuery;
+import com.nz.admin.modules.system.entity.query.SysDictTypeQuery;
 import com.nz.admin.modules.system.service.impl.SysDictTypeServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.Import;
@@ -27,13 +27,13 @@ class SysDictTypeServiceImplTest extends BaseDbUnitTest {
 
     @Test
     void testListPage() {
-        SysDictType dictType1 = randomPojo(SysDictType.class)
+        SysDictTypeDO dictType1 = randomPojo(SysDictTypeDO.class)
                 .setId(null)
                 .setName("用户性别")
                 .setType("sys_user_sex");
         dictTypeMapper.insert(dictType1);
 
-        SysDictType dictType2 = randomPojo(SysDictType.class)
+        SysDictTypeDO dictType2 = randomPojo(SysDictTypeDO.class)
                 .setId(null)
                 .setName("通知类型")
                 .setType("sys_notice_type");
@@ -44,7 +44,7 @@ class SysDictTypeServiceImplTest extends BaseDbUnitTest {
         query.setPageSize(10);
         query.setType("sys_user_sex");
 
-        Page<SysDictType> result = dictTypeService.listPage(query);
+        Page<SysDictTypeDO> result = dictTypeService.listPage(query);
 
         assertEquals(1, result.getTotal());
         assertEquals("sys_user_sex", result.getRecords().get(0).getType());
@@ -52,7 +52,7 @@ class SysDictTypeServiceImplTest extends BaseDbUnitTest {
 
     @Test
     void testSave() {
-        SysDictType dictType = randomPojo(SysDictType.class)
+        SysDictTypeDO dictType = randomPojo(SysDictTypeDO.class)
                 .setId(null)
                 .setName("用户性别")
                 .setType("sys_user_sex");
@@ -65,7 +65,7 @@ class SysDictTypeServiceImplTest extends BaseDbUnitTest {
 
     @Test
     void testRemoveById() {
-        SysDictType dictType = randomPojo(SysDictType.class)
+        SysDictTypeDO dictType = randomPojo(SysDictTypeDO.class)
                 .setId(null)
                 .setType("type_for_remove");
         dictTypeMapper.insert(dictType);

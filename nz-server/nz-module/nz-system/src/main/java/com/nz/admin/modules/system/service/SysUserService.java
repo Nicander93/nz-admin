@@ -1,20 +1,20 @@
 package com.nz.admin.modules.system.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.nz.admin.modules.system.entity.SysUser;
-import com.nz.admin.modules.system.query.SysUserQuery;
+import com.nz.admin.modules.system.entity.po.SysUserDO;
+import com.nz.admin.modules.system.entity.query.SysUserQuery;
 
 public interface SysUserService {
 
-    Page<SysUser> listPage(SysUserQuery query);
+    Page<SysUserDO> listPage(SysUserQuery query);
 
-    SysUser getById(Long id);
+    SysUserDO getById(Long id);
 
-    SysUser getByUsername(String username);
+    SysUserDO getByUsername(String username);
 
-    void save(SysUser user);
+    void save(SysUserDO user);
 
-    void updateById(SysUser user);
+    void updateById(SysUserDO user);
 
     void removeById(Long id);
 

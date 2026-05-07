@@ -1,22 +1,22 @@
 package com.nz.admin.modules.system.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.nz.admin.modules.system.entity.SysRole;
-import com.nz.admin.modules.system.query.SysRoleQuery;
+import com.nz.admin.modules.system.entity.po.SysRoleDO;
+import com.nz.admin.modules.system.entity.query.SysRoleQuery;
 
 import java.util.List;
 
 public interface SysRoleService {
 
-    Page<SysRole> listPage(SysRoleQuery query);
+    Page<SysRoleDO> listPage(SysRoleQuery query);
 
-    List<SysRole> listAll();
+    List<SysRoleDO> listAll();
 
-    SysRole getById(Long id);
+    SysRoleDO getById(Long id);
 
-    void save(SysRole role);
+    void save(SysRoleDO role);
 
-    void updateById(SysRole role);
+    void updateById(SysRoleDO role);
 
     void removeById(Long id);
 

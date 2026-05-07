@@ -2,9 +2,9 @@ package com.nz.admin.modules.system.service.impl;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.nz.admin.modules.system.config.SysFileStorageProperties;
-import com.nz.admin.modules.system.entity.SysFile;
+import com.nz.admin.modules.system.entity.po.SysFileDO;
 import com.nz.admin.modules.system.mapper.SysFileMapper;
-import com.nz.admin.modules.system.query.SysFileQuery;
+import com.nz.admin.modules.system.entity.query.SysFileQuery;
 import com.nz.admin.modules.system.service.FileStorageService;
 import com.nz.admin.modules.system.service.SysFileService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,7 +39,7 @@ public class SysFileServiceImpl implements SysFileService {
     private SysFileStorageProperties storageProperties;
 
     @Override
-    public Page<SysFile> listPage(SysFileQuery query) {
+    public Page<SysFileDO> listPage(SysFileQuery query) {
         return fileMapper.selectPageByCondition(query.toPage(), query);
     }
 
@@ -51,9 +51,9 @@ public class SysFileServiceImpl implements SysFileService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public SysFile upload(MultipartFile file, Long uploaderId) throws IOException {
+    public SysFileDO upload(MultipartFile file, Long uploaderId) throws IOException {
         FileStorageService storageService = resolveByConfiguredType();
-        SysFile sysFile = storageService.upload(file, uploaderId);
+        SysFileDO sysFile = storageService.upload(file, uploaderId);
         sysFile.setStorageType(getStorageType());
 
         try {
@@ -61,7 +61,7 @@ public class SysFileServiceImpl implements SysFileService {
             String fileUrl = storageService.getFileUrl(sysFile.getId());
             sysFile.setFileUrl(fileUrl);
             
-            SysFile update = new SysFile();
+            SysFileDO update = new SysFileDO();
             update.setId(sysFile.getId());
             update.setFileUrl(fileUrl);
             fileMapper.updateById(update);
@@ -106,7 +106,7 @@ public class SysFileServiceImpl implements SysFileService {
 
     @Override
     public void removeById(Long id) {
-        SysFile sysFile = fileMapper.selectById(id);
+        SysFileDO sysFile = fileMapper.selectById(id);
         if (sysFile == null) {
             return;
         }
@@ -116,7 +116,7 @@ public class SysFileServiceImpl implements SysFileService {
 
     @Override
     public void downloadById(Long id, HttpServletResponse response) throws IOException {
-        SysFile sysFile = fileMapper.selectById(id);
+        SysFileDO sysFile = fileMapper.selectById(id);
         if (sysFile == null) {
             throw new IllegalArgumentException("文件不存在");
         }
@@ -127,7 +127,7 @@ public class SysFileServiceImpl implements SysFileService {
         return resolveByType(getStorageType());
     }
 
-    private FileStorageService resolveByFileRecord(SysFile sysFile) {
+    private FileStorageService resolveByFileRecord(SysFileDO sysFile) {
         return resolveByType(sysFile != null ? sysFile.getStorageType() : null);
     }
 

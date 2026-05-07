@@ -4,8 +4,8 @@ import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.nz.admin.framework.log.annotation.Log;
-import com.nz.admin.modules.system.entity.SysOperLog;
-import com.nz.admin.modules.system.entity.SysUser;
+import com.nz.admin.modules.system.entity.po.SysOperLogDO;
+import com.nz.admin.modules.system.entity.po.SysUserDO;
 import com.nz.admin.modules.system.service.SysOperLogService;
 import com.nz.admin.modules.system.service.SysUserService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -63,7 +63,7 @@ public class LogAspect {
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
         Method method = signature.getMethod();
 
-        SysOperLog operLog = new SysOperLog();
+        SysOperLogDO operLog = new SysOperLogDO();
         operLog.setTitle(log.title());
         operLog.setBusinessType(log.businessType().getCode());
         operLog.setOperContent(log.title() + "-" + log.businessType().getDesc());
@@ -93,7 +93,7 @@ public class LogAspect {
             return "anonymous";
         }
         Long userId = StpUtil.getLoginIdAsLong();
-        SysUser user = userService.getById(userId);
+        SysUserDO user = userService.getById(userId);
         if (user == null) {
             return String.valueOf(userId);
         }

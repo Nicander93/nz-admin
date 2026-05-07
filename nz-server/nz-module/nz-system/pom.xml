@@ -16,6 +16,11 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>com.nz</groupId>
             <artifactId>nz-common</artifactId>
         </dependency>

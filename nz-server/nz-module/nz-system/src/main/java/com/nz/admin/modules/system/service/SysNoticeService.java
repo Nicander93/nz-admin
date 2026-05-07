@@ -1,18 +1,18 @@
 package com.nz.admin.modules.system.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.nz.admin.modules.system.entity.SysNotice;
-import com.nz.admin.modules.system.query.SysNoticeQuery;
+import com.nz.admin.modules.system.entity.po.SysNoticeDO;
+import com.nz.admin.modules.system.entity.query.SysNoticeQuery;
 
 public interface SysNoticeService {
 
-    Page<SysNotice> listPage(SysNoticeQuery query);
+    Page<SysNoticeDO> listPage(SysNoticeQuery query);
 
-    SysNotice getById(Long id);
+    SysNoticeDO getById(Long id);
 
-    boolean save(SysNotice notice);
+    boolean save(SysNoticeDO notice);
 
-    boolean updateById(SysNotice notice);
+    boolean updateById(SysNoticeDO notice);
 
     boolean removeById(Long id);
 }
