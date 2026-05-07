@@ -7,8 +7,10 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.nz.admin.common.R;
 import com.nz.admin.framework.log.annotation.BusinessType;
 import com.nz.admin.framework.log.annotation.Log;
+import com.nz.admin.modules.system.convert.SysUserConvert;
 import com.nz.admin.modules.system.entity.po.SysUserDO;
 import com.nz.admin.modules.system.entity.query.SysUserQuery;
+import com.nz.admin.modules.system.entity.vo.SysUserRespVO;
 import com.nz.admin.modules.system.service.SysPermissionService;
 import com.nz.admin.modules.system.service.SysUserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,19 +30,17 @@ public class SysUserController {
     @SaCheckPermission("system:user:list")
     @Log(title = "用户管理", businessType = BusinessType.QUERY)
     @GetMapping("/page")
-    public R<Page<SysUserDO>> page(SysUserQuery query) {
+    public R<Page<SysUserRespVO>> page(SysUserQuery query) {
         Page<SysUserDO> page = userService.listPage(query);
-        page.getRecords().forEach(u -> u.setPassword(null));
-        return R.ok(page);
+        return R.ok(SysUserConvert.INSTANCE.convertPage(page));
     }
 
     @SaCheckPermission("system:user:query")
     @Log(title = "用户管理", businessType = BusinessType.QUERY)
     @GetMapping("/{id}")
-    public R<SysUserDO> getById(@PathVariable Long id) {
+    public R<SysUserRespVO> getById(@PathVariable Long id) {
         SysUserDO user = userService.getById(id);
-        user.setPassword(null);
-        return R.ok(user);
+        return R.ok(SysUserConvert.INSTANCE.convert(user));
     }
 
     @SaCheckPermission("system:user:add")

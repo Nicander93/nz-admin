@@ -21,6 +21,10 @@
             <optional>true</optional>
         </dependency>
         <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.nz</groupId>
             <artifactId>nz-common</artifactId>
         </dependency>
