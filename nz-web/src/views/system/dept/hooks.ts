@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, reactive } from 'vue'
 import { useForm } from '@/utils/CRUD'
 import { listDepts, addDept, updateDept, deleteDept } from '@/api/system/dept'
 import type { SysDept } from '@/api/system/dept'
@@ -12,9 +12,7 @@ export interface UseDeptCrudOptions {
   deleteApi?: typeof deleteDept
 }
 
-/**
- * 部门页面的 CRUD 逻辑都收在这里。
- */
+/** 部门页面的 CRUD 逻辑。 */
 export function useDeptCrud(options: UseDeptCrudOptions = {}) {
   const _listDepts = options.listApi ?? listDepts
   const _addDept = options.addApi ?? addDept
@@ -36,7 +34,6 @@ export function useDeptCrud(options: UseDeptCrudOptions = {}) {
     updateApi: (data) => _updateDept(data),
   })
 
-  // 拉部门列表，然后顺手组装成树。
   async function loadData() {
     loading.value = true
     try {
@@ -48,13 +45,11 @@ export function useDeptCrud(options: UseDeptCrudOptions = {}) {
     }
   }
 
-  // 切一下展开状态，并重新拉一遍数据。
   function toggleExpand() {
     isExpand.value = !isExpand.value
     loadData()
   }
 
-  // 打开新增弹窗；如果传了父 id，就默认挂到这个父节点下。
   function openAdd(parentId?: number) {
     formState.openAdd()
     if (parentId !== undefined) {
@@ -62,8 +57,7 @@ export function useDeptCrud(options: UseDeptCrudOptions = {}) {
     }
   }
 
-  // 提交表单，成功后关窗并刷新列表。
-  async function handleSubmit() {
+  async function submit() {
     const result = await formState.submit()
     if (result.ok) {
       ElMessage.success(result.mode === 'add' ? '新增成功' : '更新成功')
@@ -73,23 +67,35 @@ export function useDeptCrud(options: UseDeptCrudOptions = {}) {
     return result
   }
 
-  // 删掉部门后再刷新列表。
-  async function handleDelete(id: number) {
+  async function remove(id: number) {
     await _deleteDept(id)
     ElMessage.success('删除成功')
     await loadData()
   }
 
-  return {
+  const table = reactive({
     loading,
     treeData,
     flatData,
     isExpand,
-    ...formState,
     loadData,
     toggleExpand,
+  })
+
+  const form = reactive({
+    model: formState.form,
+    visible: formState.visible,
+    title: formState.title,
+    mode: formState.mode,
     openAdd,
-    handleSubmit,
-    handleDelete,
-  }
+    openEdit: (row: SysDept) => formState.openEdit(row),
+    close: formState.close,
+  })
+
+  const actions = reactive({
+    submit,
+    remove,
+  })
+
+  return { table, form, actions }
 }

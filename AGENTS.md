@@ -8,6 +8,11 @@
 - 优先做最小改动，保持与现有风格一致。
 - 发现规则缺失时，优先补充 `docs/`，而不是把大量临时约束写进提示词。
 
+## Codex App 使用约定
+
+- 仓库位于 WSL 时，回复中的可点击文件链接优先使用 Windows UNC 绝对路径，例如 `\\wsl.localhost\Ubuntu\home\pc\my-code-repo\nz-admin\...`，避免 Codex App 使用 `/home/...` 路径时无法加载文件。
+- 在 Windows PowerShell + WSL UNC 工作目录下，如果普通沙箱命令报 `windows sandbox: setup refresh failed`，不要对每个读取命令重复试错；确认一次后，后续同类读文件、`rg`、`Get-Content`、`Get-ChildItem` 等仓库内只读操作直接沿用已验证的可执行方式，并合并并行读取，减少重复提示和噪音。
+
 ## 仓库结构
 
 - `nz-server` 后端（Maven 多模块项目，使用 Maven Wrapper）

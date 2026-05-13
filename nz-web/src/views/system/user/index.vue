@@ -17,7 +17,7 @@
     </el-form>
 
     <div class="mb-4">
-      <el-button v-permission="'system:user:add'" type="primary" @click="form.toAdd">新增</el-button>
+      <el-button v-permission="'system:user:add'" type="primary" @click="form.openAdd">新增</el-button>
     </div>
 
     <el-table :data="table.data" v-loading="table.loading" border>
@@ -39,10 +39,11 @@
         </template>
       </el-table-column>
       <el-table-column prop="createTime" label="创建时间" width="180" />
-      <el-table-column label="操作" width="240" fixed="right">
+      <el-table-column label="操作" width="320" fixed="right">
         <template #default="{ row }">
-          <el-button v-permission="'system:user:edit'" link type="primary" @click="form.toEdit(row)">编辑</el-button>
-          <el-button link type="primary" @click="role.openDialog(row)">分配角色</el-button>
+          <el-button v-permission="'system:user:edit'" link type="primary" @click="form.openEdit(row)">编辑</el-button>
+          <el-button v-permission="'system:user:resetPwd'" link type="warning" @click="handleResetPwd(row)">重置密码</el-button>
+          <el-button v-permission="'system:user:edit'" link type="primary" @click="role.openDialog(row)">分配角色</el-button>
           <el-button v-permission="'system:user:remove'" link type="danger" @click="actions.remove(row.id)">删除</el-button>
         </template>
       </el-table-column>
@@ -83,6 +84,11 @@
             clearable
           />
         </el-form-item>
+        <el-form-item label="岗位">
+          <el-select v-model="form.model.postIds" multiple placeholder="请选择岗位" clearable style="width: 100%">
+            <el-option v-for="p in posts" :key="p.id" :label="p.postName" :value="p.id" />
+          </el-select>
+        </el-form-item>
         <el-form-item label="邮箱">
           <el-input v-model="form.model.email" />
         </el-form-item>
@@ -101,7 +107,7 @@
         <el-button
           v-permission="[form.mode === 'edit' ? 'system:user:edit' : 'system:user:add']"
           type="primary"
-          @click="form.submit"
+          @click="actions.submit"
         >
           确定
         </el-button>
@@ -122,9 +128,17 @@
 
 <script setup lang="ts">
 import { onMounted } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { userApi, type SysUser } from '@/api/system'
 import { useUserCrud } from './hooks'
 
-const { table, form, actions, dept, role, lifecycle } = useUserCrud()
+const { table, form, actions, dept, role, posts } = useUserCrud()
 
-onMounted(() => lifecycle.init())
+async function handleResetPwd(row: SysUser) {
+  await ElMessageBox.confirm('确定将密码重置为参数配置中的默认密码（sys.user.initPassword）吗？', '重置密码')
+  await userApi.resetUserPassword(row.id)
+  ElMessage.success('已重置为默认密码')
+}
+
+onMounted(() => table.loadData())
 </script>

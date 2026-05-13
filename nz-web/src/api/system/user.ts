@@ -10,6 +10,7 @@ export type SysUser = {
   email: string
   phone: string
   status: number
+  postIds?: number[]
   createTime?: string
   updateTime?: string
 }
@@ -65,6 +66,10 @@ export function getUserRoleIds(userId: number) {
 
 export function assignUserRoles(userId: number, roleIds: number[]) {
   return request.put<void>(`/api/system/user/${userId}/roles`, roleIds)
+}
+
+export function resetUserPassword(userId: number) {
+  return request.put<void>(`/api/system/user/${userId}/password/reset`)
 }
 
 export function login(data: { username: string; password: string }) {

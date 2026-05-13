@@ -1,0 +1,2 @@
+com.nz.admin.framework.auth.config.AuthContextAutoConfiguration
+com.nz.admin.framework.auth.config.SaTokenAutoConfiguration

@@ -72,7 +72,7 @@
 import { onMounted } from 'vue'
 import { useFileCrud } from './hooks'
 
-const { table, actions, lifecycle } = useFileCrud()
+const { table, actions } = useFileCrud()
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return bytes + ' B'
@@ -88,5 +88,5 @@ function handleFilesChange(files: { raw: File }[]) {
   actions.uploadFiles(files.map((f) => f.raw))
 }
 
-onMounted(() => lifecycle.init())
+onMounted(() => table.loadData())
 </script>

@@ -5,9 +5,18 @@ import type { SysMenu } from '@/api/system/menu'
 import { buildTree } from '@/utils/tree'
 import { ElMessage } from 'element-plus'
 
-/**
- * 菜单页面的 CRUD 逻辑。
- */
+function sortMenuTree(nodes: SysMenu[]): SysMenu[] {
+  const sorted = [...nodes].sort((a, b) => {
+    const d = (a.sort ?? 0) - (b.sort ?? 0)
+    return d !== 0 ? d : a.id - b.id
+  })
+  return sorted.map(n => ({
+    ...n,
+    children: n.children?.length ? sortMenuTree(n.children) : [],
+  }))
+}
+
+/** 菜单页面的 CRUD 逻辑。 */
 export function useMenuCrud() {
   const loading = ref(false)
   const treeData = ref<SysMenu[]>([])
@@ -33,7 +42,7 @@ export function useMenuCrud() {
     loading.value = true
     try {
       const res = await listMenus()
-      treeData.value = buildTree(res.data)
+      treeData.value = sortMenuTree(buildTree(res.data))
     } finally {
       loading.value = false
     }
@@ -41,10 +50,8 @@ export function useMenuCrud() {
 
   function toggleExpand() {
     isExpand.value = !isExpand.value
-    loadData()
   }
 
-  // 打开新增弹窗；传了父 id 就挂到对应节点下。
   function openAdd(parentId?: number) {
     formState.openAdd()
     if (parentId !== undefined) {
@@ -52,7 +59,7 @@ export function useMenuCrud() {
     }
   }
 
-  async function handleSubmit() {
+  async function submit() {
     const result = await formState.submit()
     if (result.ok) {
       ElMessage.success(result.mode === 'add' ? '新增成功' : '更新成功')
@@ -62,30 +69,35 @@ export function useMenuCrud() {
     return result
   }
 
-  async function handleDelete(id: number) {
+  async function remove(id: number) {
     await deleteMenu(id)
     ElMessage.success('删除成功')
     await loadData()
   }
 
-  const formView = reactive({
-    model: formState.form,
-    visible: formState.visible,
-    title: formState.title,
-    close: formState.close,
-    openEdit: formState.openEdit,
-  })
-
-  return {
+  const table = reactive({
     loading,
     treeData,
     isExpand,
     menuSelectTree,
-    form: formView,
     loadData,
     toggleExpand,
+  })
+
+  const form = reactive({
+    model: formState.form,
+    visible: formState.visible,
+    title: formState.title,
+    mode: formState.mode,
     openAdd,
-    handleSubmit,
-    handleDelete,
-  }
+    openEdit: (row: SysMenu) => formState.openEdit(row),
+    close: formState.close,
+  })
+
+  const actions = reactive({
+    submit,
+    remove,
+  })
+
+  return { table, form, actions }
 }

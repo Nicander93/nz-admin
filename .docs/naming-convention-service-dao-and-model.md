@@ -28,11 +28,11 @@
 
 | 子目录 | Java 包名 | 放什么 |
 |--------|------------|--------|
-| `po/` | `com.nz.admin.modules.system.entity.po` | 全部 `*DO`（与表一一对应的持久化对象） |
-| `query/` | `com.nz.admin.modules.system.entity.query` | 全部 `*Query`（列表/分页查询入参等） |
-| `vo/` | `com.nz.admin.modules.system.entity.vo` | 全部 `*VO`（接口或页面展示用对象） |
+| `dataobject/` | `com.nz.admin.modules.system.entity.dataobject` | 全部 `*DO`（与表一一对应的持久化对象），其下再按业务域分子包（如 `user`、`log`） |
+| `query/` | `com.nz.admin.modules.system.entity.query` | 全部 `*Query`（列表/分页查询入参等），其下再按业务域分子包 |
+| `vo/` | `com.nz.admin.modules.system.entity.vo` | 全部 `*VO`（接口或页面展示用对象），其下再按业务域分子包 |
 
-**说明：** Java 语言中 `do` 为保留字，**包名不能使用 `do`**，故表实体子包采用目录名 **`po`**（与 `*DO` 含义一致）；类名仍为 `SysXxxDO` 等，与「B）领域模型命名」一致。
+**说明：** Java 语言中 `do` 为保留字，**包名不能使用 `do`**；持久化对象目录使用 **`dataobject`**，与类名后缀 `*DO` 对应。
 
-其他业务模块若引入同类结构，可沿用同一套 `entity.po` / `entity.query` / `entity.vo` 命名，便于跨模块对齐。
+其他业务模块若引入同类结构，可沿用同一套 `entity.dataobject` / `entity.query` / `entity.vo` 命名，便于跨模块对齐。
 

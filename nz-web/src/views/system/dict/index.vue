@@ -14,7 +14,7 @@
     </el-form>
 
     <div class="mb-4">
-      <el-button type="primary" @click="form.toAdd">新增类型</el-button>
+      <el-button type="primary" @click="form.openAdd">新增类型</el-button>
     </div>
 
     <el-table :data="table.data" v-loading="table.loading" border>
@@ -37,7 +37,7 @@
       <el-table-column prop="createTime" label="创建时间" width="180" />
       <el-table-column label="操作" width="180" fixed="right">
         <template #default="{ row }">
-          <el-button link type="primary" @click="form.toEdit(row)">编辑</el-button>
+          <el-button link type="primary" @click="form.openEdit(row)">编辑</el-button>
           <el-button link type="danger" @click="actions.remove(row.id)">删除</el-button>
         </template>
       </el-table-column>
@@ -72,7 +72,7 @@
       </el-form>
       <template #footer>
         <el-button @click="form.close">取消</el-button>
-        <el-button type="primary" @click="form.submit">确定</el-button>
+        <el-button type="primary" @click="actions.submit">确定</el-button>
       </template>
     </el-dialog>
 

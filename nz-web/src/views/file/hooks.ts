@@ -2,11 +2,9 @@ import { reactive } from 'vue'
 import { useCrud } from '@/utils/CRUD'
 import { fileApi, type FileQuery, type SysFile } from '@/api/system'
 
-/**
- * 文件管理页面的 CRUD 逻辑。
- */
+/** 文件管理页面的 CRUD 逻辑。 */
 export function useFileCrud() {
-  const { table, form, actions } = useCrud<SysFile, SysFile, FileQuery & Record<string, unknown>>({
+  const { table, actions } = useCrud<SysFile, SysFile, FileQuery & Record<string, unknown>>({
     name: '文件',
     api: {
       page: fileApi.pageFiles,
@@ -29,36 +27,24 @@ export function useFileCrud() {
     immediate: false,
   })
 
-  // 上传文件
   async function uploadFile(file: File) {
-    const formData = new FormData()
-    formData.append('file', file)
-    await fileApi.uploadFile(formData)
+    await fileApi.uploadFile(file)
     table.refresh()
   }
 
-  // 上传多个文件
   async function uploadFiles(files: File[]) {
-    const formData = new FormData()
-    files.forEach((f) => formData.append('files', f))
-    await fileApi.uploadFiles(formData)
+    await fileApi.uploadFiles(files)
     table.refresh()
   }
 
-  // 重置查询条件后重新查一遍列表。
   function handleResetQuery() {
     table.resetQuery()
     table.refresh()
   }
 
-  // 页面初始化时拉第一页。
-  function init() {
+  function loadData() {
     table.refresh()
   }
-
-  const lifecycle = reactive({
-    init,
-  })
 
   const tableView = reactive({
     data: table.data,
@@ -67,6 +53,7 @@ export function useFileCrud() {
     query: table.query,
     refresh: table.refresh,
     handleResetQuery,
+    loadData,
   })
 
   const actionsView = reactive({
@@ -78,6 +65,5 @@ export function useFileCrud() {
   return {
     table: tableView,
     actions: actionsView,
-    lifecycle,
   }
 }

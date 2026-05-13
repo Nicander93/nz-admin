@@ -8,6 +8,7 @@ export type SysRole = {
   sort: number
   status: number
   remark?: string
+  dataScope?: number
   createTime?: string
 }
 
@@ -15,6 +16,7 @@ export interface RoleQuery extends PageQuery {
   name?: string
   roleKey?: string
   status?: number
+  dataScope?: number
 }
 
 export function pageRoles(params: RoleQuery) {

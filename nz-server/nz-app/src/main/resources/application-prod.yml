@@ -1,0 +1,10 @@
+spring:
+  datasource:
+    url: ${NZ_DATASOURCE_URL}
+    username: ${NZ_DATASOURCE_USERNAME}
+    password: ${NZ_DATASOURCE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl

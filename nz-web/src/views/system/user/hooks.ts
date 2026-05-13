@@ -1,6 +1,16 @@
-import { reactive, ref } from 'vue'
+import { ref, reactive } from 'vue'
 import { useCrud } from '@/utils/CRUD'
-import { userApi, deptApi, roleApi, type SysUser, type UserQuery, type SysDept, type SysRole } from '@/api/system'
+import {
+  userApi,
+  deptApi,
+  roleApi,
+  postApi,
+  type SysUser,
+  type UserQuery,
+  type SysDept,
+  type SysRole,
+  type SysPost,
+} from '@/api/system'
 import { buildTree } from '@/utils/tree'
 
 export interface UseUserCrudOptions {
@@ -9,7 +19,7 @@ export interface UseUserCrudOptions {
 }
 
 function createUserCrudState() {
-  return useCrud<SysUser, SysUser, UserQuery & Record<string, unknown>>({
+  const crud = useCrud<SysUser, SysUser, UserQuery & Record<string, unknown>>({
     name: '用户',
     api: {
       page: userApi.pageUsers,
@@ -25,17 +35,25 @@ function createUserCrudState() {
       password: '',
       deptId: undefined as unknown as number,
       roleIds: [],
+      postIds: [] as number[],
       status: 0,
     }),
     immediate: false,
   })
+
+  const rawToEdit = crud.form.toEdit.bind(crud.form)
+  crud.form.toEdit = async (row: Partial<SysUser>) => {
+    const res = await userApi.getUser(row.id!)
+    rawToEdit(res.data as SysUser)
+  }
+
+  return crud
 }
 
 function createUserDeptState(loadDeptApi: typeof deptApi.listDepts) {
   const deptTree = ref<SysDept[]>([])
   const deptMap = ref<Map<number, string>>(new Map())
 
-  // 拉部门列表，构建 id->name Map
   async function load() {
     const res = await loadDeptApi()
     deptTree.value = buildTree(res.data)
@@ -44,7 +62,6 @@ function createUserDeptState(loadDeptApi: typeof deptApi.listDepts) {
     deptMap.value = map
   }
 
-  // 根据部门 id 拿部门名，拿不到时统一显示 `-`。
   function getName(deptId?: number) {
     return deptId ? deptMap.value.get(deptId) || '-' : '-'
   }
@@ -63,13 +80,11 @@ function createUserRoleState(loadRoleApi: typeof roleApi.listAllRoles) {
   const selectedIds = ref<number[]>([])
   const currentUserId = ref<number>()
 
-  // 拉角色列表，用在角色分配弹窗。
   async function load() {
     const res = await loadRoleApi()
     allRoles.value = res.data
   }
 
-  // 打开角色分配弹窗，并回填当前用户已有角色。
   async function openDialog(row: SysUser) {
     currentUserId.value = row.id
     const res = await userApi.getUserRoleIds(row.id)
@@ -77,7 +92,6 @@ function createUserRoleState(loadRoleApi: typeof roleApi.listAllRoles) {
     dialogVisible.value = true
   }
 
-  // 提交角色分配并关闭弹窗。
   async function assign() {
     await userApi.assignUserRoles(currentUserId.value!, selectedIds.value)
     dialogVisible.value = false
@@ -93,33 +107,32 @@ function createUserRoleState(loadRoleApi: typeof roleApi.listAllRoles) {
   })
 }
 
-/**
- * 用户页面的 CRUD、部门树和角色分配逻辑。
- */
+/** 用户页面的 CRUD、部门树和角色分配逻辑。 */
 export function useUserCrud(options: UseUserCrudOptions = {}) {
   const _listDepts = options.loadDeptApi ?? deptApi.listDepts
   const _listAllRoles = options.loadRoleApi ?? roleApi.listAllRoles
+
+  const posts = ref<SysPost[]>([])
+  async function loadPosts() {
+    const res = await postApi.listPosts()
+    posts.value = res.data
+  }
 
   const { table, form, actions } = createUserCrudState()
   const dept = createUserDeptState(_listDepts)
   const role = createUserRoleState(_listAllRoles)
 
-  // 重置查询条件并重新拉列表。
   function handleResetQuery() {
     table.resetQuery()
     table.refresh()
   }
 
-  // 页面初始化：先查用户，再把部门和角色基础数据准备好。
-  function init() {
+  function loadData() {
     table.refresh()
     dept.load()
     role.load()
+    loadPosts()
   }
-
-  const lifecycle = reactive({
-    init,
-  })
 
   const tableView = reactive({
     data: table.data,
@@ -128,6 +141,7 @@ export function useUserCrud(options: UseUserCrudOptions = {}) {
     query: table.query,
     refresh: table.refresh,
     handleResetQuery,
+    loadData,
   })
 
   const formView = reactive({
@@ -136,13 +150,13 @@ export function useUserCrud(options: UseUserCrudOptions = {}) {
     mode: form.mode,
     title: form.title,
     close: form.close,
-    submit: form.submit,
-    toAdd: form.toAdd,
-    toEdit: form.toEdit,
+    openAdd: form.toAdd,
+    openEdit: form.toEdit,
   })
 
   const actionsView = reactive({
     remove: actions.remove,
+    submit: form.submit,
   })
 
   return {
@@ -151,6 +165,6 @@ export function useUserCrud(options: UseUserCrudOptions = {}) {
     actions: actionsView,
     dept,
     role,
-    lifecycle,
+    posts,
   }
 }

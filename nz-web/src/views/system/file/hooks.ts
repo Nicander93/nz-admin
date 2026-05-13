@@ -1,29 +1,13 @@
 import { reactive } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
 import { useCrud } from '@/utils/CRUD'
-import { listFiles, deleteFile, downloadFileUrl } from '@/api/system/file'
+import { pageFiles, deleteFile, downloadFileUrl, type FileQuery, type SysFile } from '@/api/system/file'
 
-export interface FileRecord {
-  id: number
-  originalName: string
-  filePath: string
-  fileSize: number
-  fileExt: string
-  storageType: string
-  uploaderName: string
-  createdAt: string
-}
-
-interface FileQuery {
-  originalName?: string
-  fileExt?: string
-}
-
+/** 系统文件列表页的查询与操作逻辑。 */
 export function useFileCrud() {
-  const { table, actions } = useCrud<FileRecord, FileRecord, FileQuery & Record<string, unknown>>({
+  const { table, actions } = useCrud<SysFile, SysFile, FileQuery & Record<string, unknown>>({
     name: '文件',
     api: {
-      page: listFiles,
+      page: pageFiles,
       add: async () => Promise.reject(new Error('文件页面不支持表单新增')),
       update: async () => Promise.reject(new Error('文件页面不支持表单编辑')),
       delete: (ids: number[]) => deleteFile(ids[0]),
@@ -46,16 +30,7 @@ export function useFileCrud() {
     table.refresh()
   }
 
-  async function handleDelete(id: number) {
-    try {
-      await ElMessageBox.confirm('确认删除该文件？', '提示', { type: 'warning' })
-      await actions.remove(id)
-    } catch {
-      // 用户取消时不提示
-    }
-  }
-
-  function handleDownload(row: FileRecord) {
+  function download(row: SysFile) {
     window.open(downloadFileUrl(row.id), '_blank')
   }
 
@@ -69,9 +44,13 @@ export function useFileCrud() {
     handleSearch,
   })
 
+  const actionsView = reactive({
+    remove: actions.remove,
+    download,
+  })
+
   return {
     table: tableView,
-    handleDelete,
-    handleDownload,
+    actions: actionsView,
   }
 }

@@ -12,11 +12,17 @@
 
     <artifactId>nz-starter-auth</artifactId>
     <name>nz-starter-auth</name>
+    <description>认证鉴权 starter，提供 Sa-Token 接入、权限注解、鉴权切面和异常处理。</description>
 
     <dependencies>
         <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>com.nz</groupId>
-            <artifactId>nz-common</artifactId>
+            <artifactId>nz-common-core</artifactId>
         </dependency>
         <dependency>
             <groupId>cn.dev33</groupId>
@@ -25,6 +31,15 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-aop</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webmvc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>

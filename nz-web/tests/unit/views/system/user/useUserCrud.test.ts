@@ -1,40 +1,56 @@
 import { describe, it, expect, vi } from 'vitest'
 
-vi.mock('@/api/system/user', () => ({
-  pageUsers: vi.fn().mockResolvedValue({
-    code: 200,
-    data: { records: [{ id: 1, username: 'admin', nickname: '管理员' }], total: 1 },
-  }),
-  addUser: vi.fn().mockResolvedValue({ code: 200 }),
-  updateUser: vi.fn().mockResolvedValue({ code: 200 }),
-  deleteUser: vi.fn().mockResolvedValue({ code: 200 }),
-  getUserRoleIds: vi.fn().mockResolvedValue({ code: 200, data: [1, 2] }),
-  assignUserRoles: vi.fn().mockResolvedValue({ code: 200 }),
-}))
-
-vi.mock('@/api/system/dept', () => ({
-  listDepts: vi.fn().mockResolvedValue({
-    code: 200,
-    data: [
-      { id: 1, parentId: 0, name: '总公司' },
-      { id: 2, parentId: 1, name: '技术部' },
-    ],
-  }),
-}))
-
-vi.mock('@/api/system/role', () => ({
-  listAllRoles: vi.fn().mockResolvedValue({
-    code: 200,
-    data: [{ id: 1, name: '管理员', roleKey: 'admin' }],
-  }),
+vi.mock('@/api/system', () => ({
+  userApi: {
+    pageUsers: vi.fn().mockResolvedValue({
+      code: 200,
+      data: { records: [{ id: 1, username: 'admin', nickname: '管理员' }], total: 1 },
+    }),
+    addUser: vi.fn().mockResolvedValue({ code: 200 }),
+    updateUser: vi.fn().mockResolvedValue({ code: 200 }),
+    deleteUser: vi.fn().mockResolvedValue({ code: 200 }),
+    getUserRoleIds: vi.fn().mockResolvedValue({ code: 200, data: [1, 2] }),
+    assignUserRoles: vi.fn().mockResolvedValue({ code: 200 }),
+    getUser: vi.fn().mockResolvedValue({
+      code: 200,
+      data: {
+        id: 1,
+        username: 'admin',
+        nickname: '管理员',
+        email: 'a@b.com',
+        phone: '123',
+        status: 0,
+        postIds: [],
+      },
+    }),
+    resetUserPassword: vi.fn().mockResolvedValue({ code: 200 }),
+  },
+  deptApi: {
+    listDepts: vi.fn().mockResolvedValue({
+      code: 200,
+      data: [
+        { id: 1, parentId: 0, name: '总公司' },
+        { id: 2, parentId: 1, name: '技术部' },
+      ],
+    }),
+  },
+  roleApi: {
+    listAllRoles: vi.fn().mockResolvedValue({
+      code: 200,
+      data: [{ id: 1, name: '管理员', roleKey: 'admin' }],
+    }),
+  },
+  postApi: {
+    listPosts: vi.fn().mockResolvedValue({ code: 200, data: [] }),
+  },
 }))
 
 import { useUserCrud } from '@/views/system/user/hooks'
 
 describe('useUserCrud', () => {
-  it('init 后加载部门和角色数据', async () => {
-    const { lifecycle, dept, role } = useUserCrud()
-    lifecycle.init()
+  it('loadData 后加载部门和角色数据', async () => {
+    const { table, dept, role } = useUserCrud()
+    table.loadData()
 
     await vi.waitFor(() => {
       expect(dept.tree.length).toBeGreaterThan(0)
@@ -71,19 +87,19 @@ describe('useUserCrud', () => {
     expect(role.selectedIds).toEqual([1, 2])
   })
 
-  it('toAdd 打开新增弹窗', () => {
+  it('openAdd 打开新增弹窗', () => {
     const { form } = useUserCrud()
-    form.toAdd()
+    form.openAdd()
 
     expect(form.visible).toBe(true)
     expect(form.mode).toBe('add')
     expect(form.model.username).toBe('')
   })
 
-  it('toEdit 打开编辑弹窗并填充数据', () => {
+  it('openEdit 拉取详情后打开编辑弹窗并填充数据', async () => {
     const { form } = useUserCrud()
 
-    form.toEdit({ id: 1, username: 'admin', nickname: '管理员', email: 'a@b.com', phone: '123', status: 0 })
+    await form.openEdit({ id: 1, username: 'admin', nickname: '管理员', email: 'a@b.com', phone: '123', status: 0 })
 
     expect(form.visible).toBe(true)
     expect(form.mode).toBe('edit')

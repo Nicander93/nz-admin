@@ -1,4 +1,5 @@
 DELETE FROM sys_role_menu;
+DELETE FROM sys_user_post;
 DELETE FROM sys_user_role;
 DELETE FROM sys_login_log;
 DELETE FROM sys_oper_log;

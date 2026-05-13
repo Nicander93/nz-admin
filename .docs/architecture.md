@@ -8,7 +8,7 @@
 
 ### 后端 `nz-server`
 
-- Java 21
+- Java 17（与根 `pom.xml` 中 `java.version` 一致）
 - Spring Boot 3.3
 - MyBatis-Plus（ORM + 分页）
 - Sa-Token（认证鉴权）
@@ -43,7 +43,7 @@ nz-admin/
 │   │   └── nz-starter-sa-token/                # Sa-Token starter
 │   ├── nz-module/                              # 业务模块根目录
 │   │   ├── nz-system/                          # 系统管理模块
-│   │   │   └── src/.../com/nz/admin/modules/system/ # entity（po/query/vo）/ mapper / service / controller
+│   │   │   └── src/.../com/nz/admin/modules/system/ # entity（dataobject/query/vo）/ mapper / service / controller
 │   │   └── src/.../com/nz/admin/modules/       # 业务代码按领域建子包
 │   └── nz-app/                                 # 启动模块
 │       └── src/main/
@@ -93,7 +93,7 @@ nz-app             ← nz-starter-web, nz-starter-mybatis, nz-starter-sa-token,
 
 ## 后端约定
 
-- 包结构：`com.nz.admin.modules.{模块名}.{entity|mapper|service|controller}`；`entity` 包内放表对应 `*DO`、分页条件 `*Query`、展示 `*VO`（不再拆 `vo`/`query` 子包）
+- 包结构：`com.nz.admin.modules.{模块名}.{entity|mapper|service|controller}`；`entity` 下按 `dataobject`（表对应 `*DO`）、`query`（`*Query`）、`vo`（`*VO`）分子包，各子包内再按业务域分包
 - 统一响应体：`R<T>`，code=200 表示成功
 - 分页查询使用 `PageQuery` + MyBatis-Plus `Page`
 - 密码使用 BCrypt 加密（hutool）
@@ -128,8 +128,8 @@ mvn spring-boot:run -pl nz-app
 
 ```bash
 cd nz-web
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 ## 文档同步要求

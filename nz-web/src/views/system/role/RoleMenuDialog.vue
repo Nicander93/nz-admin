@@ -17,6 +17,7 @@
 
 <script setup lang="ts">
 import { ref, nextTick } from 'vue'
+import { useUserStore } from '@/stores/user'
 import { listMenus } from '@/api/system/menu'
 import type { SysMenu } from '@/api/system/menu'
 import { getRoleMenuIds, assignRoleMenus } from '@/api/system/role'
@@ -43,12 +44,16 @@ async function open(row: SysRole) {
   treeRef.value?.setCheckedKeys(leafIds)
 }
 
+const userStore = useUserStore()
+
 async function submit() {
   const allKeys = [
     ...treeRef.value!.getCheckedKeys() as number[],
     ...treeRef.value!.getHalfCheckedKeys() as number[],
   ]
   await assignRoleMenus(currentRoleId.value!, allKeys)
+  await userStore.fetchUserInfo()
+  await userStore.fetchUserMenus()
   visible.value = false
 }
 

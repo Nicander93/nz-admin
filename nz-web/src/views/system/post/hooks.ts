@@ -11,9 +11,7 @@ export interface UsePostCrudOptions {
   deleteApi?: typeof deletePost
 }
 
-/**
- * 岗位页面的 CRUD 逻辑。
- */
+/** 岗位页面的 CRUD 逻辑。 */
 export function usePostCrud(options: UsePostCrudOptions = {}) {
   const _listPosts = options.listApi ?? listPosts
   const _addPost = options.addApi ?? addPost
@@ -47,7 +45,7 @@ export function usePostCrud(options: UsePostCrudOptions = {}) {
     }
   }
 
-  async function handleSubmit() {
+  async function submit() {
     const result = await formState.submit()
     if (result.ok) {
       ElMessage.success(result.mode === 'add' ? '新增成功' : '更新成功')
@@ -57,18 +55,32 @@ export function usePostCrud(options: UsePostCrudOptions = {}) {
     return result
   }
 
-  async function handleDelete(id: number) {
+  async function remove(id: number) {
     await _deletePost(id)
     ElMessage.success('删除成功')
     await loadData()
   }
 
-  return {
+  const table = reactive({
     loading,
-    tableData,
-    form: formState,
+    data: tableData,
     loadData,
-    handleSubmit,
-    handleDelete,
-  }
+  })
+
+  const form = reactive({
+    model: formState.form,
+    visible: formState.visible,
+    title: formState.title,
+    mode: formState.mode,
+    openAdd: () => formState.openAdd(),
+    openEdit: (row: SysPost) => formState.openEdit(row),
+    close: formState.close,
+  })
+
+  const actions = reactive({
+    submit,
+    remove,
+  })
+
+  return { table, form, actions }
 }

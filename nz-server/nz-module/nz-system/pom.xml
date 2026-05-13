@@ -13,6 +13,7 @@
 
     <artifactId>nz-system</artifactId>
     <name>nz-system</name>
+    <description>系统管理业务模块，承载用户、角色、菜单、部门、字典、文件、日志、任务等领域。</description>
 
     <dependencies>
         <dependency>
@@ -26,7 +27,11 @@
         </dependency>
         <dependency>
             <groupId>com.nz</groupId>
-            <artifactId>nz-common</artifactId>
+            <artifactId>nz-common-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.nz</groupId>
+            <artifactId>nz-common-job</artifactId>
         </dependency>
         <dependency>
             <groupId>com.nz</groupId>
@@ -42,7 +47,32 @@
         </dependency>
         <dependency>
             <groupId>com.nz</groupId>
+            <artifactId>nz-starter-datascope</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.nz</groupId>
+            <artifactId>nz-starter-file</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.nz</groupId>
             <artifactId>nz-starter-log</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.nz</groupId>
+            <artifactId>nz-starter-protection</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.nz</groupId>
+            <artifactId>nz-starter-excel</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.nz</groupId>
+            <artifactId>nz-starter-monitor</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.nz</groupId>
+            <artifactId>nz-starter-quartz</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>cn.hutool</groupId>
@@ -56,11 +86,6 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-aop</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.aliyun.oss</groupId>
-            <artifactId>aliyun-sdk-oss</artifactId>
-            <version>3.17.4</version>
         </dependency>
     </dependencies>
 </project>

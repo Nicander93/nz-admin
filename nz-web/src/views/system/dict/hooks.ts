@@ -3,9 +3,7 @@ import { useCrud } from '@/utils/CRUD'
 import { pageDictTypes, addDictType, updateDictType, deleteDictType } from '@/api/system/dict'
 import type { SysDictType, DictTypeQuery } from '@/api/system/dict'
 
-/**
- * 字典类型 CRUD。
- */
+/** 字典类型页面的 CRUD 逻辑。 */
 export function useDictCrud() {
   const { table, form, actions } = useCrud<SysDictType, SysDictType, DictTypeQuery & Record<string, unknown>>({
     name: '字典类型',
@@ -23,7 +21,6 @@ export function useDictCrud() {
     immediate: false,
   })
 
-  // 重置字典类型查询条件并重新查询。
   function handleTypeResetQuery() {
     table.resetQuery()
     table.refresh()
@@ -44,13 +41,13 @@ export function useDictCrud() {
     mode: form.mode,
     title: form.title,
     close: form.close,
-    submit: form.submit,
-    toAdd: form.toAdd,
-    toEdit: form.toEdit,
+    openAdd: form.toAdd,
+    openEdit: form.toEdit,
   })
 
   const actionsView = reactive({
     remove: actions.remove,
+    submit: form.submit,
   })
 
   return {

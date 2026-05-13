@@ -4,7 +4,7 @@
       <el-button type="primary" @click="form.openAdd()">新增</el-button>
     </div>
 
-    <el-table :data="tableData" v-loading="loading" border>
+    <el-table :data="table.data" v-loading="table.loading" border>
       <el-table-column prop="postCode" label="岗位编码" width="150" />
       <el-table-column prop="postName" label="岗位名称" />
       <el-table-column prop="sort" label="排序" width="80" />
@@ -26,29 +26,29 @@
     </el-table>
 
     <el-dialog v-model="form.visible" :title="form.title" width="500px">
-      <el-form :model="form.form" label-width="100px">
+      <el-form :model="form.model" label-width="100px">
         <el-form-item label="岗位编码">
-          <el-input v-model="form.form.postCode" />
+          <el-input v-model="form.model.postCode" />
         </el-form-item>
         <el-form-item label="岗位名称">
-          <el-input v-model="form.form.postName" />
+          <el-input v-model="form.model.postName" />
         </el-form-item>
         <el-form-item label="排序">
-          <el-input-number v-model="form.form.sort" :min="0" />
+          <el-input-number v-model="form.model.sort" :min="0" />
         </el-form-item>
         <el-form-item label="状态">
-          <el-radio-group v-model="form.form.status">
+          <el-radio-group v-model="form.model.status">
             <el-radio :value="0">正常</el-radio>
             <el-radio :value="1">禁用</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item label="备注">
-          <el-input v-model="form.form.remark" type="textarea" :rows="3" />
+          <el-input v-model="form.model.remark" type="textarea" :rows="3" />
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="form.close">取消</el-button>
-        <el-button type="primary" @click="handleSubmit">确定</el-button>
+        <el-button type="primary" @click="actions.submit">确定</el-button>
       </template>
     </el-dialog>
   </div>
@@ -59,15 +59,12 @@ import { onMounted } from 'vue'
 import { usePostCrud } from './hooks'
 import { ElMessageBox } from 'element-plus'
 
-const {
-  loading, tableData, form,
-  handleSubmit, handleDelete, loadData,
-} = usePostCrud()
+const { table, form, actions } = usePostCrud()
 
 async function onDelete(id: number) {
   await ElMessageBox.confirm('确认删除该岗位？', '提示', { type: 'warning' })
-  handleDelete(id)
+  actions.remove(id)
 }
 
-onMounted(() => loadData())
+onMounted(() => table.loadData())
 </script>

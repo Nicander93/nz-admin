@@ -2,16 +2,30 @@ server:
   port: 8080
 
 spring:
-  datasource:
-    url: jdbc:postgresql://localhost:5432/nz-server
-    username: postgres
-    password: 123456
-    driver-class-name: org.postgresql.Driver
+  profiles:
+    active: dev
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 120MB
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
 
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+nz:
+  file:
+    storage-type: local
+    max-file-size-bytes: 104857600
 
 sa-token:
   token-name: Authorization

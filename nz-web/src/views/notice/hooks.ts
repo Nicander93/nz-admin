@@ -2,9 +2,7 @@ import { reactive } from 'vue'
 import { useCrud } from '@/utils/CRUD'
 import { noticeApi, type NoticeQuery, type SysNotice } from '@/api/system'
 
-/**
- * 通知公告页面的 CRUD 逻辑。
- */
+/** 通知公告页面的 CRUD 逻辑。 */
 export function useNoticeCrud() {
   const { table, form, actions } = useCrud<SysNotice, SysNotice, NoticeQuery & Record<string, unknown>>({
     name: '通知公告',
@@ -27,20 +25,14 @@ export function useNoticeCrud() {
     immediate: false,
   })
 
-  // 重置查询条件后重新查一遍列表。
   function handleResetQuery() {
     table.resetQuery()
     table.refresh()
   }
 
-  // 页面初始化时拉第一页。
-  function init() {
+  function loadData() {
     table.refresh()
   }
-
-  const lifecycle = reactive({
-    init,
-  })
 
   const tableView = reactive({
     data: table.data,
@@ -49,6 +41,7 @@ export function useNoticeCrud() {
     query: table.query,
     refresh: table.refresh,
     handleResetQuery,
+    loadData,
   })
 
   const formView = reactive({
@@ -57,19 +50,18 @@ export function useNoticeCrud() {
     mode: form.mode,
     title: form.title,
     close: form.close,
-    submit: form.submit,
-    toAdd: form.toAdd,
-    toEdit: form.toEdit,
+    openAdd: form.toAdd,
+    openEdit: form.toEdit,
   })
 
   const actionsView = reactive({
     remove: actions.remove,
+    submit: form.submit,
   })
 
   return {
     table: tableView,
     form: formView,
     actions: actionsView,
-    lifecycle,
   }
 }

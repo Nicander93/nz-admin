@@ -12,15 +12,38 @@
 
     <artifactId>nz-starter-log</artifactId>
     <name>nz-starter-log</name>
+    <description>操作日志 starter，提供日志注解、采集入口、自动配置和日志记录扩展点。</description>
 
     <dependencies>
         <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>com.nz</groupId>
-            <artifactId>nz-common</artifactId>
+            <artifactId>nz-common-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.nz</groupId>
+            <artifactId>nz-starter-auth</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-all</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-aop</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>

@@ -17,92 +17,92 @@ describe('useDeptCrud', () => {
       { id: 3, parentId: 1, name: '市场部', sort: 2, status: 0 },
     ])
 
-    const { loadData, treeData, flatData, loading } = useDeptCrud({
+    const { table } = useDeptCrud({
       listApi: listApi as any,
     })
 
-    expect(loading.value).toBe(false)
-    await loadData()
-    expect(loading.value).toBe(false)
+    expect(table.loading).toBe(false)
+    await table.loadData()
+    expect(table.loading).toBe(false)
 
-    expect(flatData.value).toHaveLength(3)
-    expect(treeData.value).toHaveLength(1)
-    expect(treeData.value[0].name).toBe('总公司')
-    expect(treeData.value[0].children).toHaveLength(2)
+    expect(table.flatData).toHaveLength(3)
+    expect(table.treeData).toHaveLength(1)
+    expect(table.treeData[0].name).toBe('总公司')
+    expect(table.treeData[0].children).toHaveLength(2)
   })
 
   it('openAdd 设置 parentId', () => {
-    const { openAdd, form, visible } = useDeptCrud({
+    const { form } = useDeptCrud({
       listApi: mockListApi() as any,
     })
 
-    openAdd(5)
-    expect(visible.value).toBe(true)
-    expect(form.parentId).toBe(5)
+    form.openAdd(5)
+    expect(form.visible).toBe(true)
+    expect(form.model.parentId).toBe(5)
   })
 
   it('openAdd 不传 parentId 默认为 0', () => {
-    const { openAdd, form } = useDeptCrud({
+    const { form } = useDeptCrud({
       listApi: mockListApi() as any,
     })
 
-    openAdd()
-    expect(form.parentId).toBe(0)
+    form.openAdd()
+    expect(form.model.parentId).toBe(0)
   })
 
   it('openEdit 填充表单数据', () => {
-    const { openEdit, form, visible, mode } = useDeptCrud({
+    const { form } = useDeptCrud({
       listApi: mockListApi() as any,
     })
 
-    openEdit({ id: 2, parentId: 1, name: '技术部', sort: 1, status: 0 } as any)
-    expect(visible.value).toBe(true)
-    expect(mode.value).toBe('edit')
-    expect(form.name).toBe('技术部')
-    expect(form.parentId).toBe(1)
+    form.openEdit({ id: 2, parentId: 1, name: '技术部', sort: 1, status: 0 } as any)
+    expect(form.visible).toBe(true)
+    expect(form.mode).toBe('edit')
+    expect(form.model.name).toBe('技术部')
+    expect(form.model.parentId).toBe(1)
   })
 
-  it('handleSubmit 新增后刷新列表', async () => {
+  it('submit 新增后刷新列表', async () => {
     const addApi = mockVoidApi()
     const listApi = mockListApi([])
 
-    const { openAdd, handleSubmit, form } = useDeptCrud({
+    const { form, actions } = useDeptCrud({
       listApi: listApi as any,
       addApi: addApi as any,
     })
 
-    openAdd()
-    form.name = '新部门'
-    await handleSubmit()
+    form.openAdd()
+    form.model.name = '新部门'
+    await actions.submit()
 
     expect(addApi).toHaveBeenCalled()
-    expect(listApi).toHaveBeenCalledTimes(1) // 刷新列表
+    expect(listApi).toHaveBeenCalledTimes(1)
   })
 
-  it('handleDelete 删除后刷新列表', async () => {
+  it('remove 删除后刷新列表', async () => {
     const deleteApi = mockVoidApi()
     const listApi = mockListApi([])
 
-    const { handleDelete } = useDeptCrud({
+    const { actions } = useDeptCrud({
       listApi: listApi as any,
       deleteApi: deleteApi as any,
     })
 
-    await handleDelete(1)
+    await actions.remove(1)
     expect(deleteApi).toHaveBeenCalledWith(1)
     expect(listApi).toHaveBeenCalledTimes(1)
   })
 
   it('toggleExpand 切换展开状态', () => {
     const listApi = mockListApi([])
-    const { isExpand, toggleExpand } = useDeptCrud({
+    const { table } = useDeptCrud({
       listApi: listApi as any,
     })
 
-    expect(isExpand.value).toBe(true)
-    toggleExpand()
-    expect(isExpand.value).toBe(false)
-    toggleExpand()
-    expect(isExpand.value).toBe(true)
+    expect(table.isExpand).toBe(true)
+    table.toggleExpand()
+    expect(table.isExpand).toBe(false)
+    table.toggleExpand()
+    expect(table.isExpand).toBe(true)
   })
 })

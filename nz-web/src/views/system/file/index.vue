@@ -39,8 +39,8 @@
       <el-table-column prop="createdAt" label="上传时间" width="180" />
       <el-table-column label="操作" width="160" fixed="right">
         <template #default="{ row }">
-          <el-button link type="primary" @click="handleDownload(row)">下载</el-button>
-          <el-button link type="danger" @click="handleDelete(row.id)">删除</el-button>
+          <el-button link type="primary" @click="actions.download(row)">下载</el-button>
+          <el-button link type="danger" @click="onDelete(row.id)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -62,11 +62,17 @@
 import { ref, onMounted } from 'vue'
 import { useFileCrud } from './hooks'
 import FileUploadDialogs from './FileUploadDialogs.vue'
+import { ElMessageBox } from 'element-plus'
 
-const { table, handleDelete, handleDownload } = useFileCrud()
+const { table, actions } = useFileCrud()
 const uploadDialogsRef = ref<InstanceType<typeof FileUploadDialogs>>()
 
 onMounted(() => table.refresh())
+
+async function onDelete(id: number) {
+  await ElMessageBox.confirm('确认删除该文件？', '提示', { type: 'warning' })
+  await actions.remove(id)
+}
 
 function formatFileSize(bytes: number) {
   if (bytes < 1024) return bytes + ' B'

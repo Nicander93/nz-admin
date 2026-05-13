@@ -4,8 +4,12 @@ import * as roleApi from './role'
 import * as postApi from './post'
 import * as configApi from './config'
 import * as noticeApi from './notice'
+import * as fileApi from './file'
+import * as dictApi from './dict'
+import * as workbenchApi from './workbench'
+import * as monitorApi from './monitor'
 
-export { userApi, deptApi, roleApi, postApi, configApi, noticeApi }
+export { userApi, deptApi, roleApi, postApi, configApi, noticeApi, fileApi, dictApi, workbenchApi, monitorApi }
 
 export type { SysUser, UserQuery } from './user'
 export type { SysDept } from './dept'
@@ -13,3 +17,7 @@ export type { SysRole } from './role'
 export type { SysPost } from './post'
 export type { SysConfig } from './config'
 export type { SysNotice, NoticeQuery } from './notice'
+export type { SysFile, FileQuery } from './file'
+export type { SysDictType, SysDictData, DictTypeQuery } from './dict'
+export type { WorkbenchSnapshot, LoginLogRow, OperLogRow } from './workbench'
+export type { MonitorSummary } from './monitor'

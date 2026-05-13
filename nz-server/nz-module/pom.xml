@@ -13,6 +13,7 @@
     <artifactId>nz-module</artifactId>
     <packaging>pom</packaging>
     <name>nz-module</name>
+    <description>业务模块聚合模块，收拢按业务域沉淀的后端业务实现。</description>
 
     <modules>
         <module>nz-system</module>

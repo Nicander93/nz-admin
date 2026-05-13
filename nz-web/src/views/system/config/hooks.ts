@@ -11,9 +11,7 @@ export interface UseConfigCrudOptions {
   deleteApi?: typeof deleteConfig
 }
 
-/**
- * 参数管理页面的 CRUD 逻辑。
- */
+/** 参数管理页面的 CRUD 逻辑。 */
 export function useConfigCrud(options: UseConfigCrudOptions = {}) {
   const _listConfigs = options.listApi ?? listConfigs
   const _addConfig = options.addApi ?? addConfig
@@ -48,7 +46,7 @@ export function useConfigCrud(options: UseConfigCrudOptions = {}) {
     }
   }
 
-  async function handleSubmit() {
+  async function submit() {
     const result = await formState.submit()
     if (result.ok) {
       ElMessage.success(result.mode === 'add' ? '新增成功' : '更新成功')
@@ -58,27 +56,32 @@ export function useConfigCrud(options: UseConfigCrudOptions = {}) {
     return result
   }
 
-  async function handleDelete(id: number) {
+  async function remove(id: number) {
     await _deleteConfig(id)
     ElMessage.success('删除成功')
     await loadData()
   }
 
-  const formView = reactive({
+  const table = reactive({
+    loading,
+    data: tableData,
+    loadData,
+  })
+
+  const form = reactive({
     model: formState.form,
     visible: formState.visible,
     title: formState.title,
+    mode: formState.mode,
+    openAdd: () => formState.openAdd(),
+    openEdit: (row: SysConfig) => formState.openEdit(row),
     close: formState.close,
-    openAdd: formState.openAdd,
-    openEdit: formState.openEdit,
   })
 
-  return {
-    loading,
-    tableData,
-    form: formView,
-    loadData,
-    handleSubmit,
-    handleDelete,
-  }
+  const actions = reactive({
+    submit,
+    remove,
+  })
+
+  return { table, form, actions }
 }

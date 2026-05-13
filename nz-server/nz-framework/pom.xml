@@ -13,13 +13,20 @@
     <artifactId>nz-framework</artifactId>
     <name>nz-framework</name>
     <packaging>pom</packaging>
+    <description>框架能力聚合模块，组织可复用 starter、自动配置、注解和扩展点。</description>
 
     <modules>
         <module>nz-starter-web</module>
+        <module>nz-starter-datascope</module>
         <module>nz-starter-mybatis</module>
-        <module>nz-starter-sa-token</module>
         <module>nz-starter-auth</module>
         <module>nz-starter-log</module>
+        <module>nz-starter-cache</module>
+        <module>nz-starter-protection</module>
+        <module>nz-starter-excel</module>
+        <module>nz-starter-monitor</module>
+        <module>nz-starter-file</module>
         <module>nz-starter-test</module>
+        <module>nz-starter-quartz</module>
     </modules>
 </project>

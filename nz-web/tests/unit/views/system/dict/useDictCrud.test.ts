@@ -1,36 +1,4 @@
 import { describe, it, expect, vi } from 'vitest'
-import { useDictCrud } from '@/views/system/dict/hooks'
-
-// Mock the external dependency @nz-js-toolkit/crud
-vi.mock('@nz-js-toolkit/crud', () => ({
-  createCrudFactory: () => ({
-    useTable: () => ({
-      data: [],
-      loading: false,
-      query: {},
-      pagination: { current: 1, size: 10, total: 0 },
-      refresh: vi.fn(),
-      handleResetQuery: vi.fn(),
-    }),
-    useCrud: (config: any) => ({
-      data: [],
-      loading: false,
-      query: {},
-      pagination: { current: 1, size: 10, total: 0 },
-      refresh: vi.fn(),
-      resetQuery: vi.fn(function(this: any) { this.pagination.current = 1 }),
-    }),
-    useForm: (config: any) => ({
-      visible: { value: false },
-      mode: { value: 'add' },
-      form: config.defaultForm ? config.defaultForm() : {},
-      openAdd: vi.fn(),
-      openEdit: vi.fn(),
-      close: vi.fn(),
-      submit: vi.fn().mockResolvedValue({ ok: true }),
-    }),
-  }),
-}))
 
 vi.mock('@/api/system/dict', () => ({
   pageDictTypes: vi.fn().mockResolvedValue({
@@ -40,47 +8,39 @@ vi.mock('@/api/system/dict', () => ({
   addDictType: vi.fn().mockResolvedValue({ code: 200 }),
   updateDictType: vi.fn().mockResolvedValue({ code: 200 }),
   deleteDictType: vi.fn().mockResolvedValue({ code: 200 }),
-  listDictDataByType: vi.fn().mockResolvedValue({
-    code: 200,
-    data: [
-      { id: 1, dictType: 'sys_user_sex', label: '男', value: '0', sort: 0, status: 0 },
-      { id: 2, dictType: 'sys_user_sex', label: '女', value: '1', sort: 1, status: 0 },
-    ],
-  }),
-  addDictData: vi.fn().mockResolvedValue({ code: 200 }),
-  updateDictData: vi.fn().mockResolvedValue({ code: 200 }),
-  deleteDictData: vi.fn().mockResolvedValue({ code: 200 }),
 }))
 
+import { pageDictTypes } from '@/api/system/dict'
+import { useDictCrud } from '@/views/system/dict/hooks'
+
 describe('useDictCrud', () => {
-  it('openDataPanel 加载字典数据', async () => {
-    const { openDataPanel, dataDrawerVisible, dataList, currentDictType } = useDictCrud()
+  it('refresh 后表格有数据', async () => {
+    const { table } = useDictCrud()
+    await table.refresh()
 
-    await openDataPanel({ id: 1, name: '用户性别', type: 'sys_user_sex', status: 0 } as any)
-
-    expect(dataDrawerVisible.value).toBe(true)
-    expect(currentDictType.value).toBe('sys_user_sex')
-    expect(dataList.value).toHaveLength(2)
-    expect(dataList.value[0].label).toBe('男')
+    await vi.waitFor(() => {
+      expect(table.data.length).toBeGreaterThan(0)
+    })
+    expect(table.data[0].type).toBe('sys_user_sex')
+    expect(pageDictTypes).toHaveBeenCalled()
   })
 
-  it('openDataAdd 设置 dictType', async () => {
-    const { openDataPanel, openDataAdd, dataForm } = useDictCrud()
+  it('handleResetQuery 将分页回到第一页', () => {
+    const { table } = useDictCrud()
+    table.query.name = 'test'
+    table.pagination.current = 3
 
-    await openDataPanel({ id: 1, name: '用户性别', type: 'sys_user_sex', status: 0 } as any)
-    openDataAdd()
+    table.handleResetQuery()
 
-    expect(dataForm.visible.value).toBe(true)
-    expect(dataForm.form.dictType).toBe('sys_user_sex')
+    expect(table.pagination.current).toBe(1)
   })
 
-  it('handleTypeResetQuery 重置查询', () => {
-    const { typeCrud, handleTypeResetQuery } = useDictCrud()
+  it('openAdd 打开新增弹窗', () => {
+    const { form } = useDictCrud()
+    form.openAdd()
 
-    typeCrud.query.name = 'test'
-    typeCrud.pagination.current = 3
-
-    handleTypeResetQuery()
-    expect(typeCrud.pagination.current).toBe(1)
+    expect(form.visible).toBe(true)
+    expect(form.mode).toBe('add')
+    expect(form.model.type).toBe('')
   })
 })

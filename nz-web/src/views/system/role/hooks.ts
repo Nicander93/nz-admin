@@ -3,9 +3,7 @@ import { useCrud } from '@/utils/CRUD'
 import { pageRoles, addRole, updateRole, deleteRole } from '@/api/system/role'
 import type { SysRole, RoleQuery } from '@/api/system/role'
 
-/**
- * 角色页面的 CRUD 逻辑。
- */
+/** 角色页面的 CRUD 逻辑。 */
 export function useRoleCrud() {
   const { table, form, actions } = useCrud<SysRole, SysRole, RoleQuery & Record<string, unknown>>({
     name: '角色',
@@ -43,13 +41,13 @@ export function useRoleCrud() {
     mode: form.mode,
     title: form.title,
     close: form.close,
-    submit: form.submit,
-    toAdd: form.toAdd,
-    toEdit: form.toEdit,
+    openAdd: form.toAdd,
+    openEdit: form.toEdit,
   })
 
   const actionsView = reactive({
     remove: actions.remove,
+    submit: form.submit,
   })
 
   return {

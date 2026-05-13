@@ -2,6 +2,7 @@
 -- H2 MODE=PostgreSQL 下运行，每次测试启动时重建
 
 DROP TABLE IF EXISTS sys_role_menu;
+DROP TABLE IF EXISTS sys_user_post;
 DROP TABLE IF EXISTS sys_user_role;
 DROP TABLE IF EXISTS sys_login_log;
 DROP TABLE IF EXISTS sys_oper_log;
@@ -45,6 +46,7 @@ CREATE TABLE sys_role
     sort        INT          DEFAULT 0,
     status      INT          DEFAULT 0,
     remark      VARCHAR(500),
+    data_scope  INT          DEFAULT 1,
     create_time TIMESTAMP,
     update_time TIMESTAMP
 );
@@ -94,6 +96,12 @@ CREATE TABLE sys_user_role
 (
     user_id BIGINT NOT NULL,
     role_id BIGINT NOT NULL
+);
+
+CREATE TABLE sys_user_post
+(
+    user_id BIGINT NOT NULL,
+    post_id BIGINT NOT NULL
 );
 
 CREATE TABLE sys_role_menu

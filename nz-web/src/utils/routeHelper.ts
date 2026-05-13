@@ -36,7 +36,7 @@ function normalizeSegment(path: string): string {
   return path.replace(/^\/+|\/+$/g, '')
 }
 
-function buildPath(currentPath: string, parentPath: string): string {
+export function buildPath(currentPath: string, parentPath: string): string {
   if (!currentPath) return parentPath
   if (currentPath.startsWith('/')) return currentPath
   const current = normalizeSegment(currentPath)

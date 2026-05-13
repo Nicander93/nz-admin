@@ -46,22 +46,26 @@ describe('routeHelper', () => {
 
   it('buildDynamicChildrenRoutes 生成路由配置', () => {
     const list: MenuRouteItem[] = [
-      { id: 1, name: '系统管理', path: '/system', parentId: 0 },
       {
-        id: 2,
-        name: '用户管理',
-        path: 'user',
-        parentId: 1,
-        component: '@/views/system/user/index.vue',
-        meta: { icon: 'User' },
-      },
-      {
-        id: 3,
-        name: '角色管理',
-        path: 'role',
-        parentId: 1,
-        component: '@/views/system/role/index.vue',
-        meta: { title: '角色维护' },
+        id: 1,
+        name: '系统管理',
+        path: '/system',
+        children: [
+          {
+            id: 2,
+            name: '用户管理',
+            path: 'user',
+            component: '@/views/system/user/index.vue',
+            meta: { icon: 'User' },
+          },
+          {
+            id: 3,
+            name: '角色管理',
+            path: 'role',
+            component: '@/views/system/role/index.vue',
+            meta: { title: '角色维护' },
+          },
+        ],
       },
     ]
 
@@ -80,9 +84,15 @@ describe('routeHelper', () => {
 
   it('resolveFirstRoutePath 返回第一个路由路径', () => {
     const list: MenuRouteItem[] = [
-      { id: 1, name: '系统管理', path: '/system', parentId: 0 },
-      { id: 2, name: '用户管理', path: 'user', parentId: 1, component: '@/views/system/user/index.vue' },
-      { id: 3, name: '角色管理', path: 'role', parentId: 1, component: '@/views/system/role/index.vue' },
+      {
+        id: 1,
+        name: '系统管理',
+        path: '/system',
+        children: [
+          { id: 2, name: '用户管理', path: 'user', component: '@/views/system/user/index.vue' },
+          { id: 3, name: '角色管理', path: 'role', component: '@/views/system/role/index.vue' },
+        ],
+      },
     ]
 
     expect(resolveFirstRoutePath(list)).toBe('/system/user')

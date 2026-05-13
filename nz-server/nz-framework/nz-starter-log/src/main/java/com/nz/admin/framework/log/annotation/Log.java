@@ -19,4 +19,14 @@ public @interface Log {
      * 操作类型。
      */
     BusinessType businessType() default BusinessType.QUERY;
+
+    /**
+     * 是否记录请求参数。
+     */
+    boolean recordRequest() default true;
+
+    /**
+     * 是否记录响应结果。
+     */
+    boolean recordResponse() default true;
 }

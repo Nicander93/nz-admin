@@ -4,7 +4,7 @@
       <el-button type="primary" @click="form.openAdd()">新增</el-button>
     </div>
 
-    <el-table :data="tableData" v-loading="loading" border>
+    <el-table :data="table.data" v-loading="table.loading" border>
       <el-table-column prop="configName" label="参数名称" />
       <el-table-column prop="configKey" label="参数键名" width="180" />
       <el-table-column prop="configValue" label="参数键值" show-overflow-tooltip />
@@ -61,7 +61,7 @@
       </el-form>
       <template #footer>
         <el-button @click="form.close">取消</el-button>
-        <el-button type="primary" @click="handleSubmit">确定</el-button>
+        <el-button type="primary" @click="actions.submit">确定</el-button>
       </template>
     </el-dialog>
   </div>
@@ -72,12 +72,12 @@ import { onMounted } from 'vue'
 import { useConfigCrud } from './hooks'
 import { ElMessageBox } from 'element-plus'
 
-const { loading, tableData, form, loadData, handleSubmit, handleDelete } = useConfigCrud()
+const { table, form, actions } = useConfigCrud()
 
 async function onDelete(id: number) {
   await ElMessageBox.confirm('确认删除该参数？', '提示', { type: 'warning' })
-  handleDelete(id)
+  actions.remove(id)
 }
 
-onMounted(() => loadData())
+onMounted(() => table.loadData())
 </script>

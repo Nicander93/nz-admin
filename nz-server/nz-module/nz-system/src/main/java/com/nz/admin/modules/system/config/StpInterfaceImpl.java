@@ -1,7 +1,7 @@
 package com.nz.admin.modules.system.config;
 
 import cn.dev33.satoken.stp.StpInterface;
-import com.nz.admin.modules.system.service.SysPermissionService;
+import com.nz.admin.modules.system.service.permission.PermissionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -12,7 +12,7 @@ import java.util.List;
 public class StpInterfaceImpl implements StpInterface {
 
     @Autowired
-    private SysPermissionService permissionService;
+    private PermissionService permissionService;
 
     @Override
     public List<String> getPermissionList(Object loginId, String loginType) {

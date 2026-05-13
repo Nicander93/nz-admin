@@ -23,7 +23,7 @@
     </el-form>
 
     <div class="mb-4">
-      <el-button v-permission="'system:notice:add'" type="primary" @click="form.toAdd">新增</el-button>
+      <el-button v-permission="'system:notice:add'" type="primary" @click="form.openAdd">新增</el-button>
     </div>
 
     <el-table :data="table.data" v-loading="table.loading" border>
@@ -46,7 +46,7 @@
       <el-table-column prop="createTime" label="创建时间" width="180" />
       <el-table-column label="操作" width="160" fixed="right">
         <template #default="{ row }">
-          <el-button v-permission="'system:notice:edit'" link type="primary" @click="form.toEdit(row)">编辑</el-button>
+          <el-button v-permission="'system:notice:edit'" link type="primary" @click="form.openEdit(row)">编辑</el-button>
           <el-button v-permission="'system:notice:remove'" link type="danger" @click="actions.remove(row.id)">删除</el-button>
         </template>
       </el-table-column>
@@ -90,7 +90,7 @@
         <el-button
           v-permission="[form.mode === 'edit' ? 'system:notice:edit' : 'system:notice:add']"
           type="primary"
-          @click="form.submit"
+          @click="actions.submit"
         >
           确定
         </el-button>
@@ -103,7 +103,7 @@
 import { onMounted } from 'vue'
 import { useNoticeCrud } from './hooks'
 
-const { table, form, actions, lifecycle } = useNoticeCrud()
+const { table, form, actions } = useNoticeCrud()
 
-onMounted(() => lifecycle.init())
+onMounted(() => table.loadData())
 </script>

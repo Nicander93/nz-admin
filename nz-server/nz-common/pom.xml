@@ -11,17 +11,12 @@
     </parent>
 
     <artifactId>nz-common</artifactId>
+    <packaging>pom</packaging>
     <name>nz-common</name>
+    <description>公共能力聚合模块，收拢基础对象、轻量协议和跨模块任务契约。</description>
 
-    <dependencies>
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-extension</artifactId>
-        </dependency>
-    </dependencies>
+    <modules>
+        <module>nz-common-core</module>
+        <module>nz-common-job</module>
+    </modules>
 </project>

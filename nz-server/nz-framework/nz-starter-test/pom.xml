@@ -12,11 +12,16 @@
 
     <artifactId>nz-starter-test</artifactId>
     <name>nz-starter-test</name>
+    <description>测试支撑 starter，提供单元测试、数据库测试和随机对象生成工具。</description>
 
     <dependencies>
         <dependency>
             <groupId>com.nz</groupId>
             <artifactId>nz-starter-mybatis</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.nz</groupId>
+            <artifactId>nz-starter-auth</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
