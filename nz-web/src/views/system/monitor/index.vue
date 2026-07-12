@@ -40,6 +40,26 @@
           <div class="monitor-card__value">{{ table.summary?.availableProcessors ?? '—' }}</div>
         </section>
       </el-col>
+      <el-col :xs="24" :sm="12" :lg="6">
+        <section class="monitor-card">
+          <div class="monitor-card__label">Redis</div>
+          <div class="monitor-card__value">
+            <el-tag v-if="!table.summary?.redisAvailable" type="info" size="large">Not configured</el-tag>
+            <el-tag v-else :type="table.summary?.redisOk ? 'success' : 'danger'" size="large">
+              {{ table.summary?.redisOk ? 'Healthy' : 'Unavailable' }}
+            </el-tag>
+          </div>
+          <p v-if="table.summary?.redisAvailable && table.summary?.redisOk" class="monitor-card__hint">
+            {{ table.summary.redisVersion || '-' }} / {{ table.summary.redisMode || '-' }},
+            {{ table.summary.redisConnectedClients }} clients,
+            {{ table.summary.redisKeyCount }} keys,
+            {{ table.formatBytes(table.summary.redisUsedMemoryBytes) }}
+          </p>
+          <p v-else-if="table.summary?.redisAvailable" class="monitor-card__hint">
+            {{ table.summary.redisMessage }}
+          </p>
+        </section>
+      </el-col>
     </el-row>
   </div>
 </template>

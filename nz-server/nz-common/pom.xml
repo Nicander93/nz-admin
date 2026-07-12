@@ -18,5 +18,6 @@
     <modules>
         <module>nz-common-core</module>
         <module>nz-common-job</module>
+        <module>nz-common-module</module>
     </modules>
 </project>

@@ -2,6 +2,7 @@
   "name": "nz-web",
   "private": true,
   "version": "0.0.1",
+  "packageManager": "pnpm@9.15.9",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -18,7 +19,6 @@
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.0",
-    "@nz-js-toolkit/crud": "link:../../nz-js-toolkit/packages/crud",
     "axios": "^1.8.0",
     "element-plus": "^2.9.0",
     "pinia": "^2.3.0",

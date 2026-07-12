@@ -69,7 +69,7 @@ router.beforeEach(async (to, _from, next) => {
       } else if (!userStore.menus.length) {
         await userStore.fetchUserMenus()
       }
-      const childrenRoutes = buildDynamicChildrenRoutes(userStore.menus)
+      const childrenRoutes = buildDynamicChildrenRoutes(userStore.menus, userStore.enabledModuleCodes)
       childrenRoutes.forEach((route) => {
         const name = route.name
         if (typeof name === 'string' && !router.hasRoute(name)) {

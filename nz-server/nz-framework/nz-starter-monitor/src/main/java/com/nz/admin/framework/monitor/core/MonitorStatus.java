@@ -2,12 +2,8 @@ package com.nz.admin.framework.monitor.core;
 
 import lombok.Data;
 
-/**
- * 轻量运行状态对象。
- */
 @Data
 public class MonitorStatus {
-
     private String healthStatus;
     private boolean databaseOk;
     private String databaseMessage;
@@ -17,4 +13,12 @@ public class MonitorStatus {
     private int availableProcessors;
     private long diskTotalBytes;
     private long diskFreeBytes;
+    private boolean redisAvailable;
+    private boolean redisOk;
+    private String redisMessage;
+    private String redisVersion;
+    private String redisMode;
+    private long redisConnectedClients;
+    private long redisUsedMemoryBytes;
+    private long redisKeyCount;
 }

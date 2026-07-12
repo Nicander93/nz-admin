@@ -11,9 +11,6 @@ importers:
       '@element-plus/icons-vue':
         specifier: ^2.3.0
         version: 2.3.2(vue@3.5.32(typescript@5.8.3))
-      '@nz-js-toolkit/crud':
-        specifier: link:../../nz-js-toolkit/packages/crud
-        version: link:../../nz-js-toolkit/packages/crud
       axios:
         specifier: ^1.8.0
         version: 1.15.0

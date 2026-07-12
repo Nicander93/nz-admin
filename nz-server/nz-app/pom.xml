@@ -22,6 +22,10 @@
         </dependency>
         <dependency>
             <groupId>com.nz</groupId>
+            <artifactId>nz-common-module</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.nz</groupId>
             <artifactId>nz-starter-web</artifactId>
         </dependency>
         <dependency>
@@ -36,7 +40,11 @@
             <groupId>com.nz</groupId>
             <artifactId>nz-starter-log</artifactId>
         </dependency>
-        <dependency>
+                <dependency>
+            <groupId>com.nz</groupId>
+            <artifactId>nz-job</artifactId>
+        </dependency>
+<dependency>
             <groupId>com.nz</groupId>
             <artifactId>nz-system</artifactId>
         </dependency>

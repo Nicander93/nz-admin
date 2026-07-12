@@ -1,4 +1,4 @@
-import { createCrudFactory } from '@nz-js-toolkit/crud'
+import { createCrudFactory } from './crudFactory'
 import { ElMessage } from 'element-plus'
 
 const { useTable, useCrud, useForm } = createCrudFactory({

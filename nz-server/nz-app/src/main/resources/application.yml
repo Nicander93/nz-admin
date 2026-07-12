@@ -23,6 +23,12 @@ mybatis-plus:
     map-underscore-to-camel-case: true
 
 nz:
+  mail:
+    enabled: false
+  modules:
+    system:
+      enabled: true
+      initialize-data: true
   file:
     storage-type: local
     max-file-size-bytes: 104857600

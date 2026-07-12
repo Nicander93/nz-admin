@@ -1,0 +1,7 @@
+code: job
+name: Job Scheduler
+version: 0.0.1-SNAPSHOT
+description: Scheduled job definitions, execution and logs
+requiredModules:
+defaultEnabled: true
+frontendModule: job

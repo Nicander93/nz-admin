@@ -1,13 +1,18 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { getUserInfo, getUserMenus } from '@/api/system/user'
+import { getModuleStatuses } from '@/api/system/modules'
 import type { SysUser, UserMenu } from '@/api/system/user'
+import { getEnabledFrontendModuleCodes } from '@/core/modules/registry'
+import type { BackendModuleStatus } from '@/core/modules/types'
 
 export const useUserStore = defineStore('user', () => {
   const userInfo = ref<SysUser | null>(null)
   const roles = ref<string[]>([])
   const permissions = ref<string[]>([])
   const menus = ref<UserMenu[]>([])
+  const moduleStatuses = ref<BackendModuleStatus[]>([])
+  const enabledModuleCodes = ref<Set<string>>(new Set())
   const token = ref(localStorage.getItem('token') || '')
   const routesLoaded = ref(false)
 
@@ -22,6 +27,8 @@ export const useUserStore = defineStore('user', () => {
     roles.value = []
     permissions.value = []
     menus.value = []
+    moduleStatuses.value = []
+    enabledModuleCodes.value = new Set()
     routesLoaded.value = false
     localStorage.removeItem('token')
   }
@@ -38,8 +45,14 @@ export const useUserStore = defineStore('user', () => {
     menus.value = res.data || []
   }
 
+  async function fetchModuleStatuses() {
+    const res = await getModuleStatuses()
+    moduleStatuses.value = res.data || []
+    enabledModuleCodes.value = getEnabledFrontendModuleCodes(moduleStatuses.value)
+  }
+
   async function initAuthData() {
-    await Promise.all([fetchUserInfo(), fetchUserMenus()])
+    await Promise.all([fetchUserInfo(), fetchUserMenus(), fetchModuleStatuses()])
   }
 
   function setRoutesLoaded(val: boolean) {
@@ -55,12 +68,15 @@ export const useUserStore = defineStore('user', () => {
     roles,
     permissions,
     menus,
+    moduleStatuses,
+    enabledModuleCodes,
     token,
     routesLoaded,
     setToken,
     logout,
     fetchUserInfo,
     fetchUserMenus,
+    fetchModuleStatuses,
     initAuthData,
     setRoutesLoaded,
     hasPermission,

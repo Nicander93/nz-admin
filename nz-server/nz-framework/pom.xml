@@ -25,6 +25,7 @@
         <module>nz-starter-protection</module>
         <module>nz-starter-excel</module>
         <module>nz-starter-monitor</module>
+        <module>nz-starter-mail</module>
         <module>nz-starter-file</module>
         <module>nz-starter-test</module>
         <module>nz-starter-quartz</module>

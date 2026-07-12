@@ -8,8 +8,9 @@ import * as fileApi from './file'
 import * as dictApi from './dict'
 import * as workbenchApi from './workbench'
 import * as monitorApi from './monitor'
+import * as moduleApi from './modules'
 
-export { userApi, deptApi, roleApi, postApi, configApi, noticeApi, fileApi, dictApi, workbenchApi, monitorApi }
+export { userApi, deptApi, roleApi, postApi, configApi, noticeApi, fileApi, dictApi, workbenchApi, monitorApi, moduleApi }
 
 export type { SysUser, UserQuery } from './user'
 export type { SysDept } from './dept'

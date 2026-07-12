@@ -16,11 +16,10 @@ jobs:
           distribution: temurin
           java-version: '17'
           cache: maven
-      - name: Compile and test nz-system
+      - name: Test backend modules
         run: |
           cd nz-server
-          ./mvnw -q -pl nz-app -am compile -DskipTests
-          ./mvnw -q -pl nz-system test
+          ./mvnw -q test
 
   frontend:
     runs-on: ubuntu-latest

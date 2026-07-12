@@ -17,5 +17,6 @@
 
     <modules>
         <module>nz-system</module>
+        <module>nz-job</module>
     </modules>
 </project>

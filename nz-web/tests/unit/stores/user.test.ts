@@ -24,6 +24,10 @@ vi.mock('@/api/system/user', () => ({
   }),
 }))
 
+vi.mock('@/api/system/modules', () => ({
+  getModuleStatuses: vi.fn().mockResolvedValue({ data: [{ code: 'system', name: 'system', version: '1', frontendModule: 'system', state: 'ENABLED' }] }),
+}))
+
 import { useUserStore } from '@/stores/user'
 
 describe('useUserStore', () => {
@@ -44,6 +48,7 @@ describe('useUserStore', () => {
     expect(store.roles).toEqual(['admin'])
     expect(store.permissions).toEqual(['system:user:list', 'system:user:add'])
     expect(store.menus).toHaveLength(2)
+    expect(store.enabledModuleCodes).toEqual(new Set(['system']))
   })
 
   it('logout 清除所有状态', async () => {
@@ -60,6 +65,7 @@ describe('useUserStore', () => {
     expect(store.roles).toEqual([])
     expect(store.permissions).toEqual([])
     expect(store.menus).toEqual([])
+    expect(store.enabledModuleCodes).toEqual(new Set())
     expect(store.routesLoaded).toBe(false)
     expect(localStorage.getItem('token')).toBeNull()
   })

@@ -221,11 +221,12 @@ INSERT INTO sys_menu (id, parent_id, name, path, component, icon, sort, type, pe
 (1700, 1000, '参数管理', 'config', 'system/config/index', 'Tools', 7, 'C', 'system:config:list', 0, 0),
 (1800, 1000, '通知公告', 'notice', 'system/notice/index', 'Bell', 8, 'C', 'system:notice:list', 0, 0),
 (1900, 1000, '文件管理', 'file', 'system/file/index', 'Folder', 9, 'C', 'system:file:list', 0, 0),
+(1960, 1000, '邮件测试', 'mail', 'system/mail/index', 'Message', 11, 'C', 'system:mail:test', 0, 0),
 (2000, 0, '系统监控', '/monitor', NULL, 'Monitor', 20, 'M', NULL, 1, 0),
 (2100, 2000, '操作日志', 'oper-log', NULL, 'Document', 1, 'C', 'system:operlog:list', 1, 0),
 (2200, 2000, '登录日志', 'login-log', NULL, 'Tickets', 2, 'C', 'system:loginlog:list', 1, 0),
 (2300, 2000, '在线用户', 'online', NULL, 'Connection', 3, 'C', 'system:online:list', 1, 0),
-(2400, 2000, '定时任务', 'job', NULL, 'Timer', 4, 'C', 'system:job:list', 1, 0),
+(2400, 2000, '定时任务', 'job', 'job/index', 'Timer', 4, 'C', 'system:job:list', 0, 0),
 (2450, 2000, '运行状态', 'state', 'system/monitor/index', 'Cpu', 5, 'C', 'system:monitor:query', 0, 0)
 ON CONFLICT (id) DO NOTHING;
 
@@ -303,3 +304,32 @@ SELECT setval(pg_get_serial_sequence('sys_menu', 'id'), COALESCE((SELECT MAX(id)
 SELECT setval(pg_get_serial_sequence('sys_dict_type', 'id'), COALESCE((SELECT MAX(id) FROM sys_dict_type), 1), true);
 SELECT setval(pg_get_serial_sequence('sys_dict_data', 'id'), COALESCE((SELECT MAX(id) FROM sys_dict_data), 1), true);
 SELECT setval(pg_get_serial_sequence('sys_config', 'id'), COALESCE((SELECT MAX(id) FROM sys_config), 1), true);
+-- 客户端管理 v0：业务表、菜单和按钮权限。
+CREATE TABLE IF NOT EXISTS sys_client (
+    id BIGSERIAL PRIMARY KEY,
+    client_id VARCHAR(64) NOT NULL UNIQUE,
+    client_name VARCHAR(128) NOT NULL,
+    login_type VARCHAR(32) NOT NULL DEFAULT 'account',
+    token_timeout INTEGER NOT NULL DEFAULT 7200,
+    status SMALLINT NOT NULL DEFAULT 0,
+    remark VARCHAR(500),
+    create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO sys_menu (id, parent_id, name, path, component, icon, sort, type, perm, visible, status) VALUES
+    (1800, 1000, '客户端管理', 'client', 'system/client/index', 'Connection', 8, 'C', 'system:client:list', 0, 0)
+ON CONFLICT (id) DO UPDATE SET
+    name = EXCLUDED.name, path = EXCLUDED.path, component = EXCLUDED.component,
+    icon = EXCLUDED.icon, sort = EXCLUDED.sort, perm = EXCLUDED.perm;
+
+INSERT INTO sys_menu (id, parent_id, name, sort, type, perm, visible, status) VALUES
+    (1810, 1800, '查询', 1810, 'F', 'system:client:query', 0, 0),
+    (1811, 1800, '新增', 1811, 'F', 'system:client:add', 0, 0),
+    (1812, 1800, '修改', 1812, 'F', 'system:client:edit', 0, 0),
+    (1813, 1800, '删除', 1813, 'F', 'system:client:remove', 0, 0)
+ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, perm = EXCLUDED.perm;
+
+INSERT INTO sys_role_menu (role_id, menu_id)
+SELECT 1, menu.id FROM sys_menu menu WHERE menu.id IN (1800, 1810, 1811, 1812, 1813)
+ON CONFLICT DO NOTHING;

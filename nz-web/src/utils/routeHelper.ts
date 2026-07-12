@@ -1,4 +1,5 @@
 import type { RouteRecordRaw } from 'vue-router'
+import { getModuleCodeForComponent } from '@/core/modules/registry'
 
 export interface MenuMeta {
   title?: string
@@ -71,9 +72,13 @@ export function flattenRouteMenus(
   })
 }
 
-export function buildDynamicChildrenRoutes(menuList: MenuRouteItem[]): RouteRecordRaw[] {
+export function buildDynamicChildrenRoutes(menuList: MenuRouteItem[], enabledModuleCodes?: Set<string>): RouteRecordRaw[] {
   return flattenRouteMenus(menuList)
     .map(({ menu, fullPath }) => {
+      const moduleCode = getModuleCodeForComponent(menu.component)
+      if (moduleCode && enabledModuleCodes && !enabledModuleCodes.has(moduleCode)) {
+        return null
+      }
       const componentPath = normalizeComponentPath(menu.component)
       const component = viewModules[componentPath]
       if (!component) {
