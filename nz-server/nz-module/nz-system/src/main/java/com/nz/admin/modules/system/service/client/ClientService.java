@@ -14,6 +14,8 @@ public interface ClientService {
 
     ClientDO getRequired(Long id);
 
+    ClientDO getEnabledForLogin(String clientId, String loginType);
+
     Long create(ClientCreateRequest request);
 
     void update(ClientUpdateRequest request);

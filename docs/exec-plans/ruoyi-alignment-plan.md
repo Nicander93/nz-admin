@@ -26,12 +26,12 @@
 - 前端页面：Vue3、Element Plus、Pinia、动态路由、hooks 风格 CRUD 页面。
 - 测试基础：后端和前端已有部分单元测试、E2E 测试。
 
-主要差距：
+本文起草时的主要差距（完成状态以后文勾选为准）：
 
 - 初始化 SQL 只有建表，缺少管理员、角色、菜单、权限、字典等种子数据。
 - 项目还没有形成完整的开箱即用启动链路。
 - 定时任务还不是完整在线调度体系。
-- 代码生成器尚未实现。
+- 代码生成器当时尚未实现，后续切片已完成。
 - 监控、健康检查、接口文档入口、运行状态页还不完整。
 - README、docs、部分中文注释和提示存在编码显示问题。
 
@@ -157,15 +157,27 @@
 - [x] E2E：登录后进入工作台可见关键区块。
 - [x] GitHub Actions：`nz-server` 编译、`nz-web` pnpm install + test + build。
 
-**本轮结论**：P2.0–P2.5 已落地（Redis 缓存监控与代码生成器仍按上文延后）。新增 `GET /api/system/workbench/snapshot`、`GET /api/system/monitor/summary`、前端工作台与运行状态页、`docs/crud-paradigm.md` / `docs/module-development-guide.md`、`.github/workflows/ci.yml`；旧库可执行 `nz-app/src/main/resources/db/upgrade-p2-menus.sql` 补菜单与权限。
+**本轮结论**：P2.0–P2.5 已落地；该轮未包含 Redis 缓存监控和代码生成器，生成器已在后续切片完成。新增 `GET /api/system/workbench/snapshot`、`GET /api/system/monitor/summary`、前端工作台与运行状态页、`docs/crud-paradigm.md` / `docs/module-development-guide.md`、`.github/workflows/ci.yml`；旧库可执行 `nz-app/src/main/resources/db/upgrade-p2-menus.sql` 补菜单与权限。
 
-### 延后：轻量代码生成器
+### 轻量代码生成器（已完成）
 
-- [ ] 读取数据库表结构。
-- [ ] 生成后端 DO、Query、Mapper、Service、Controller。
-- [ ] 生成前端 API、hooks、列表页、表单弹窗。
-- [ ] 生成菜单和按钮权限 SQL。
-- [ ] 支持预览和下载。
+- [x] 读取 PostgreSQL 表结构。
+- [x] 生成后端 DO、Query、DTO、VO、Convert、Mapper、Service、Controller。
+- [x] 生成前端 API、hooks、列表页、表单弹窗。
+- [x] 生成菜单和按钮权限 SQL。
+- [x] 支持预览和 ZIP 下载。
+
+**生成器切片结论**：新增独立 `nz-generator` 模块、前端 `generator` 模块清单、V8 菜单迁移和 14 份外置模板。首版仅支持单主键表，不直接写工作区。
+
+### 项目 CLI（已完成）
+
+- [x] 环境、迁移和模块装配检查。
+- [x] 模块创建、启用和禁用。
+- [x] 生成器 ZIP 下载入口。
+- [x] 项目标识替换、自动备份和回滚。
+- [x] 开发、构建和全量验证命令。
+
+**CLI 切片结论**：根目录新增 `nz` / `nz.cmd`，实现位于 `tools/nz-cli`。19 项 CLI 测试通过；CLI 生成模块已在完整临时副本中通过 Maven、Flyway、Vue 类型检查和前端注册测试。
 
 ## 推荐实施顺序
 
@@ -184,3 +196,46 @@
 - 前端至少执行一次 `pnpm test` 和 `pnpm build`。
 - 涉及登录、菜单、权限、核心页面时，补一次 E2E 或手动联调记录。
 - 每完成一个阶段，在本文档中勾选对应事项，并补充关键结论。
+
+### 在线用户管理（已完成）
+
+- [x] 登录时记录租户、用户、部门、IP、登录时间和 User-Agent。
+- [x] 支持按用户名和登录 IP 查询在线会话。
+- [x] 默认租户可查看全部会话，普通租户只能访问本租户会话。
+- [x] 强制退出使用独立 `system:online:force` 权限，并阻止跨租户操作。
+- [x] 前端页面、动态路由、菜单按钮和 V12 Flyway 迁移形成闭环。
+- [x] 会话适配器、租户隔离、菜单初始化和迁移资源均有自动化测试。
+
+**切片结论**：在线用户不再只是一个空壳接口。新登录会话会保存页面需要的元数据，旧会话需重新登录后才会补齐；升级已有数据库时执行 V12 或对应的 `upgrade-p12-online-user-management.sql`。
+
+### 实时通信（已完成）
+
+- [x] 新增独立 `nz-starter-realtime`，同时支持 SSE 与原生 WebSocket。
+- [x] 连接使用 30 秒一次性票据，登录令牌不进入长连接 URL。
+- [x] 支持用户定向、租户定向和当前节点广播，用户定向同时匹配租户 ID。
+- [x] 前端支持切换传输方式、查看当前节点连接数和接收测试消息。
+- [x] Vite 与 Nginx 分别补齐开发、生产代理，V13 注册菜单和按钮权限。
+- [x] 票据、连接注册、自动装配、system 服务和前端连接均有单元测试。
+
+**切片结论**：单节点实时通信闭环已经可用。当前连接和票据保存在 JVM 内，多节点部署还需要共享票据和消息总线。
+
+### 短信管理（已完成）
+
+- [x] 新增独立 `nz-starter-sms`，提供统一网关和可插拔供应商协议。
+- [x] 内置本地日志与通用 Webhook 渠道，支持业务注册自定义 provider。
+- [x] 渠道、模板、发送记录和测试发送形成后端管理闭环。
+- [x] 前端页面、菜单按钮、租户表范围和 V14 迁移形成闭环。
+- [x] 渠道密钥不回传明文，发送记录手机号按权限链路脱敏。
+- [x] starter、system 服务、菜单初始化、迁移资源和前端 hooks 均有测试。
+
+### 短信验证码登录（已完成）
+
+- [x] 验证码按租户和手机号隔离，具备有效期、重发间隔、尝试次数和一次性消费约束。
+- [x] 账号与短信登录分别绑定 `nz-web-account`、`nz-web-sms` 客户端。
+- [x] 登录页支持双模式，前后端都提交并校验客户端和登录类型。
+- [x] V15 增加手机号检索摘要、客户端种子和授权类型约束。
+- [x] 后端服务、控制器、用户摘要回填、迁移和前端表单均有测试。
+
+**切片结论**：单节点短信认证闭环已经可用。验证码仍存放在 JVM 内存中，多节点共享需要 Redis 实现；供应商专用 SDK 仍需按实际供应商接入。
+
+项目仍未完整对齐 RuoYi-Vue-Plus。工作流、第三方登录、Redis 分布式能力、动态数据源、国际化和更完整的可观测性仍在后续范围。

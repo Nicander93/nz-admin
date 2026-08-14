@@ -1,15 +1,20 @@
 package com.nz.admin.modules.system.service.permission;
 
 import cn.hutool.core.util.StrUtil;
+import com.nz.admin.framework.tenant.config.TenantProperties;
+import com.nz.admin.framework.tenant.core.TenantContextHolder;
 import com.nz.admin.modules.system.entity.dataobject.menu.MenuDO;
 import com.nz.admin.modules.system.entity.dataobject.role.RoleDO;
 import com.nz.admin.modules.system.entity.dataobject.role.RoleMenuDO;
+import com.nz.admin.modules.system.entity.dataobject.tenant.TenantDO;
 import com.nz.admin.modules.system.entity.dataobject.user.UserRoleDO;
 import com.nz.admin.modules.system.mapper.menu.MenuMapper;
 import com.nz.admin.modules.system.mapper.role.RoleMapper;
 import com.nz.admin.modules.system.mapper.role.RoleMenuMapper;
+import com.nz.admin.modules.system.mapper.tenant.TenantMapper;
 import com.nz.admin.modules.system.mapper.user.UserRoleMapper;
 import com.nz.admin.modules.system.service.permission.PermissionService;
+import com.nz.admin.modules.system.service.tenant.TenantPackageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +36,12 @@ public class PermissionServiceImpl implements PermissionService {
     private RoleMenuMapper roleMenuMapper;
     @Autowired
     private MenuMapper menuMapper;
+    @Autowired
+    private TenantMapper tenantMapper;
+    @Autowired
+    private TenantPackageService tenantPackageService;
+    @Autowired
+    private TenantProperties tenantProperties;
 
     /**
      * 按用户 id 拿角色标识集合。
@@ -61,6 +72,7 @@ public class PermissionServiceImpl implements PermissionService {
                     .forEach(menuIds::add);
         }
         if (menuIds.isEmpty()) return Collections.emptySet();
+        retainMenusWithinTenantPackage(menuIds);
 
         return menuIds.stream()
                 .map(menuMapper::selectById)
@@ -85,6 +97,7 @@ public class PermissionServiceImpl implements PermissionService {
                     .forEach(menuIds::add);
         }
         if (menuIds.isEmpty()) return Collections.emptyList();
+        retainMenusWithinTenantPackage(menuIds);
 
         return menuMapper.selectBatchIds(menuIds).stream()
                 .filter(Objects::nonNull)
@@ -116,5 +129,18 @@ public class PermissionServiceImpl implements PermissionService {
             ur.setRoleId(roleId);
             userRoleMapper.insert(ur);
         }
+    }
+
+    private void retainMenusWithinTenantPackage(Set<Long> menuIds) {
+        Long tenantId = TenantContextHolder.getTenantIdOrNull();
+        if (tenantId == null || tenantProperties.getDefaultTenantId().equals(tenantId)) {
+            return;
+        }
+        TenantDO tenant = tenantMapper.selectById(tenantId);
+        if (tenant == null) {
+            menuIds.clear();
+            return;
+        }
+        menuIds.retainAll(tenantPackageService.getMenuIds(tenant.getPackageId()));
     }
 }

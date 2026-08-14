@@ -16,6 +16,7 @@ import static com.nz.admin.framework.test.core.util.RandomPojoUtils.randomPojo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Import(NzSystemTestApplication.class)
 class UserServiceImplTest extends BaseDbUnitTest {
@@ -74,6 +75,22 @@ class UserServiceImplTest extends BaseDbUnitTest {
 
         assertNotNull(result);
         assertEquals(user.getId(), result.getId());
+    }
+
+    @Test
+    void testGetByPhone_backfillsSearchHash() {
+        UserDO user = randomPojo(UserDO.class)
+                .setId(null)
+                .setUsername("phone_login_user")
+                .setPhone("13800138000")
+                .setPhoneHash(null);
+        userMapper.insert(user);
+
+        UserDO result = userService.getByPhone("13800138000");
+
+        assertNotNull(result);
+        assertEquals(user.getId(), result.getId());
+        assertNotNull(userMapper.selectById(user.getId()).getPhoneHash());
     }
 
     @Test
@@ -139,5 +156,10 @@ class UserServiceImplTest extends BaseDbUnitTest {
         long count = userService.count();
 
         assertEquals(2L, count);
+    }
+
+    @Test
+    void testReEncryptContactsRequiresEnabledCipher() {
+        assertThrows(com.nz.admin.common.core.BusinessException.class, userService::reEncryptContacts);
     }
 }

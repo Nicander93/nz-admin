@@ -29,4 +29,9 @@ public interface FileStorageService {
      * 获取文件访问 URL。
      */
     String getFileUrl(Long fileId);
+
+    /**
+     * 检查当前存储配置和目标位置是否可用。
+     */
+    void checkAvailable();
 }

@@ -18,5 +18,8 @@
     <modules>
         <module>nz-system</module>
         <module>nz-job</module>
+        <module>nz-demo</module>
+        <module>nz-generator</module>
+        <module>nz-workflow</module>
     </modules>
 </project>

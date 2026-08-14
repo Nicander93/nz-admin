@@ -1,6 +1,7 @@
 package com.nz.admin.modules.system.config;
 
 import cn.hutool.crypto.digest.BCrypt;
+import com.nz.admin.framework.tenant.core.TenantContextHolder;
 import com.nz.admin.modules.system.entity.dataobject.config.ConfigDO;
 import com.nz.admin.modules.system.entity.dataobject.dept.DeptDO;
 import com.nz.admin.modules.system.entity.dataobject.dept.PostDO;
@@ -10,7 +11,9 @@ import com.nz.admin.modules.job.entity.dataobject.job.JobDO;
 import com.nz.admin.modules.system.entity.dataobject.menu.MenuDO;
 import com.nz.admin.modules.system.entity.dataobject.notice.NoticeDO;
 import com.nz.admin.modules.system.entity.dataobject.role.RoleDO;
+import com.nz.admin.modules.system.entity.dataobject.tenant.TenantDO;
 import com.nz.admin.modules.system.entity.dataobject.user.UserDO;
+import com.nz.admin.modules.system.mapper.tenant.TenantMapper;
 import com.nz.admin.modules.system.entity.query.dict.DictTypeQuery;
 import com.nz.admin.modules.system.service.config.ConfigService;
 import com.nz.admin.modules.system.service.dept.DeptService;
@@ -25,10 +28,13 @@ import com.nz.admin.modules.job.service.job.JobService;
 import com.nz.admin.modules.system.service.user.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -61,6 +67,13 @@ public class DataInitializer implements CommandLineRunner {
     @Autowired
     private PermissionService permissionService;
 
+    @Autowired
+    private TenantMapper tenantMapper;
+
+    @Value("${nz.modules.system.initial-admin-password:admin123}")
+    private String initialAdminPassword = "admin123";
+
+
     @Override
     public void run(String... args) {
         log.info("初始化基础数据...");
@@ -75,22 +88,37 @@ public class DataInitializer implements CommandLineRunner {
         ensureNotice();
         ensureJob();
 
-        // 分配管理员所有菜单权限
+        // 明文联系方式查看必须显式授权，初始化时不自动开放。
         var allMenus = menuService.listAll();
-        roleService.assignMenus(adminRole.getId(), allMenus.stream().map(MenuDO::getId).toList());
+        roleService.assignMenus(adminRole.getId(), allMenus.stream()
+                .filter(menu -> !"system:user:contact:plain".equals(menu.getPerm()))
+                .map(MenuDO::getId)
+                .toList());
 
         // 分配管理员角色
         permissionService.assignUserRoles(admin.getId(), java.util.List.of(adminRole.getId()));
 
-        // Initialize Quartz scheduler with all active jobs
-        var allJobs = jobService.listPage(1, 200, null, null, null).getRecords();
+        initializeSchedulerForActiveTenants();
+
+        log.info("初始化完成，管理员账号为 admin");
+    }
+
+    private void initializeSchedulerForActiveTenants() {
+        List<JobDO> allJobs = new ArrayList<>();
+        List<TenantDO> tenants = tenantMapper.selectList(null).stream()
+                .filter(tenant -> tenant.getStatus() == null || tenant.getStatus() == 0)
+                .filter(tenant -> tenant.getExpireTime() == null
+                        || tenant.getExpireTime().isAfter(LocalDateTime.now()))
+                .toList();
+        for (TenantDO tenant : tenants) {
+            allJobs.addAll(TenantContextHolder.callWithTenantId(tenant.getId(),
+                    () -> jobService.listPage(1, 10000, null, null, null).getRecords()));
+        }
         try {
             jobService.initializeScheduler(allJobs);
         } catch (Exception e) {
             log.error("初始化 Quartz 调度失败", e);
         }
-
-        log.info("初始化完成: admin / admin123");
     }
 
     private DeptDO ensureRootDept() {
@@ -116,7 +144,7 @@ public class DataInitializer implements CommandLineRunner {
         admin = new UserDO();
         admin.setDeptId(rootDept.getId());
         admin.setUsername("admin");
-        admin.setPassword(BCrypt.hashpw("admin123"));
+        admin.setPassword(BCrypt.hashpw(initialAdminPassword));
         admin.setNickname("管理员");
         admin.setStatus(0);
         userService.save(admin);
@@ -141,7 +169,9 @@ public class DataInitializer implements CommandLineRunner {
 
     private void ensureMenus() {
         MenuDO systemDir = ensureMenu(0L, "系统管理", "/system", null, "Setting", 0, "M", null, 0);
-        ensureCrudMenu(systemDir.getId(), "用户管理", "user", "system/user/index", "User", 1, "system:user", true);
+        MenuDO userMenu = ensureCrudMenu(systemDir.getId(), "用户管理", "user", "system/user/index", "User", 1, "system:user", true);
+        ensureMenu(userMenu.getId(), "查看明文联系方式", null, null, null, 1115, "F", "system:user:contact:plain", 0);
+        ensureMenu(userMenu.getId(), "联系方式重加密", null, null, null, 1116, "F", "system:user:contact:encrypt", 0);
         ensureCrudMenu(systemDir.getId(), "角色管理", "role", "system/role/index", "UserFilled", 2, "system:role", true);
         ensureCrudMenu(systemDir.getId(), "菜单管理", "menu", "system/menu/index", "Menu", 3, "system:menu", true);
         ensureCrudMenu(systemDir.getId(), "部门管理", "dept", "system/dept/index", "OfficeBuilding", 4, "system:dept", true);
@@ -151,19 +181,52 @@ public class DataInitializer implements CommandLineRunner {
         ensureCrudMenu(systemDir.getId(), "通知公告", "notice", "system/notice/index", "Bell", 8, "system:notice", true);
         ensureCrudMenu(systemDir.getId(), "文件管理", "file", "system/file/index", "Folder", 9, "system:file", false);
         ensureCrudMenu(systemDir.getId(), "\u5BA2\u6237\u7AEF\u7BA1\u7406", "client", "system/client/index", "Connection", 10, "system:client", true);
-        ensureMenu(systemDir.getId(), "\u90AE\u4EF6\u6D4B\u8BD5", "mail", "system/mail/index", "Message", 11, "C", "system:mail:test", 0);
+        MenuDO fileConfigMenu = ensureCrudMenu(systemDir.getId(), "文件配置", "file-config", "system/file-config/index", "SetUp", 11, "system:fileconfig", true);
+        ensureMenu(fileConfigMenu.getId(), "测试存储连接", null, null, null, 1975, "F", "system:fileconfig:test", 0);
+        ensureMenu(systemDir.getId(), "\u90AE\u4EF6\u6D4B\u8BD5", "mail", "system/mail/index", "Message", 12, "C", "system:mail:test", 0);
+        MenuDO smsMenu = ensureCrudMenu(systemDir.getId(), "短信管理", "sms", "system/sms/index", "ChatDotRound", 13, "system:sms", true);
+        ensureMenu(smsMenu.getId(), "测试发送", null, null, null, 6, "F", "system:sms:send", 0);
+        ensureCrudMenu(systemDir.getId(), "租户套餐", "tenant-package", "system/tenant-package/index", "Tickets", 14, "system:tenantpackage", true);
+        ensureCrudMenu(systemDir.getId(), "租户管理", "tenant", "system/tenant/index", "OfficeBuilding", 15, "system:tenant", true);
+        MenuDO socialMenu = ensureMenu(systemDir.getId(), "第三方账号", "social",
+                "system/social/index", "Link", 16, "C", "system:social:list", 0);
+        ensureMenu(socialMenu.getId(), "绑定账号", null, null, null, 1, "F", "system:social:bind", 0);
+        ensureMenu(socialMenu.getId(), "解除绑定", null, null, null, 2, "F", "system:social:remove", 0);
+
+        MenuDO messageMenu = ensureMenu(systemDir.getId(), "消息中心", "message",
+                "system/message/index", "Bell", 17, "C", "system:message:list", 0);
+        ensureMenu(messageMenu.getId(), "查看详情", null, null, null, 1, "F", "system:message:query", 0);
+        ensureMenu(messageMenu.getId(), "标记已读", null, null, null, 2, "F", "system:message:read", 0);
+        ensureMenu(messageMenu.getId(), "删除消息", null, null, null, 3, "F", "system:message:remove", 0);
+        ensureMenu(messageMenu.getId(), "发送消息", null, null, null, 4, "F", "system:message:send", 0);
 
         MenuDO monitorDir = ensureMenu(0L, "系统监控", "/monitor", null, "Monitor", 20, "M", null, 1);
         ensureCrudMenu(monitorDir.getId(), "操作日志", "oper-log", null, "Document", 1, "system:operlog", false);
         ensureCrudMenu(monitorDir.getId(), "登录日志", "login-log", null, "Tickets", 2, "system:loginlog", false);
-        ensureCrudMenu(monitorDir.getId(), "在线用户", "online", null, "Connection", 3, "system:online", false);
-        ensureCrudMenu(monitorDir.getId(), "定时任务", "job", "job/index", "Timer", 4, "system:job", true);
+        MenuDO onlineMenu = ensureMenu(
+                monitorDir.getId(), "在线用户", "online", "system/online/index",
+                "Connection", 3, "C", "system:online:list", 0
+        );
+        ensureMenu(
+                onlineMenu.getId(), "强制退出", null, null,
+                null, 2311, "F", "system:online:force", 0
+        );
+        MenuDO realtimeMenu = ensureMenu(
+                monitorDir.getId(), "实时通信", "realtime", "system/realtime/index",
+                "Promotion", 4, "C", "system:realtime:view", 0
+        );
+        ensureMenu(
+                realtimeMenu.getId(), "发送测试消息", null, null,
+                null, 1, "F", "system:realtime:send", 0
+        );
+        ensureCrudMenu(monitorDir.getId(), "定时任务", "job", "job/index", "Timer", 5, "system:job", true);
     }
 
-    private void ensureCrudMenu(Long parentId, String name, String path, String component, String icon, int sort, String permPrefix, boolean withMutationButtons) {
+    private MenuDO ensureCrudMenu(Long parentId, String name, String path, String component, String icon, int sort, String permPrefix, boolean withMutationButtons) {
         int visible = component == null ? 1 : 0;
         MenuDO menu = ensureMenu(parentId, name, path, component, icon, sort, "C", permPrefix + ":list", visible);
         saveButtons(menu.getId(), permPrefix, sort + 1, withMutationButtons);
+        return menu;
     }
 
     private MenuDO ensureMenu(Long parentId, String name, String path, String component, String icon, int sort, String type, String perm, int visible) {
@@ -261,7 +324,7 @@ public class DataInitializer implements CommandLineRunner {
         if (exists) return;
         NoticeDO notice = new NoticeDO();
         notice.setTitle("欢迎使用 nz-admin");
-        notice.setContent("系统初始化完成，可使用 admin / admin123 登录。");
+        notice.setContent("系统初始化完成，请使用部署时配置的管理员密码登录。");
         notice.setType(2);
         notice.setStatus(0);
         notice.setRemark("系统内置公告");

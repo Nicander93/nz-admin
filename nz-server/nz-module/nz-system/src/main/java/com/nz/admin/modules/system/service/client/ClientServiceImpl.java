@@ -38,6 +38,20 @@ public class ClientServiceImpl extends ServiceImpl<ClientMapper, ClientDO> imple
     }
 
     @Override
+    public ClientDO getEnabledForLogin(String clientId, String loginType) {
+        ClientDO client = baseMapper.selectOne(new LambdaQueryWrapper<ClientDO>()
+                .eq(ClientDO::getClientId, clientId));
+        if (client == null || !Integer.valueOf(0).equals(client.getStatus())
+                || !loginType.equalsIgnoreCase(client.getLoginType())) {
+            throw new BusinessException("客户端未启用或不支持当前登录方式");
+        }
+        if (client.getTokenTimeout() == null || client.getTokenTimeout() < 60) {
+            throw new BusinessException("客户端 Token 有效期配置不正确");
+        }
+        return client;
+    }
+
+    @Override
     public Long create(ClientCreateRequest request) {
         ensureClientIdUnique(request.getClientId(), null);
         ClientDO client = ClientConvert.toDO(request);

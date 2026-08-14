@@ -1,4 +1,4 @@
-import axios, { type AxiosRequestConfig } from 'axios'
+import axios, { type AxiosRequestConfig, type AxiosResponse } from 'axios'
 import { ElMessage } from 'element-plus'
 import router from '@/router'
 import type { R } from './types'
@@ -16,7 +16,22 @@ instance.interceptors.request.use((config) => {
 })
 
 instance.interceptors.response.use(
-  (response) => {
+  async (response) => {
+    if (response.config.responseType === 'blob') {
+      const contentType = String(response.headers['content-type'] ?? '')
+      if (response.data instanceof Blob && contentType.includes('application/json')) {
+        const res = JSON.parse(await response.data.text()) as R
+        if (res.code !== 200) {
+          ElMessage.error(res.msg || '请求失败')
+          if (res.code === 401) {
+            localStorage.removeItem('token')
+            router.push('/login')
+          }
+          return Promise.reject(res)
+        }
+      }
+      return response
+    }
     const res = response.data
     if (res.code !== 200) {
       ElMessage.error(res.msg || '请求失败')
@@ -46,6 +61,12 @@ const request = {
   },
   delete<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<R<T>> {
     return instance.delete(url, config) as unknown as Promise<R<T>>
+  },
+  download<T = Blob>(url: string, data?: unknown): Promise<AxiosResponse<T>> {
+    return instance.post(url, data, { responseType: 'blob' }) as Promise<AxiosResponse<T>>
+  },
+  getBlob<T = Blob>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
+    return instance.get(url, { ...config, responseType: 'blob' }) as Promise<AxiosResponse<T>>
   },
 }
 

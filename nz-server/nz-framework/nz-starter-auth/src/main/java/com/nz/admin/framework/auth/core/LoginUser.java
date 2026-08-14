@@ -12,6 +12,7 @@ import java.util.Set;
 public class LoginUser {
 
     private Long userId;
+    private Long tenantId;
     private String username;
     private Set<String> permissions = new LinkedHashSet<>();
     private Set<String> roles = new LinkedHashSet<>();

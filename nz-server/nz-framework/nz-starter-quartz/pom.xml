@@ -29,6 +29,10 @@
             <artifactId>nz-common-job</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.nz</groupId>
+            <artifactId>nz-starter-tenant</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>

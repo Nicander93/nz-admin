@@ -1,65 +1,111 @@
 package com.nz.admin.modules.system.controller.auth;
 
 import cn.dev33.satoken.stp.StpUtil;
-import cn.hutool.crypto.digest.BCrypt;
+import cn.hutool.core.util.StrUtil;
 import com.nz.admin.common.core.R;
 import com.nz.admin.framework.protection.annotation.RateLimit;
 import com.nz.admin.framework.protection.annotation.RepeatSubmit;
-import com.nz.admin.modules.system.entity.dataobject.log.LoginLogDO;
+import com.nz.admin.framework.realtime.core.RealtimeConnectionManager;
+import com.nz.admin.framework.realtime.core.RealtimeTicketService;
+import com.nz.admin.framework.tenant.core.TenantContextHolder;
 import com.nz.admin.modules.system.entity.dataobject.menu.MenuDO;
+import com.nz.admin.modules.system.entity.dataobject.tenant.TenantDO;
 import com.nz.admin.modules.system.entity.dataobject.user.UserDO;
-import com.nz.admin.modules.system.service.log.LoginLogService;
+import com.nz.admin.modules.system.entity.dto.auth.SmsCodeSendRequest;
+import com.nz.admin.modules.system.entity.dto.auth.SmsLoginRequest;
+import com.nz.admin.modules.system.service.auth.AuthenticationService;
 import com.nz.admin.modules.system.service.permission.PermissionService;
+import com.nz.admin.modules.system.service.tenant.TenantService;
 import com.nz.admin.modules.system.service.user.UserService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.*;
 
+/** 统一登录、退出和当前用户信息接口。 */
 @RestController
 @RequestMapping("/api/auth")
 public class LoginController {
 
     @Autowired
+    private AuthenticationService authenticationService;
+    @Autowired
+    private TenantService tenantService;
+    @Autowired
     private UserService userService;
     @Autowired
     private PermissionService permissionService;
-    @Autowired
-    private LoginLogService loginLogService;
+    @Autowired(required = false)
+    private RealtimeConnectionManager realtimeConnectionManager;
+    @Autowired(required = false)
+    private RealtimeTicketService realtimeTicketService;
 
-    public record LoginBody(String username, String password) {}
+    public record LoginBody(
+            String tenantCode,
+            String clientId,
+            @NotBlank(message = "用户名不能为空") String username,
+            @NotBlank(message = "密码不能为空") String password
+    ) {
+    }
 
-    @RepeatSubmit(intervalSeconds = 1, key = "auth:login")
-    @RateLimit(permits = 5, windowSeconds = 60, key = "auth:login")
+    @RepeatSubmit(intervalSeconds = 1)
+    @RateLimit(permits = 5, windowSeconds = 60)
     @PostMapping("/login")
-    public R<String> login(@RequestBody LoginBody body, HttpServletRequest request) {
-        UserDO user = userService.getByUsername(body.username());
-        if (user == null || !BCrypt.checkpw(body.password(), user.getPassword())) {
-            saveLoginFail(body.username(), null, request, "用户名或密码错误");
-            return R.fail("用户名或密码错误");
-        }
-        if (user.getStatus() != null && user.getStatus() != 0) {
-            saveLoginFail(body.username(), user.getId(), request, "账号已被禁用");
-            return R.fail("账号已被禁用");
-        }
-        StpUtil.login(user.getId());
-        LoginLogDO loginLog = new LoginLogDO();
-        loginLog.setUserId(user.getId());
-        loginLog.setUsername(user.getUsername());
-        loginLog.setIp(getClientIp(request));
-        loginLog.setStatus(0);
-        loginLog.setMsg("登录成功");
-        loginLog.setLoginTime(LocalDateTime.now());
-        loginLogService.saveAsync(loginLog);
-        return R.ok(StpUtil.getTokenValue());
+    public R<String> login(@Valid @RequestBody LoginBody body, HttpServletRequest request) {
+        String tenantCode = StrUtil.blankToDefault(body.tenantCode(), "default");
+        TenantDO tenant = tenantService.validateLoginTenant(tenantCode);
+        return TenantContextHolder.callWithTenantId(tenant.getId(),
+                () -> R.ok(authenticationService.loginByPassword(
+                        tenant,
+                        StrUtil.blankToDefault(body.clientId(), "nz-web-account"),
+                        body.username(),
+                        body.password(),
+                        metadata(request))));
+    }
+
+    @RateLimit(permits = 5, windowSeconds = 60)
+    @PostMapping("/sms/code")
+    public R<Void> sendSmsCode(@Valid @RequestBody SmsCodeSendRequest body) {
+        TenantDO tenant = tenantService.validateLoginTenant(body.tenantCode());
+        return TenantContextHolder.callWithTenantId(tenant.getId(), () -> {
+            authenticationService.sendSmsLoginCode(body.clientId(), body.phone());
+            return R.ok();
+        });
+    }
+
+    @RepeatSubmit(intervalSeconds = 1)
+    @RateLimit(permits = 5, windowSeconds = 60)
+    @PostMapping("/sms/login")
+    public R<String> smsLogin(@Valid @RequestBody SmsLoginRequest body, HttpServletRequest request) {
+        TenantDO tenant = tenantService.validateLoginTenant(body.tenantCode());
+        return TenantContextHolder.callWithTenantId(tenant.getId(),
+                () -> R.ok(authenticationService.loginBySms(
+                        tenant, body.clientId(), body.phone(), body.code(), metadata(request))));
     }
 
     @PostMapping("/logout")
     public R<Void> logout() {
+        if (StpUtil.isLogin()) {
+            Long userId = StpUtil.getLoginIdAsLong();
+            Long tenantId = TenantContextHolder.getTenantIdOrNull();
+            if (tenantId != null) {
+                revokeRealtimeAccess(tenantId, userId);
+            }
+        }
         StpUtil.logout();
         return R.ok();
+    }
+
+    private void revokeRealtimeAccess(Long tenantId, Long userId) {
+        if (realtimeTicketService != null) {
+            realtimeTicketService.revokeUser(tenantId, userId);
+        }
+        if (realtimeConnectionManager != null) {
+            realtimeConnectionManager.disconnectUser(tenantId, userId);
+        }
     }
 
     @GetMapping("/info")
@@ -70,6 +116,7 @@ public class LoginController {
 
         Map<String, Object> result = new HashMap<>();
         result.put("user", user);
+        result.put("tenant", tenantService.getRequired(user.getTenantId()));
         result.put("roles", permissionService.getRoleKeysByUserId(userId));
         result.put("permissions", permissionService.getPermsByUserId(userId));
         return R.ok(result);
@@ -119,9 +166,13 @@ public class LoginController {
         return enabled && visible && notButton;
     }
 
-    /**
-     * 获取客户端真实 IP 地址。
-     */
+    private AuthenticationService.LoginMetadata metadata(HttpServletRequest request) {
+        return new AuthenticationService.LoginMetadata(
+                getClientIp(request),
+                StrUtil.blankToDefault(request.getHeader("User-Agent"), "unknown"));
+    }
+
+    /** 获取客户端真实 IP 地址。 */
     private String getClientIp(HttpServletRequest request) {
         String ip = request.getHeader("X-Forwarded-For");
         if (ip == null || ip.isBlank() || "unknown".equalsIgnoreCase(ip)) {
@@ -136,27 +187,13 @@ public class LoginController {
         if (ip == null || ip.isBlank() || "unknown".equalsIgnoreCase(ip)) {
             ip = request.getRemoteAddr();
         }
-        // 多个代理时，取第一个 IP
         if (ip != null && ip.contains(",")) {
             ip = ip.split(",")[0].trim();
         }
         return ip;
     }
 
-    private void saveLoginFail(String username, Long userId, HttpServletRequest request, String msg) {
-        LoginLogDO loginLog = new LoginLogDO();
-        loginLog.setUserId(userId);
-        loginLog.setUsername(username);
-        loginLog.setIp(getClientIp(request));
-        loginLog.setStatus(1);
-        loginLog.setMsg(msg);
-        loginLog.setLoginTime(LocalDateTime.now());
-        loginLogService.saveAsync(loginLog);
-    }
-
-    /**
-     * 登录态返回给前端的菜单节点。
-     */
+    /** 登录态返回给前端的菜单节点。 */
     public record UserMenu(
             Long id,
             String name,
@@ -165,5 +202,6 @@ public class LoginController {
             Long parentId,
             Map<String, Object> meta,
             List<UserMenu> children
-    ) {}
+    ) {
+    }
 }

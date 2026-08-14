@@ -10,7 +10,7 @@ import java.util.Map;
  * 部署期模块开关；修改后重启生效。
  */
 @Data
-@ConfigurationProperties(prefix = "nz.modules")
+@ConfigurationProperties(prefix = "nz")
 public class ModuleProperties {
 
     private Map<String, Switch> modules = new LinkedHashMap<>();

@@ -18,8 +18,12 @@ public class UserVO {
     private String nickname;
     private String email;
     private String phone;
+    private String emailMasked;
+    private String phoneMasked;
     private Long deptId;
     private Integer status;
+    private String gender;
+    private Long avatarFileId;
     private List<Long> postIds;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;

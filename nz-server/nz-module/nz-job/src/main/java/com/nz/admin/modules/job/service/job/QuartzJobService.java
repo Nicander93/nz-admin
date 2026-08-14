@@ -62,6 +62,7 @@ public class QuartzJobService {
     private QuartzJobDescriptor toDescriptor(JobDO job) {
         QuartzJobDescriptor descriptor = new QuartzJobDescriptor();
         descriptor.setJobId(job.getId());
+        descriptor.setTenantId(job.getTenantId());
         descriptor.setJobName(job.getJobName());
         descriptor.setJobGroup(job.getJobGroup());
         descriptor.setInvokeTarget(job.getInvokeTarget());

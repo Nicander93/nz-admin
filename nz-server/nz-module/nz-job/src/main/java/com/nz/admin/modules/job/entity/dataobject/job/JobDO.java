@@ -19,6 +19,7 @@ public class JobDO extends BaseEntity {
 
     @TableId(type = IdType.AUTO)
     private Long id;
+    private Long tenantId;
     /**
      * 任务名称。
      */

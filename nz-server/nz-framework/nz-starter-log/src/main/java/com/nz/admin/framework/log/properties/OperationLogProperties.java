@@ -13,5 +13,7 @@ import java.util.List;
 @ConfigurationProperties(prefix = "nz.log")
 public class OperationLogProperties {
 
-    private List<String> sensitiveFields = new ArrayList<>(List.of("password", "pwd", "token", "secret"));
+    private List<String> sensitiveFields = new ArrayList<>(List.of(
+            "password", "pwd", "token", "secret", "email", "phone", "contactPhone", "accessKeySecret"
+    ));
 }

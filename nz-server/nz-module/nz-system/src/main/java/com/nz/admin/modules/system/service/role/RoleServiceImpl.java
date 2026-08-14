@@ -1,12 +1,18 @@
 package com.nz.admin.modules.system.service.role;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.nz.admin.common.core.BusinessException;
+import com.nz.admin.framework.tenant.config.TenantProperties;
+import com.nz.admin.framework.tenant.core.TenantContextHolder;
 import com.nz.admin.modules.system.entity.dataobject.role.RoleDO;
 import com.nz.admin.modules.system.entity.dataobject.role.RoleMenuDO;
+import com.nz.admin.modules.system.entity.dataobject.tenant.TenantDO;
 import com.nz.admin.modules.system.mapper.role.RoleMapper;
 import com.nz.admin.modules.system.mapper.role.RoleMenuMapper;
+import com.nz.admin.modules.system.mapper.tenant.TenantMapper;
 import com.nz.admin.modules.system.entity.query.role.RoleQuery;
 import com.nz.admin.modules.system.service.role.RoleService;
+import com.nz.admin.modules.system.service.tenant.TenantPackageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +29,12 @@ public class RoleServiceImpl implements RoleService {
     private RoleMapper roleMapper;
     @Autowired
     private RoleMenuMapper roleMenuMapper;
+    @Autowired
+    private TenantMapper tenantMapper;
+    @Autowired
+    private TenantPackageService tenantPackageService;
+    @Autowired
+    private TenantProperties tenantProperties;
 
     /**
      * 按分页条件查角色列表。
@@ -90,12 +102,27 @@ public class RoleServiceImpl implements RoleService {
     @Transactional
     public void assignMenus(Long roleId, List<Long> menuIds) {
         // 这里走覆盖式分配：先清掉旧关联，再写入新关联。
+        checkMenusWithinTenantPackage(menuIds);
         roleMenuMapper.deleteByRoleId(roleId);
         for (Long menuId : menuIds) {
             RoleMenuDO rm = new RoleMenuDO();
             rm.setRoleId(roleId);
             rm.setMenuId(menuId);
             roleMenuMapper.insert(rm);
+        }
+    }
+    private void checkMenusWithinTenantPackage(List<Long> menuIds) {
+        Long tenantId = TenantContextHolder.getTenantIdOrNull();
+        if (tenantId == null || tenantProperties.getDefaultTenantId().equals(tenantId)) {
+            return;
+        }
+        TenantDO tenant = tenantMapper.selectById(tenantId);
+        if (tenant == null) {
+            throw new BusinessException("当前租户不存在");
+        }
+        var allowedMenuIds = tenantPackageService.getMenuIds(tenant.getPackageId());
+        if (menuIds != null && !allowedMenuIds.containsAll(menuIds)) {
+            throw new BusinessException("角色菜单超出租户套餐范围");
         }
     }
 }

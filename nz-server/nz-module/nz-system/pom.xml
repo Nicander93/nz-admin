@@ -35,11 +35,19 @@
         </dependency>
         <dependency>
             <groupId>com.nz</groupId>
+            <artifactId>nz-common-module</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.nz</groupId>
             <artifactId>nz-starter-web</artifactId>
         </dependency>
         <dependency>
             <groupId>com.nz</groupId>
             <artifactId>nz-starter-mybatis</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.nz</groupId>
+            <artifactId>nz-starter-tenant</artifactId>
         </dependency>
         <dependency>
             <groupId>com.nz</groupId>
@@ -52,6 +60,10 @@
         <dependency>
             <groupId>com.nz</groupId>
             <artifactId>nz-starter-file</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.nz</groupId>
+            <artifactId>nz-starter-encryption</artifactId>
         </dependency>
         <dependency>
             <groupId>com.nz</groupId>
@@ -72,6 +84,18 @@
         <dependency>
             <groupId>com.nz</groupId>
             <artifactId>nz-starter-mail</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.nz</groupId>
+            <artifactId>nz-starter-sms</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.nz</groupId>
+            <artifactId>nz-starter-social</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.nz</groupId>
+            <artifactId>nz-starter-realtime</artifactId>
         </dependency>
         <dependency>
             <groupId>cn.hutool</groupId>

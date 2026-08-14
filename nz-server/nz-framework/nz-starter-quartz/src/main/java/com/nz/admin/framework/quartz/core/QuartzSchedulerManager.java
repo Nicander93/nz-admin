@@ -20,6 +20,9 @@ public class QuartzSchedulerManager {
         JobDataMap jobDataMap = new JobDataMap();
         jobDataMap.put(QuartzConstants.JOB_ID, descriptor.getJobId());
         jobDataMap.put(QuartzConstants.INVOKE_TARGET, descriptor.getInvokeTarget());
+        if (descriptor.getTenantId() != null) {
+            jobDataMap.put(QuartzConstants.TENANT_ID, descriptor.getTenantId());
+        }
 
         Class<? extends Job> jobClass = (descriptor.getConcurrent() != null && descriptor.getConcurrent() == 1)
                 ? DisallowConcurrentQuartzJob.class

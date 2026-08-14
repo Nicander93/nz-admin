@@ -62,6 +62,7 @@ class OperationLogAspectTest {
         assertThat(event.getOperIp()).isEqualTo("10.0.0.1");
         assertThat(event.getOperParam()).doesNotContain("secret");
         assertThat(event.getJsonResult()).contains("ok");
+        assertThat(event.getJsonResult()).doesNotContain("admin@example.com", "13800138000");
         assertThat(event.getStatus()).isEqualTo(0);
     }
 
@@ -69,7 +70,10 @@ class OperationLogAspectTest {
 
         @Log(title = "演示接口", businessType = BusinessType.INSERT)
         public Map<String, Object> create(DemoRequest request) {
-            return Map.of("status", "ok", "password", "masked");
+            return Map.of(
+                    "status", "ok",
+                    "data", Map.of("password", "masked", "email", "admin@example.com", "phone", "13800138000")
+            );
         }
     }
 

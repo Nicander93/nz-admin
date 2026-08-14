@@ -1,11 +1,13 @@
 package com.nz.admin.modules.system.controller.user;
 
 import com.nz.admin.framework.auth.annotation.SaCheckPermission;
+import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.digest.BCrypt;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.nz.admin.common.core.PageResult;
 import com.nz.admin.common.core.R;
+import com.nz.admin.framework.encryption.mask.SensitiveDataUtils;
 import com.nz.admin.framework.log.annotation.BusinessType;
 import com.nz.admin.framework.log.annotation.Log;
 import com.nz.admin.modules.system.convert.user.UserConvert;
@@ -34,17 +36,31 @@ public class UserController {
     @GetMapping("/page")
     public R<PageResult<UserVO>> page(UserQuery query) {
         Page<UserDO> page = userService.listPage(query);
-        return R.ok(PageResult.of(page, UserConvert.INSTANCE.toVOList(page.getRecords())));
+        boolean revealContacts = Boolean.TRUE.equals(query.getRevealContacts());
+        checkContactPermission(revealContacts);
+        List<UserVO> records = UserConvert.INSTANCE.toVOList(page.getRecords());
+        records.forEach(user -> applyContactVisibility(user, revealContacts));
+        return R.ok(PageResult.of(page, records));
     }
 
     @SaCheckPermission("system:user:query")
     @Log(title = "用户管理", businessType = BusinessType.QUERY)
     @GetMapping("/{id}")
-    public R<UserVO> getById(@PathVariable Long id) {
+    public R<UserVO> getById(@PathVariable Long id,
+                            @RequestParam(defaultValue = "false") boolean revealContacts) {
+        checkContactPermission(revealContacts);
         UserDO user = userService.getById(id);
         UserVO vo = UserConvert.INSTANCE.toVO(user);
         vo.setPostIds(userService.getPostIdsByUserId(id));
+        applyContactVisibility(vo, revealContacts);
         return R.ok(vo);
+    }
+
+    @SaCheckPermission("system:user:contact:encrypt")
+    @Log(title = "用户联系方式重加密", businessType = BusinessType.UPDATE)
+    @PutMapping("/contacts/re-encrypt")
+    public R<Integer> reEncryptContacts() {
+        return R.ok(userService.reEncryptContacts());
     }
 
     @SaCheckPermission("system:user:add")
@@ -104,5 +120,20 @@ public class UserController {
     public R<Void> resetPassword(@PathVariable Long userId) {
         userService.resetPassword(userId);
         return R.ok();
+    }
+
+    private void checkContactPermission(boolean revealContacts) {
+        if (revealContacts) {
+            StpUtil.checkPermission("system:user:contact:plain");
+        }
+    }
+
+    private void applyContactVisibility(UserVO user, boolean revealContacts) {
+        user.setEmailMasked(SensitiveDataUtils.maskEmail(user.getEmail()));
+        user.setPhoneMasked(SensitiveDataUtils.maskPhone(user.getPhone()));
+        if (!revealContacts) {
+            user.setEmail(null);
+            user.setPhone(null);
+        }
     }
 }

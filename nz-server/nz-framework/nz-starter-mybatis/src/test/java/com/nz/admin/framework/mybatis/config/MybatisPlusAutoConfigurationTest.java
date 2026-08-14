@@ -3,7 +3,9 @@ package com.nz.admin.framework.mybatis.config;
 import com.baomidou.mybatisplus.annotation.DbType;
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
+import com.baomidou.mybatisplus.extension.plugins.inner.BlockAttackInnerInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
+import com.nz.admin.framework.mybatis.plugin.MybatisPlusInterceptorCustomizer;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -51,6 +53,18 @@ class MybatisPlusAutoConfigurationTest {
                 .run(context -> {
                     assertThat(context).hasSingleBean(MybatisPlusInterceptor.class);
                     assertThat(context.getBean(MybatisPlusInterceptor.class)).isSameAs(customInterceptor);
+                });
+    }
+
+    @Test
+    void shouldApplyCustomizersBeforePagination() {
+        contextRunner.withBean(MybatisPlusInterceptorCustomizer.class,
+                        () -> interceptor -> interceptor.addInnerInterceptor(new BlockAttackInnerInterceptor()))
+                .run(context -> {
+                    MybatisPlusInterceptor interceptor = context.getBean(MybatisPlusInterceptor.class);
+                    assertThat(interceptor.getInterceptors()).hasSize(2);
+                    assertThat(interceptor.getInterceptors().get(0)).isInstanceOf(BlockAttackInnerInterceptor.class);
+                    assertThat(interceptor.getInterceptors().get(1)).isInstanceOf(PaginationInnerInterceptor.class);
                 });
     }
 }

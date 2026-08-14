@@ -9,6 +9,7 @@ import lombok.Data;
 public class QuartzJobDescriptor {
 
     private Long jobId;
+    private Long tenantId;
     private String jobName;
     private String jobGroup;
     private String invokeTarget;

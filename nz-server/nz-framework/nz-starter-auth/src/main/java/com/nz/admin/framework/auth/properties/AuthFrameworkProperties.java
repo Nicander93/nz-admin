@@ -14,5 +14,9 @@ import java.util.List;
 public class AuthFrameworkProperties {
 
     private List<String> includePaths = new ArrayList<>(List.of("/api/**"));
-    private List<String> excludePaths = new ArrayList<>(List.of("/api/auth/login"));
+    private List<String> excludePaths = new ArrayList<>(List.of(
+            "/api/auth/login",
+            "/api/auth/sms/**",
+            "/api/auth/social/**"
+    ));
 }

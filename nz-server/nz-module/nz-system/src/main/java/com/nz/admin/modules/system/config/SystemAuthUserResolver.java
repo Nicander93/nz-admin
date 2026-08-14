@@ -29,6 +29,7 @@ public class SystemAuthUserResolver implements AuthUserResolver {
         UserDO user = userService.getById(userId);
         if (user != null) {
             loginUser.setUsername(user.getUsername());
+            loginUser.setTenantId(user.getTenantId());
         }
         loginUser.setPermissions(new LinkedHashSet<>(permissionService.getPermsByUserId(userId)));
         loginUser.setRoles(new LinkedHashSet<>(permissionService.getRoleKeysByUserId(userId)));

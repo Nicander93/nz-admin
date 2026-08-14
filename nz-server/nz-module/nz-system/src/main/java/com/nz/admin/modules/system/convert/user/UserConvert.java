@@ -3,6 +3,7 @@ package com.nz.admin.modules.system.convert.user;
 import com.nz.admin.modules.system.entity.dataobject.user.UserDO;
 import com.nz.admin.modules.system.entity.vo.user.UserVO;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
 
 import java.util.List;
@@ -15,6 +16,8 @@ public interface UserConvert {
 
     UserConvert INSTANCE = Mappers.getMapper(UserConvert.class);
 
+    @Mapping(target = "emailMasked", ignore = true)
+    @Mapping(target = "phoneMasked", ignore = true)
     UserVO toVO(UserDO user);
 
     List<UserVO> toVOList(List<UserDO> list);

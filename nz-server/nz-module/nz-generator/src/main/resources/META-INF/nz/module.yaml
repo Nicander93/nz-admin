@@ -1,0 +1,10 @@
+code: generator
+name: Code Generator
+version: 0.0.1-SNAPSHOT
+description: PostgreSQL metadata driven CRUD code preview and download
+requiredModules: []
+requiredStarters:
+  - web
+  - auth
+defaultEnabled: true
+frontendModule: generator

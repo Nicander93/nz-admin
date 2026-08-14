@@ -3,6 +3,7 @@ package com.nz.admin.modules.job.service.job;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.nz.admin.common.job.JobExecuteService;
+import com.nz.admin.framework.tenant.core.TenantContextHolder;
 import com.nz.admin.modules.job.entity.dataobject.job.JobDO;
 import com.nz.admin.modules.job.mapper.job.JobMapper;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +38,9 @@ public class JobServiceImpl implements JobService {
 
     @Override
     public void save(JobDO job) {
+        if (job.getTenantId() == null) {
+            job.setTenantId(TenantContextHolder.getTenantIdOrNull());
+        }
         jobMapper.insert(job);
         if (job.getStatus() != null && job.getStatus() == 0 && StrUtil.isNotBlank(job.getCronExpression())) {
             try {

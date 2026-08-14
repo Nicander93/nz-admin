@@ -12,5 +12,6 @@ public class UserQuery extends PageQuery implements DataScopeParam {
     private String username;
     private String nickname;
     private Integer status;
+    private Boolean revealContacts;
     private String dataScopeSql;
 }

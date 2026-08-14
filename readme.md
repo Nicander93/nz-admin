@@ -7,18 +7,31 @@
 - 后端：Spring Boot、MyBatis-Plus、Sa-Token、Hutool、PostgreSQL。
 - 前端：Vue 3、TypeScript、Vite、Pinia、Element Plus、UnoCSS、ESLint、Prettier。
 
+## 项目命令
+
+Node.js 22.13 及以上版本可以直接使用根目录 CLI：
+
+```bash
+./nz doctor
+./nz dev
+./nz verify
+```
+
+Windows 使用 `.\nz.cmd`。模块创建、迁移检查、代码生成、容器交付、备份和回滚见 [项目 CLI](docs/cli.md)。
+
+租户登录、套餐菜单边界和 V9 升级步骤见 [多租户](docs/multi-tenancy.md)。
+
 ## 快速启动
 
 ### 1. 初始化数据库
 
-创建 PostgreSQL 数据库后执行初始化脚本：
+创建空的 PostgreSQL 数据库。后端首次启动时会通过 Flyway 自动执行 V1-V15，不需要手工导入基线脚本。
 
-```bash
-psql -h localhost -U postgres -d nz-server -f nz-server/nz-app/src/main/resources/db/init.sql
-```
+已有数据库升级前先备份；不能由应用执行 Flyway 时，按版本顺序使用 `nz-app/src/main/resources/db/upgrade-p*.sql`。
 
 默认账号：
 
+- 租户编码：`default`
 - 用户名：`admin`
 - 密码：`admin123`
 
@@ -59,6 +72,18 @@ pnpm dev
 
 Sa-Token 仅拦截 `/api/**`（登录接口除外），上述路径无需登录即可访问。
 
+### 容器化交付
+
+```bash
+cp deploy/.env.example deploy/.env
+# 修改 deploy/.env 中的示例密码和密钥
+./nz delivery check --env deploy/.env --compose
+./nz delivery up --yes
+./nz delivery smoke --url http://127.0.0.1
+```
+
+基础环境包含 PostgreSQL、后端和前端。环境变量可自动启用 Redis 与 MinIO；端口、数据卷、升级和回滚说明见 [生产部署](docs/deployment.md)。
+
 ### 文件存储
 
 `application.yml` / 环境配置中 `nz.file` 常用项：
@@ -74,6 +99,8 @@ Sa-Token 仅拦截 `/api/**`（登录接口除外），上述路径无需登录�
 - [P2 脚手架阶段说明](docs/p2-phase-overview.md)
 - [CRUD 范式](docs/crud-paradigm.md)
 - [模块开发指南](docs/module-development-guide.md)
+- [项目 CLI](docs/cli.md)
+- [多租户](docs/multi-tenancy.md)
 
 ## 开发规范
 

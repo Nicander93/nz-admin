@@ -23,4 +23,8 @@ public interface UserMapper extends BaseMapper<UserDO> {
     default UserDO selectByUsername(String username) {
         return selectOne(new LambdaQueryWrapper<UserDO>().eq(UserDO::getUsername, username));
     }
+
+    default java.util.List<UserDO> selectByPhoneHash(String phoneHash) {
+        return selectList(new LambdaQueryWrapper<UserDO>().eq(UserDO::getPhoneHash, phoneHash));
+    }
 }

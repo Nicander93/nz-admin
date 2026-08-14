@@ -4,6 +4,21 @@ spring:
     username: ${NZ_DATASOURCE_USERNAME}
     password: ${NZ_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: ${NZ_DB_POOL_MAX_SIZE:20}
+      minimum-idle: ${NZ_DB_POOL_MIN_IDLE:2}
+      connection-timeout: 30000
+      validation-timeout: 5000
+  flyway:
+    clean-disabled: true
+
+server:
+  forward-headers-strategy: framework
+
+nz:
+  modules:
+    system:
+      initialize-data: ${NZ_INITIALIZE_DATA:false}
 
 mybatis-plus:
   configuration:

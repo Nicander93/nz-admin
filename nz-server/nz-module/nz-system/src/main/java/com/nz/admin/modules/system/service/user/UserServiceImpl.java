@@ -1,13 +1,20 @@
 package com.nz.admin.modules.system.service.user;
 
+import cn.hutool.crypto.digest.DigestUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.digest.BCrypt;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.nz.admin.common.core.BusinessException;
 import com.nz.admin.framework.datascope.DataScope;
 import com.nz.admin.framework.datascope.DataScopeType;
+import com.nz.admin.framework.encryption.core.FieldCipher;
+import com.nz.admin.framework.tenant.core.TenantContextHolder;
+import com.nz.admin.modules.system.entity.dataobject.tenant.TenantDO;
 import com.nz.admin.modules.system.entity.dataobject.user.UserDO;
 import com.nz.admin.modules.system.entity.dataobject.user.UserPostDO;
+import com.nz.admin.modules.system.mapper.tenant.TenantMapper;
 import com.nz.admin.modules.system.mapper.user.UserMapper;
 import com.nz.admin.modules.system.mapper.user.UserPostMapper;
 import com.nz.admin.modules.system.entity.query.user.UserQuery;
@@ -16,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -30,6 +38,11 @@ public class UserServiceImpl implements UserService {
     private UserPostMapper userPostMapper;
     @Autowired
     private ConfigService configService;
+    @Autowired
+    private TenantMapper tenantMapper;
+    @Autowired
+    private FieldCipher fieldCipher;
+
 
     /**
      * 按分页条件查用户列表。
@@ -48,6 +61,29 @@ public class UserServiceImpl implements UserService {
         return userMapper.selectById(id);
     }
 
+    @Override
+    public UserDO getByPhone(String phone) {
+        if (StrUtil.isBlank(phone)) {
+            return null;
+        }
+        String normalizedPhone = phone.trim();
+        String phoneHash = DigestUtil.sha256Hex(normalizedPhone);
+        List<UserDO> matches = userMapper.selectByPhoneHash(phoneHash);
+        if (matches.size() > 1) {
+            throw new BusinessException("同一租户存在重复手机号，请先修复用户数据");
+        }
+        if (!matches.isEmpty()) {
+            return matches.get(0);
+        }
+        for (UserDO user : userMapper.selectList(null)) {
+            if (normalizedPhone.equals(user.getPhone())) {
+                userMapper.updateById(new UserDO().setId(user.getId()).setPhoneHash(phoneHash));
+                return user;
+            }
+        }
+        return null;
+    }
+
     /**
      * 按用户名查用户。
      */
@@ -61,7 +97,9 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public void save(UserDO user) {
+        preparePhoneHash(user);
         userMapper.insert(user);
+        checkTenantAccountLimit();
     }
 
     /**
@@ -69,6 +107,7 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public void updateById(UserDO user) {
+        preparePhoneHash(user);
         userMapper.updateById(user);
     }
 
@@ -121,5 +160,56 @@ public class UserServiceImpl implements UserService {
     @Override
     public long count() {
         return userMapper.selectCount(null);
+    }
+
+    @Override
+    public List<UserDO> listEnabledUsers(Collection<Long> userIds) {
+        return userMapper.selectList(new LambdaQueryWrapper<UserDO>()
+                .eq(UserDO::getStatus, 0)
+                .in(userIds != null && !userIds.isEmpty(), UserDO::getId, userIds)
+                .orderByAsc(UserDO::getId));
+    }
+
+    /**
+     * 用活动密钥重写当前租户下的用户联系方式。
+     */
+    @Override
+    @Transactional
+    public int reEncryptContacts() {
+        if ("disabled".equals(fieldCipher.activeKeyId())) {
+            throw new BusinessException("字段加密未启用，不能执行联系方式重加密");
+        }
+        List<UserDO> users = userMapper.selectList(null);
+        for (UserDO user : users) {
+            UserDO update = new UserDO()
+                    .setId(user.getId())
+                    .setEmail(user.getEmail())
+                    .setPhone(user.getPhone());
+            preparePhoneHash(update);
+            userMapper.updateById(update);
+        }
+        return users.size();
+    }
+
+    private void preparePhoneHash(UserDO user) {
+        if (user != null && StrUtil.isNotBlank(user.getPhone())) {
+            user.setPhone(user.getPhone().trim());
+            user.setPhoneHash(DigestUtil.sha256Hex(user.getPhone()));
+        }
+    }
+
+    private void checkTenantAccountLimit() {
+        Long tenantId = TenantContextHolder.getTenantIdOrNull();
+        if (tenantId == null) {
+            return;
+        }
+        TenantDO tenant = tenantMapper.selectById(tenantId);
+        if (tenant == null || tenant.getAccountCount() == null || tenant.getAccountCount() <= 0) {
+            return;
+        }
+        Long currentCount = userMapper.selectCount(null);
+        if (currentCount != null && currentCount >= tenant.getAccountCount()) {
+            throw new BusinessException("租户账号数量已达到套餐上限");
+        }
     }
 }

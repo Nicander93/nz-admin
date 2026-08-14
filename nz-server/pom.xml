@@ -66,6 +66,11 @@
             </dependency>
             <dependency>
                 <groupId>com.nz</groupId>
+                <artifactId>nz-starter-tenant</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.nz</groupId>
                 <artifactId>nz-starter-auth</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -106,7 +111,27 @@
             </dependency>
             <dependency>
                 <groupId>com.nz</groupId>
+                <artifactId>nz-starter-sms</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.nz</groupId>
+                <artifactId>nz-starter-social</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.nz</groupId>
                 <artifactId>nz-starter-file</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.nz</groupId>
+                <artifactId>nz-starter-encryption</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.nz</groupId>
+                <artifactId>nz-starter-realtime</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -122,6 +147,21 @@
             <dependency>
                 <groupId>com.nz</groupId>
                 <artifactId>nz-job</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.nz</groupId>
+                <artifactId>nz-demo</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.nz</groupId>
+                <artifactId>nz-generator</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.nz</groupId>
+                <artifactId>nz-workflow</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

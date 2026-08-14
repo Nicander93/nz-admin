@@ -2,34 +2,27 @@
 
 ## 分层
 
-- app：启动、环境和 SQL 初始化。
-- common：返回、异常、分页和作业公共能力。
+- app：启动、环境、Flyway 迁移和模块装配。
+- common：返回、异常、分页、任务和模块描述协议。
 - framework：跨业务 starter，禁止依赖业务模块。
-- business：领域规则、API 和持久化。
-- web：API 边界、页面、状态和测试。
+- business：按 `nz-module/<name>` 隔离领域规则、API 和持久化。
+- web：API 客户端、模块清单、页面状态和测试。
 
-新增业务使用 nz-module-<name>；可复用技术使用 nz-starter-<name>。
+新增业务使用独立 `nz-module/<name>`；可复用技术使用 `nz-starter-<name>`。
 
-## 实际能力
+## 当前能力
 
-- 已具备：用户、角色、菜单、部门、岗位、字典、参数、公告、日志、在线用户、任务、文件、工作台和基础监控。
-- 部分具备：数据权限、限流/防重复提交基础能力、本地/OSS 静态文件配置、缓存 starter、基础监控。
-- 缺失：客户端管理、文件配置管理、Redis 指标、demo、租户、字段加密、WebSocket/SSE、邮件短信、代码生成和 AI 助手。
+已完成用户、角色、菜单、部门、岗位、字典、参数、公告、日志、在线用户、任务、文件、工作台、客户端管理 v0、文件配置、可选 Redis 指标、邮件、SSE/WebSocket、可删除 demo 模块、独立代码生成模块，以及工作流分类、定义版本和发布状态机。
 
-## 实现顺序
+短信与第三方登录已经落地。后续主要缺口是工作流实例与任务审批，动态数据源和分布式增强属于后续扩展。代码生成与模板已经落地；根目录 CLI 已提供模块脚手架、Maven 接入、迁移检查、生成器下载和回滚。
 
-1. 客户端管理 v0：clientId、名称、登录类型、token 时长、状态、备注；不改现有登录流程。
-2. 文件配置：先只读脱敏展示，再考虑持久化和动态切换；密钥不得返回。
-3. Redis 监控：可选 starter，未配置时返回未启用，不能阻止应用启动。
-4. 示例模块：包含 CRUD、权限、SQL、测试，且可整体删除。
+## 模块约定
 
-## 启停、包、菜单和 SQL
+- 每个后端业务模块提供 `META-INF/nz/module.yaml` 和 Spring Boot 自动装配入口。
+- 模块开关使用 `nz.modules.<code>.enabled`，修改后重启生效，不支持热卸载。
+- 业务模块不得被 framework 反向依赖；可删除模块也不能被其他业务模块直接依赖。
+- 前端模块在 `src/modules/<code>/manifest.ts` 声明，注册表自动发现清单。
+- 后端按 `controller/service/mapper/entity/convert` 分层，DO 不直接返回。
+- 每个纵向切片同时提交 API、页面、菜单与按钮权限、Flyway 迁移、测试和文档。
 
-- starter 用条件化自动配置；业务模块目前由 Maven 聚合，不承诺运行时热启停。
-- 后端按 modules.<module>/{controller,service,mapper,entity,convert} 组织；Entity/DO 不直接返回。
-- 前端按 src/api/<module> 与 src/views/<module>/<feature> 组织，页面状态放 hooks.ts。
-- 初始 SQL 位于 db/init.sql，已部署升级用 db/upgrade-<version>-*.sql。
-- 每项模块变更同步 API、菜单/按钮权限 SQL、测试和文档。
-
-本轮不实现 npm CLI、OAuth/OIDC、分布式任务和完整 AI 助手。
-
+demo 模块的启停、删除和数据库处理见 [demo-module.md](demo-module.md)。代码生成器的接口、模板和限制见 [code-generator.md](code-generator.md)。

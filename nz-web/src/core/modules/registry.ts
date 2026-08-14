@@ -1,8 +1,17 @@
-import systemModule from '@/modules/system/manifest'
-import jobModule from '@/modules/job/manifest'
 import type { BackendModuleStatus, FrontendModuleManifest } from './types'
 
-const manifests: FrontendModuleManifest[] = [systemModule, jobModule]
+const manifestModules = import.meta.glob<{ default: FrontendModuleManifest }>('/src/modules/*/manifest.ts', {
+  eager: true,
+})
+
+const manifests = Object.values(manifestModules)
+  .map((module) => module.default)
+  .filter(Boolean)
+  .sort((left, right) => {
+    if (left.code === 'system') return -1
+    if (right.code === 'system') return 1
+    return left.code.localeCompare(right.code)
+  })
 
 export function getFrontendModuleManifests(): FrontendModuleManifest[] {
   return manifests.slice()

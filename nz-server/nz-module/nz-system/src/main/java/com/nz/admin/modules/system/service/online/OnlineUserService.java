@@ -12,7 +12,7 @@ public interface OnlineUserService {
     /**
      * 获取当前在线用户列表。
      */
-    List<OnlineUserVO> listOnlineUsers();
+    List<OnlineUserVO> listOnlineUsers(String username, String loginIp);
 
     /**
      * 强制下线指定 token。

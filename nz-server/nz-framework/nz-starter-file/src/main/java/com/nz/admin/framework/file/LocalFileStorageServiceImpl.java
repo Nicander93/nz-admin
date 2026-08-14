@@ -93,4 +93,12 @@ public class LocalFileStorageServiceImpl implements FileStorageService {
     public String getFileUrl(Long fileId) {
         return properties.getLocalAccessUrlPrefix() + fileId;
     }
+
+    @Override
+    public void checkAvailable() {
+        File directory = FileUtil.mkdir(properties.getBasePath());
+        if (!directory.isDirectory() || !directory.canWrite()) {
+            throw new IllegalStateException("本地存储目录不可写: " + properties.getBasePath());
+        }
+    }
 }

@@ -1,0 +1,12 @@
+code: demo
+name: Demo Module
+version: 0.0.1-SNAPSHOT
+description: Removable example module with an end-to-end CRUD feature
+requiredModules: []
+requiredStarters:
+  - web
+  - mybatis
+  - auth
+  - log
+defaultEnabled: true
+frontendModule: demo

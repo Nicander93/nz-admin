@@ -2,12 +2,22 @@
 
 面向在 `nz-admin` 中**新增一个带菜单、权限、CRUD 的业务模块**的最小流程。细节范式见 [crud-paradigm.md](crud-paradigm.md)。
 
+## CLI 快速路径
+
+新模块先通过 CLI 生成可编译骨架：
+
+```bash
+./nz module add audit-center --title 审计中心 --parent-menu-id 1000 --menu-id 9300 --dry-run
+```
+
+确认文件列表后改用 `--yes`。命令会创建后端模块、前端清单、入口页面、菜单权限迁移和测试；业务表 CRUD 再使用代码生成器。完整参数见 [cli.md](cli.md)。
+
 ## 1. 后端（nz-server）
 
 1. **库表**：在 `nz-app/src/main/resources/db/init.sql`（或迁移脚本）中建表；本地可重复执行时注意幂等。若已有数据库且缺少工作台/运行监控菜单，可执行 `nz-app/src/main/resources/db/upgrade-p2-menus.sql`。
 2. **实体**：在 `nz-module/nz-system`（或新业务模块）下按 [.docs/naming-convention-service-dao-and-model.md](../.docs/naming-convention-service-dao-and-model.md) 放置 `*DO`、`*Query`、`*VO`。
 3. **Mapper**：`mapper/{域}/XxxMapper.java`，继承 `BaseMapper<XxxDO>`，复杂 SQL 用 default 方法或 XML。
-4. **Service**：接口 + `XxxServiceImpl`，不继承 MyBatis-Plus `ServiceImpl`，业务层不出现 `LambdaQueryWrapper`。
+4. **Service**：接口 + `XxxServiceImpl`；实现类优先继承 `ServiceImpl<Mapper, DO>`，不让业务接口继承 `IService`。
 5. **Controller**：`@RequestMapping("/api/{模块}/{资源}")`，方法语义与 [.docs/api-convention.md](../.docs/api-convention.md) 对齐，返回 `R<T>`。
 6. **权限**：在 `SaCheckPermission` 上使用与菜单/按钮一致的 perm 字符串。
 7. **种子菜单**：`init.sql` 中 `sys_menu` 插入目录/菜单/按钮；`sys_role_menu` 为管理员角色关联新菜单 id（若使用全量 CROSS JOIN 可省略单条）。

@@ -1,9 +1,23 @@
 server:
   port: 8080
+  shutdown: graceful
 
 spring:
   profiles:
-    active: dev
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      timeout: 2s
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    baseline-version: 1
+    validate-on-migrate: true
   servlet:
     multipart:
       max-file-size: 100MB
@@ -17,22 +31,101 @@ management:
   endpoint:
     health:
       show-details: never
+      validate-group-membership: false
+      probes:
+        enabled: true
+      group:
+        liveness:
+          include: livenessState
+        readiness:
+          include: readinessState,db,redis
+  health:
+    redis:
+      enabled: ${NZ_REDIS_ENABLED:false}
 
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true
 
 nz:
+  realtime:
+    ticket-ttl: ${NZ_REALTIME_TICKET_TTL:30s}
+    sse-timeout: ${NZ_REALTIME_SSE_TIMEOUT:30m}
+    enabled: ${NZ_REALTIME_ENABLED:true}
+  sms:
+    enabled: ${NZ_SMS_ENABLED:true}
+    logging-provider-enabled: ${NZ_SMS_LOGGING_PROVIDER_ENABLED:true}
+    verification:
+      enabled: ${NZ_SMS_VERIFICATION_ENABLED:true}
+      template-code: ${NZ_SMS_VERIFICATION_TEMPLATE_CODE:verification-code}
+      code-length: ${NZ_SMS_VERIFICATION_CODE_LENGTH:6}
+      max-attempts: ${NZ_SMS_VERIFICATION_MAX_ATTEMPTS:5}
+      fixed-code: ${NZ_SMS_VERIFICATION_FIXED_CODE:}
+      ttl: ${NZ_SMS_VERIFICATION_TTL:5m}
+      resend-interval: ${NZ_SMS_VERIFICATION_RESEND_INTERVAL:60s}
+    webhook-connect-timeout: ${NZ_SMS_WEBHOOK_CONNECT_TIMEOUT:3s}
+    webhook-read-timeout: ${NZ_SMS_WEBHOOK_READ_TIMEOUT:5s}
+  social:
+    enabled: ${NZ_SOCIAL_ENABLED:true}
+    state-ttl: ${NZ_SOCIAL_STATE_TTL:5m}
+    providers:
+      github:
+        enabled: ${NZ_SOCIAL_GITHUB_ENABLED:false}
+        display-name: GitHub
+        protocol: oauth2
+        client-id: ${NZ_SOCIAL_GITHUB_CLIENT_ID:}
+        client-secret: ${NZ_SOCIAL_GITHUB_CLIENT_SECRET:}
+        authorization-uri: https://github.com/login/oauth/authorize
+        token-uri: https://github.com/login/oauth/access_token
+        user-info-uri: https://api.github.com/user
+        redirect-uri: ${NZ_SOCIAL_GITHUB_REDIRECT_URI:http://localhost:5173/oauth/callback/github}
+        scopes:
+          - read:user
+          - user:email
+        subject-attribute: id
+        username-attribute: login
+        nickname-attribute: name
+        email-attribute: email
+        avatar-attribute: avatar_url
+  tenant:
+    enabled: true
+    default-tenant-id: 1
+  field-encryption:
+    enabled: ${NZ_FIELD_ENCRYPTION_ENABLED:false}
+    active-key-id: ${NZ_FIELD_ENCRYPTION_ACTIVE_KEY_ID:v1}
+    allow-plaintext-read: ${NZ_FIELD_ENCRYPTION_ALLOW_PLAINTEXT:true}
+    keys:
+      v1: ${NZ_FIELD_ENCRYPTION_KEY:}
   mail:
     enabled: false
   modules:
     system:
       enabled: true
-      initialize-data: true
+      initialize-data: ${NZ_INITIALIZE_DATA:true}
+      initial-admin-password: ${NZ_INITIAL_ADMIN_PASSWORD:admin123}
+    job:
+      enabled: true
+    demo:
+      enabled: true
+    generator:
+      enabled: true
+  monitor:
+    redis:
+      enabled: ${NZ_REDIS_ENABLED:false}
   file:
-    storage-type: local
+    storage-type: ${NZ_FILE_STORAGE_TYPE:local}
+    config-encryption-key: ${NZ_FILE_CONFIG_KEY:}
+    base-path: ${NZ_FILE_BASE_PATH:${user.home}/nz-admin/upload}
     max-file-size-bytes: 104857600
 
+    s3:
+      endpoint: ${NZ_S3_ENDPOINT:}
+      access-key-id: ${NZ_S3_ACCESS_KEY:}
+      access-key-secret: ${NZ_S3_SECRET_KEY:}
+      bucket-name: ${NZ_S3_BUCKET:}
+      region: ${NZ_S3_REGION:us-east-1}
+      domain: ${NZ_S3_DOMAIN:}
+      path-prefix: ${NZ_S3_PATH_PREFIX:}
 sa-token:
   token-name: Authorization
   timeout: 86400

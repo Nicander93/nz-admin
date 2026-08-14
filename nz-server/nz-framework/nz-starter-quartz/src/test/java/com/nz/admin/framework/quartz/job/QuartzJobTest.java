@@ -1,6 +1,7 @@
 package com.nz.admin.framework.quartz.job;
 
 import com.nz.admin.common.job.JobExecuteService;
+import com.nz.admin.framework.tenant.core.TenantContextHolder;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -10,7 +11,9 @@ import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -49,6 +52,24 @@ class QuartzJobTest {
         quartzJob.execute(jobExecutionContext);
 
         verify(jobExecuteService).execute("demoJob.run");
+    }
+
+    @Test
+    void shouldRestoreTenantContextForExecution() throws Exception {
+        JobDataMap jobDataMap = new JobDataMap();
+        jobDataMap.put("jobId", 103L);
+        jobDataMap.put("tenantId", 7L);
+        jobDataMap.put("invokeTarget", "demoJob.run");
+        when(jobExecutionContext.getMergedJobDataMap()).thenReturn(jobDataMap);
+        org.mockito.Mockito.doAnswer(invocation -> {
+            assertEquals(7L, TenantContextHolder.getTenantIdOrNull());
+            return null;
+        }).when(jobExecuteService).execute("demoJob.run");
+
+        QuartzJob quartzJob = new QuartzJob(jobExecuteService);
+        quartzJob.execute(jobExecutionContext);
+
+        assertNull(TenantContextHolder.getTenantIdOrNull());
     }
 
     @Test

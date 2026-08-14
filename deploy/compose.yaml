@@ -1,0 +1,142 @@
+name: nz-admin
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${NZ_DB_NAME:-nz_admin}
+      POSTGRES_USER: ${NZ_DB_USERNAME:-nz_admin}
+      POSTGRES_PASSWORD: ${NZ_DB_PASSWORD:?请在 deploy/.env 中设置 NZ_DB_PASSWORD}
+    ports:
+      - "${NZ_POSTGRES_BIND:-127.0.0.1}:${NZ_POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${NZ_DB_USERNAME:-nz_admin} -d ${NZ_DB_NAME:-nz_admin}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    logging: *default-logging
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ../nz-server
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      NZ_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${NZ_DB_NAME:-nz_admin}
+      NZ_DATASOURCE_USERNAME: ${NZ_DB_USERNAME:-nz_admin}
+      NZ_DATASOURCE_PASSWORD: ${NZ_DB_PASSWORD:?请在 deploy/.env 中设置 NZ_DB_PASSWORD}
+      NZ_INITIALIZE_DATA: ${NZ_INITIALIZE_DATA:-true}
+      NZ_INITIAL_ADMIN_PASSWORD: ${NZ_INITIAL_ADMIN_PASSWORD:?请设置首次启动管理员密码}
+      NZ_FILE_STORAGE_TYPE: ${NZ_FILE_STORAGE_TYPE:-local}
+      NZ_FILE_BASE_PATH: /app/uploads
+      NZ_FILE_CONFIG_KEY: ${NZ_FILE_CONFIG_KEY:?请设置文件配置加密密钥}
+      NZ_FIELD_ENCRYPTION_ENABLED: ${NZ_FIELD_ENCRYPTION_ENABLED:-false}
+      NZ_FIELD_ENCRYPTION_KEY: ${NZ_FIELD_ENCRYPTION_KEY:-}
+      NZ_REDIS_ENABLED: ${NZ_REDIS_ENABLED:-false}
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      NZ_S3_ENDPOINT: ${NZ_S3_ENDPOINT:-http://minio:9000}
+      NZ_S3_ACCESS_KEY: ${NZ_MINIO_ROOT_USER:-nzadmin}
+      NZ_S3_SECRET_KEY: ${NZ_MINIO_ROOT_PASSWORD:-}
+      NZ_S3_BUCKET: ${NZ_S3_BUCKET:-nz-admin}
+    ports:
+      - "${NZ_BACKEND_BIND:-127.0.0.1}:${NZ_BACKEND_PORT:-8080}:8080"
+    volumes:
+      - upload-data:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+        required: false
+      minio-init:
+        condition: service_completed_successfully
+        required: false
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/actuator/health/readiness"]
+      interval: 10s
+      timeout: 5s
+      start_period: 60s
+      retries: 10
+    logging: *default-logging
+    stop_grace_period: 30s
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ../nz-web
+    ports:
+      - "${NZ_WEB_PORT:-80}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    logging: *default-logging
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.4-alpine
+    profiles: ["redis"]
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    logging: *default-logging
+    restart: unless-stopped
+
+  minio:
+    image: quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z
+    profiles: ["storage"]
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${NZ_MINIO_ROOT_USER:-nzadmin}
+      MINIO_ROOT_PASSWORD: ${NZ_MINIO_ROOT_PASSWORD:?启用 storage profile 前请设置 NZ_MINIO_ROOT_PASSWORD}
+    ports:
+      - "${NZ_MINIO_BIND:-127.0.0.1}:${NZ_MINIO_API_PORT:-9000}:9000"
+      - "${NZ_MINIO_BIND:-127.0.0.1}:${NZ_MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    logging: *default-logging
+    restart: unless-stopped
+
+  minio-init:
+    image: quay.io/minio/mc:RELEASE.2025-04-16T18-13-26Z
+    profiles: ["storage"]
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint:
+      - /bin/sh
+      - -ec
+      - >-
+        mc alias set local http://minio:9000 "${NZ_MINIO_ROOT_USER:-nzadmin}" "${NZ_MINIO_ROOT_PASSWORD}";
+        mc mb --ignore-existing "local/${NZ_S3_BUCKET:-nz-admin}"
+    logging: *default-logging
+    restart: "no"
+
+volumes:
+  postgres-data:
+  upload-data:
+  redis-data:
+  minio-data:

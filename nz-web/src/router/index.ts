@@ -10,10 +10,19 @@ const router = createRouter({
       component: () => import('@/views/login/index.vue'),
     },
     {
+      path: '/oauth/callback/:provider',
+      component: () => import('@/views/oauth/callback/index.vue'),
+    },
+    {
       path: '/',
       name: 'Root',
       component: () => import('@/layout/index.vue'),
       children: [
+        {
+          path: '/profile',
+          name: 'Profile',
+          component: () => import('@/views/profile/index.vue'),
+        },
         {
           path: '/notice',
           name: 'Notice',
@@ -47,7 +56,8 @@ const router = createRouter({
 router.beforeEach(async (to, _from, next) => {
   const userStore = useUserStore()
   const token = localStorage.getItem('token')
-  if (to.path !== '/login' && !token) {
+  const publicRoute = to.path === '/login' || to.path.startsWith('/oauth/callback/')
+  if (!publicRoute && !token) {
     next('/login')
     return
   }

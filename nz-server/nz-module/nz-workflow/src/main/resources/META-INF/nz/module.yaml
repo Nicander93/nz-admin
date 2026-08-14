@@ -1,0 +1,15 @@
+code: workflow
+name: Workflow Module
+version: 0.0.1-SNAPSHOT
+description: Workflow categories, definitions, instances and tasks
+requiredModules: []
+requiredStarters:
+  - web
+  - mybatis
+  - tenant
+  - auth
+  - log
+  - protection
+  - excel
+defaultEnabled: true
+frontendModule: workflow

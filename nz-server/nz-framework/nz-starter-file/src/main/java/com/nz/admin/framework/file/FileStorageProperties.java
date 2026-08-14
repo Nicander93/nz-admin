@@ -14,7 +14,7 @@ import java.util.List;
 public class FileStorageProperties {
 
     /**
-     * 存储类型：local 或 oss。
+     * 存储类型：local、oss 或 s3。
      */
     private String storageType = "local";
 
@@ -50,7 +50,14 @@ public class FileStorageProperties {
      */
     private String localAccessUrlPrefix = "/api/system/file/download/";
 
+    /**
+     * 文件配置密钥，用于加密持久化的存储凭据。
+     */
+    private String configEncryptionKey;
+
     private Oss oss = new Oss();
+
+    private S3 s3 = new S3();
 
     @Data
     public static class Oss {
@@ -58,6 +65,20 @@ public class FileStorageProperties {
         private String accessKeyId;
         private String accessKeySecret;
         private String bucketName;
+        private String domain;
+        private String pathPrefix = "";
+    }
+
+    /**
+     * S3 兼容存储配置，可连接 MinIO。
+     */
+    @Data
+    public static class S3 {
+        private String endpoint;
+        private String accessKeyId;
+        private String accessKeySecret;
+        private String bucketName;
+        private String region = "us-east-1";
         private String domain;
         private String pathPrefix = "";
     }

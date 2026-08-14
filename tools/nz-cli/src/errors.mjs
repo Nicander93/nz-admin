@@ -1,0 +1,11 @@
+export class CliError extends Error {
+  constructor(message, exitCode = 2) {
+    super(message)
+    this.name = 'CliError'
+    this.exitCode = exitCode
+  }
+}
+
+export function invariant(condition, message) {
+  if (!condition) throw new CliError(message)
+}

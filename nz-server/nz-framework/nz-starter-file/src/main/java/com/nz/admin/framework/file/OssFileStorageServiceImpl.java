@@ -110,4 +110,16 @@ public class OssFileStorageServiceImpl implements FileStorageService {
         }
         return "/api/system/file/download/" + fileId;
     }
+
+    @Override
+    public void checkAvailable() {
+        OSS ossClient = getOssClient();
+        try {
+            if (!ossClient.doesBucketExist(properties.getOss().getBucketName())) {
+                throw new IllegalStateException("OSS bucket 不存在: " + properties.getOss().getBucketName());
+            }
+        } finally {
+            ossClient.shutdown();
+        }
+    }
 }

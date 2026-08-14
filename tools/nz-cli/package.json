@@ -1,0 +1,15 @@
+{
+  "name": "@nz-admin/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "nz": "bin/nz.mjs"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=22.13"
+  }
+}

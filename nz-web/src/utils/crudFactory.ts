@@ -87,13 +87,13 @@ export function createCrudFactory(options: {
     return { data, loading, pagination, query, refresh, resetQuery }
   }
 
-  function useCrud<T, F extends object, Q extends PageQuery>(crudOptions: {
+  function useCrud<T, F extends object, Q extends PageQuery, Id = number>(crudOptions: {
     name: string
     api: {
       page: PageApi<T, Q>
       add?: FormApi<F>
       update?: FormApi<F>
-      delete: (ids: number[]) => Promise<unknown>
+      delete: (ids: Id[]) => Promise<unknown>
     }
     defaultForm: () => Partial<F>
     immediate?: boolean
@@ -106,7 +106,7 @@ export function createCrudFactory(options: {
       updateApi: crudOptions.api.update ?? unsupported,
     })
 
-    async function remove(id: number) {
+    async function remove(id: Id) {
       try {
         await crudOptions.api.delete([id])
         options.notify?.('success', '删除成功')

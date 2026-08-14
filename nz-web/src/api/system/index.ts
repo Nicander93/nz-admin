@@ -8,9 +8,12 @@ import * as fileApi from './file'
 import * as dictApi from './dict'
 import * as workbenchApi from './workbench'
 import * as monitorApi from './monitor'
+import * as onlineApi from './online'
+import * as realtimeApi from './realtime'
+import * as smsApi from './sms'
 import * as moduleApi from './modules'
 
-export { userApi, deptApi, roleApi, postApi, configApi, noticeApi, fileApi, dictApi, workbenchApi, monitorApi, moduleApi }
+export { userApi, deptApi, roleApi, postApi, configApi, noticeApi, fileApi, dictApi, workbenchApi, monitorApi, onlineApi, realtimeApi, smsApi, moduleApi }
 
 export type { SysUser, UserQuery } from './user'
 export type { SysDept } from './dept'
@@ -22,3 +25,6 @@ export type { SysFile, FileQuery } from './file'
 export type { SysDictType, SysDictData, DictTypeQuery } from './dict'
 export type { WorkbenchSnapshot, LoginLogRow, OperLogRow } from './workbench'
 export type { MonitorSummary } from './monitor'
+export type { OnlineUser, OnlineUserQuery } from './online'
+export type { RealtimeConnectionStats, RealtimeEnvelope, RealtimeTicket, RealtimeTransport } from './realtime'
+export type { SmsChannel, SmsTemplate, SmsSendLog } from './sms'

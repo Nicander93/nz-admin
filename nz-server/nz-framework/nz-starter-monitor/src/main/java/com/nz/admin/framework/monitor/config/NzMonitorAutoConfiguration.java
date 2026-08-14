@@ -9,6 +9,7 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -29,6 +30,7 @@ public class NzMonitorAutoConfiguration {
 
     @Configuration(proxyBeanMethods = false)
     @ConditionalOnClass(RedisConnectionFactory.class)
+    @ConditionalOnProperty(prefix = "nz.monitor.redis", name = "enabled", havingValue = "true")
     static class RedisMonitorConfiguration {
 
         @Bean

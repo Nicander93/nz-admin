@@ -34,6 +34,10 @@ public class FileServiceImpl implements FileService {
     private FileStorageService ossFileStorageService;
 
     @Autowired
+    @Qualifier("s3FileStorageService")
+    private FileStorageService s3FileStorageService;
+
+    @Autowired
     private FileStorageProperties storageProperties;
 
     @Override
@@ -130,7 +134,13 @@ public class FileServiceImpl implements FileService {
     }
 
     private FileStorageService resolveByType(String type) {
-        return "oss".equalsIgnoreCase(type) ? ossFileStorageService : localFileStorageService;
+        if ("oss".equalsIgnoreCase(type)) {
+            return ossFileStorageService;
+        }
+        if ("s3".equalsIgnoreCase(type)) {
+            return s3FileStorageService;
+        }
+        return localFileStorageService;
     }
 
     private FileDO toFileDO(FileStorageObject storageObject) {

@@ -121,18 +121,28 @@ public class OperationLogAspect {
             return json;
         }
         try {
-            JSONArray array = JSONUtil.parseArray(json);
-            for (int i = 0; i < array.size(); i++) {
-                Object current = array.get(i);
-                if (current instanceof JSONObject jsonObject) {
-                    for (String sensitiveField : properties.getSensitiveFields()) {
-                        jsonObject.remove(sensitiveField);
-                    }
-                }
-            }
-            return array.toString();
+            Object parsed = JSONUtil.parse(json);
+            removeSensitiveFields(parsed);
+            return parsed.toString();
         } catch (Exception ignored) {
             return json;
+        }
+    }
+
+    private void removeSensitiveFields(Object value) {
+        if (value instanceof JSONObject jsonObject) {
+            for (String sensitiveField : properties.getSensitiveFields()) {
+                jsonObject.remove(sensitiveField);
+            }
+            for (String key : new ArrayList<>(jsonObject.keySet())) {
+                removeSensitiveFields(jsonObject.get(key));
+            }
+            return;
+        }
+        if (value instanceof JSONArray jsonArray) {
+            for (Object item : jsonArray) {
+                removeSensitiveFields(item);
+            }
         }
     }
 

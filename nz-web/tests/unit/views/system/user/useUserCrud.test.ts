@@ -4,7 +4,10 @@ vi.mock('@/api/system', () => ({
   userApi: {
     pageUsers: vi.fn().mockResolvedValue({
       code: 200,
-      data: { records: [{ id: 1, username: 'admin', nickname: '管理员' }], total: 1 },
+      data: {
+        records: [{ id: 1, username: 'admin', nickname: '管理员' }],
+        total: 1,
+      },
     }),
     addUser: vi.fn().mockResolvedValue({ code: 200 }),
     updateUser: vi.fn().mockResolvedValue({ code: 200 }),
@@ -46,6 +49,7 @@ vi.mock('@/api/system', () => ({
 }))
 
 import { useUserCrud } from '@/views/system/user/hooks'
+import { userApi } from '@/api/system'
 
 describe('useUserCrud', () => {
   it('loadData 后加载部门和角色数据', async () => {
@@ -81,7 +85,14 @@ describe('useUserCrud', () => {
   it('openRoleDialog 加载用户角色 ID', async () => {
     const { role } = useUserCrud()
 
-    await role.openDialog({ id: 1, username: 'admin', nickname: '', email: '', phone: '', status: 0 })
+    await role.openDialog({
+      id: 1,
+      username: 'admin',
+      nickname: '',
+      email: '',
+      phone: '',
+      status: 0,
+    })
 
     expect(role.dialogVisible).toBe(true)
     expect(role.selectedIds).toEqual([1, 2])
@@ -99,11 +110,29 @@ describe('useUserCrud', () => {
   it('openEdit 拉取详情后打开编辑弹窗并填充数据', async () => {
     const { form } = useUserCrud()
 
-    await form.openEdit({ id: 1, username: 'admin', nickname: '管理员', email: 'a@b.com', phone: '123', status: 0 })
+    await form.openEdit({
+      id: 1,
+      username: 'admin',
+      nickname: '管理员',
+      email: 'a@b.com',
+      phone: '123',
+      status: 0,
+    })
 
     expect(form.visible).toBe(true)
     expect(form.mode).toBe('edit')
     expect(form.model.username).toBe('admin')
     expect(form.model.nickname).toBe('管理员')
+  })
+
+  it('有权限时请求明文详情并切换列表显示', async () => {
+    const { form, contact } = useUserCrud({ canRevealContacts: () => true })
+    await form.openEdit({ id: 1 })
+    expect(userApi.getUser).toHaveBeenLastCalledWith(1, true)
+    await contact.toggle()
+    expect(contact.revealed).toBe(true)
+    expect(userApi.pageUsers).toHaveBeenLastCalledWith(
+      expect.objectContaining({ revealContacts: true }),
+    )
   })
 })

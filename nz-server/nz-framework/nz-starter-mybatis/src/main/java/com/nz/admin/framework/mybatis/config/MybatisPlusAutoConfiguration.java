@@ -4,7 +4,9 @@ import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
 import com.nz.admin.framework.mybatis.handler.DefaultDbFieldHandler;
+import com.nz.admin.framework.mybatis.plugin.MybatisPlusInterceptorCustomizer;
 import com.nz.admin.framework.mybatis.properties.MybatisFrameworkProperties;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -24,8 +26,11 @@ public class MybatisPlusAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean
-    public MybatisPlusInterceptor mybatisPlusInterceptor(MybatisFrameworkProperties properties) {
+    public MybatisPlusInterceptor mybatisPlusInterceptor(
+            MybatisFrameworkProperties properties,
+            ObjectProvider<MybatisPlusInterceptorCustomizer> customizers) {
         MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
+        customizers.orderedStream().forEach(customizer -> customizer.customize(interceptor));
         interceptor.addInnerInterceptor(new PaginationInnerInterceptor(properties.getDbType()));
         return interceptor;
     }

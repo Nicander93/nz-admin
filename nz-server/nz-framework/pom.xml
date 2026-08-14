@@ -19,6 +19,7 @@
         <module>nz-starter-web</module>
         <module>nz-starter-datascope</module>
         <module>nz-starter-mybatis</module>
+        <module>nz-starter-tenant</module>
         <module>nz-starter-auth</module>
         <module>nz-starter-log</module>
         <module>nz-starter-cache</module>
@@ -26,7 +27,11 @@
         <module>nz-starter-excel</module>
         <module>nz-starter-monitor</module>
         <module>nz-starter-mail</module>
+        <module>nz-starter-sms</module>
+        <module>nz-starter-social</module>
         <module>nz-starter-file</module>
+        <module>nz-starter-encryption</module>
+        <module>nz-starter-realtime</module>
         <module>nz-starter-test</module>
         <module>nz-starter-quartz</module>
     </modules>

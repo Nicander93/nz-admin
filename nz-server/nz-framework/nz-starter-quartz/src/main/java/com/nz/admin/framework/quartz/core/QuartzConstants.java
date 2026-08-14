@@ -6,6 +6,7 @@ package com.nz.admin.framework.quartz.core;
 public final class QuartzConstants {
 
     public static final String JOB_ID = "jobId";
+    public static final String TENANT_ID = "tenantId";
     public static final String INVOKE_TARGET = "invokeTarget";
 
     private QuartzConstants() {

@@ -67,7 +67,7 @@
         <el-form-item label="登录类型">
           <el-select v-model="form.model.loginType" style="width: 100%">
             <el-option label="账号密码" value="account" />
-            <el-option label="短信（预留）" value="sms" />
+            <el-option label="短信验证码" value="sms" />
             <el-option label="第三方（预留）" value="social" />
           </el-select>
         </el-form-item>

@@ -1,0 +1,2 @@
+com.nz.admin.framework.tenant.config.TenantPropertiesAutoConfiguration
+com.nz.admin.framework.tenant.config.TenantAutoConfiguration

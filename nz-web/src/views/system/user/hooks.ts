@@ -16,9 +16,10 @@ import { buildTree } from '@/utils/tree'
 export interface UseUserCrudOptions {
   loadDeptApi?: typeof deptApi.listDepts
   loadRoleApi?: typeof roleApi.listAllRoles
+  canRevealContacts?: () => boolean
 }
 
-function createUserCrudState() {
+function createUserCrudState(canRevealContacts: () => boolean) {
   const crud = useCrud<SysUser, SysUser, UserQuery & Record<string, unknown>>({
     name: '用户',
     api: {
@@ -43,7 +44,7 @@ function createUserCrudState() {
 
   const rawToEdit = crud.form.toEdit.bind(crud.form)
   crud.form.toEdit = async (row: Partial<SysUser>) => {
-    const res = await userApi.getUser(row.id!)
+    const res = await userApi.getUser(row.id!, canRevealContacts())
     rawToEdit(res.data as SysUser)
   }
 
@@ -58,7 +59,7 @@ function createUserDeptState(loadDeptApi: typeof deptApi.listDepts) {
     const res = await loadDeptApi()
     deptTree.value = buildTree(res.data)
     const map = new Map<number, string>()
-    res.data.forEach(d => map.set(d.id, d.name))
+    res.data.forEach((d) => map.set(d.id, d.name))
     deptMap.value = map
   }
 
@@ -111,6 +112,7 @@ function createUserRoleState(loadRoleApi: typeof roleApi.listAllRoles) {
 export function useUserCrud(options: UseUserCrudOptions = {}) {
   const _listDepts = options.loadDeptApi ?? deptApi.listDepts
   const _listAllRoles = options.loadRoleApi ?? roleApi.listAllRoles
+  const canRevealContacts = options.canRevealContacts ?? (() => false)
 
   const posts = ref<SysPost[]>([])
   async function loadPosts() {
@@ -118,13 +120,25 @@ export function useUserCrud(options: UseUserCrudOptions = {}) {
     posts.value = res.data
   }
 
-  const { table, form, actions } = createUserCrudState()
+  const { table, form, actions } = createUserCrudState(canRevealContacts)
   const dept = createUserDeptState(_listDepts)
   const role = createUserRoleState(_listAllRoles)
+
+  const contact = reactive({
+    canReveal: canRevealContacts(),
+    revealed: false,
+    async toggle() {
+      if (!contact.canReveal) return
+      contact.revealed = !contact.revealed
+      table.query.revealContacts = contact.revealed
+      await table.refresh()
+    },
+  })
 
   function handleResetQuery() {
     table.resetQuery()
     table.refresh()
+    table.query.revealContacts = contact.revealed
   }
 
   function loadData() {
@@ -164,6 +178,7 @@ export function useUserCrud(options: UseUserCrudOptions = {}) {
     form: formView,
     actions: actionsView,
     dept,
+    contact,
     role,
     posts,
   }
