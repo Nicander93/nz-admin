@@ -22,6 +22,7 @@
         <dependency><groupId>com.nz</groupId><artifactId>nz-starter-protection</artifactId></dependency>
         <dependency><groupId>com.nz</groupId><artifactId>nz-starter-excel</artifactId></dependency>
         <dependency><groupId>cn.hutool</groupId><artifactId>hutool-all</artifactId></dependency>
+        <dependency><groupId>org.dromara.warm</groupId><artifactId>warm-flow-mybatis-plus-sb3-starter</artifactId></dependency>
         <dependency><groupId>com.nz</groupId><artifactId>nz-starter-test</artifactId><scope>test</scope></dependency>
     </dependencies>
 </project>

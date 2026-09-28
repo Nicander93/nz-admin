@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 @Data
 @Accessors(chain = true)
 @EqualsAndHashCode(callSuper = true)
-@TableName("flow_instance")
+@TableName("nz_flow_instance_legacy")
 public class WorkflowInstanceDO extends BaseEntity {
 
     @TableId(value = "instance_id", type = IdType.AUTO)

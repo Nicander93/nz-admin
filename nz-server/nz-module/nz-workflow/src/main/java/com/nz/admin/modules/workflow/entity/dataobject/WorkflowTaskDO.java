@@ -12,7 +12,7 @@ import lombok.experimental.Accessors;
 @Data
 @Accessors(chain = true)
 @EqualsAndHashCode(callSuper = true)
-@TableName("flow_task")
+@TableName("nz_flow_task_legacy")
 public class WorkflowTaskDO extends BaseEntity {
 
     @TableId(value = "task_id", type = IdType.AUTO)

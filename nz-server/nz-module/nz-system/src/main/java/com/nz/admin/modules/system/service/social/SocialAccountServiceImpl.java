@@ -3,7 +3,7 @@ package com.nz.admin.modules.system.service.social;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.nz.admin.common.core.BusinessException;
 import com.nz.admin.framework.social.core.SocialAuthenticationException;
 import com.nz.admin.framework.social.core.SocialAuthorization;

@@ -29,6 +29,8 @@ src/main/resources/db/migration。
 - V21__workflow_instance.sql：流程实例快照、当前节点、运行轨迹、实例菜单和权限。
 - V22__workflow_task.sql：当前待办、历史已办、逐用户抄送、存量任务回填、任务菜单和权限。
 - V23__workflow_task_delegate.sql：任务委派原办理人、受托归还状态、委派历史动作和按钮权限。
+- V24__workflow_instance_urge.sql：流程实例催办权限。
+- V25__warm_flow_foundation.sql：保留并重命名现有流程运行表，创建 Warm-Flow 1.8.9 标准表。
 旧的 db/init.sql 与 db/upgrade-p*.sql 暂时保留用于人工部署兼容，内容必须与对应
 Flyway 文件同步；新变更只应新增 Flyway 版本，不修改已经发布的版本。
 

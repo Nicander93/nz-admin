@@ -1,5 +1,9 @@
 package com.nz.admin.framework.test.core.ut;
 
+import cn.dev33.satoken.context.SaHolder;
+import cn.dev33.satoken.servlet.model.SaRequestForServlet;
+import cn.dev33.satoken.servlet.model.SaResponseForServlet;
+import cn.dev33.satoken.servlet.model.SaStorageForServlet;
 import cn.dev33.satoken.stp.StpUtil;
 import com.nz.admin.framework.test.core.util.TestContextCleaner;
 import org.junit.jupiter.api.AfterEach;
@@ -16,6 +20,11 @@ public abstract class BaseWebContextUnitTest {
     protected void mockRequest(String method, String requestUri) {
         MockHttpServletRequest request = new MockHttpServletRequest(method, requestUri);
         MockHttpServletResponse response = new MockHttpServletResponse();
+        SaHolder.getContext().setContext(
+                new SaRequestForServlet(request),
+                new SaResponseForServlet(response),
+                new SaStorageForServlet(request)
+        );
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request, response));
     }
 

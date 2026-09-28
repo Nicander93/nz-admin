@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.nz.admin.modules.system.entity.dataobject.user.UserRoleDO;
 import org.apache.ibatis.annotations.Mapper;
 
+import java.util.Collection;
 import java.util.List;
 
 @Mapper
@@ -12,6 +13,13 @@ public interface UserRoleMapper extends BaseMapper<UserRoleDO> {
 
     default List<UserRoleDO> selectByUserId(Long userId) {
         return selectList(new LambdaQueryWrapper<UserRoleDO>().eq(UserRoleDO::getUserId, userId));
+    }
+
+    default List<UserRoleDO> selectByRoleIds(Collection<Long> roleIds) {
+        if (roleIds == null || roleIds.isEmpty()) {
+            return List.of();
+        }
+        return selectList(new LambdaQueryWrapper<UserRoleDO>().in(UserRoleDO::getRoleId, roleIds));
     }
 
     default void deleteByUserId(Long userId) {

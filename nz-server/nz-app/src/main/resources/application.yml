@@ -47,6 +47,11 @@ mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true
 
+warm-flow:
+  enabled: ${NZ_WARM_FLOW_ENABLED:false}
+  banner: false
+  ui: false
+
 nz:
   realtime:
     ticket-ttl: ${NZ_REALTIME_TICKET_TTL:30s}

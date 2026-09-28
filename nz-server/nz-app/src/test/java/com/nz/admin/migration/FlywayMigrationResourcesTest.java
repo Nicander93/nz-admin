@@ -32,9 +32,10 @@ class FlywayMigrationResourcesTest {
             "db/migration/V19__workflow_category.sql",
             "db/migration/V20__workflow_definition.sql",
             "db/migration/V21__workflow_instance.sql",
-            "db/migration/V24__workflow_instance_urge.sql",
             "db/migration/V22__workflow_task.sql",
-            "db/migration/V23__workflow_task_delegate.sql"
+            "db/migration/V23__workflow_task_delegate.sql",
+            "db/migration/V24__workflow_instance_urge.sql",
+            "db/migration/V25__warm_flow_foundation.sql"
     );
 
     @Test
@@ -157,14 +158,26 @@ class FlywayMigrationResourcesTest {
         );
         assertThat(read(MIGRATIONS.get(22))).contains(
                 "ADD COLUMN IF NOT EXISTS owner_assignee",
+                "ADD COLUMN IF NOT EXISTS delegation_status",
+                "'DELEGATE', 'RESOLVE'",
+                "workflow:task:delegate"
+        );
         assertThat(read(MIGRATIONS.get(23))).contains(
                 "workflow:instance:urge",
                 "INSERT INTO sys_role_menu",
                 "INSERT INTO sys_tenant_package_menu"
         );
-                "ADD COLUMN IF NOT EXISTS delegation_status",
-                "'DELEGATE', 'RESOLVE'",
-                "workflow:task:delegate"
+        assertThat(read(MIGRATIONS.get(24))).contains(
+                "ALTER TABLE flow_definition RENAME TO nz_flow_definition_legacy",
+                "ALTER TABLE flow_instance RENAME TO nz_flow_instance_legacy",
+                "ALTER TABLE flow_task RENAME TO nz_flow_task_legacy",
+                "CREATE TABLE flow_definition",
+                "CREATE TABLE flow_node",
+                "CREATE TABLE flow_skip",
+                "CREATE TABLE flow_instance",
+                "CREATE TABLE flow_task",
+                "CREATE TABLE flow_his_task",
+                "CREATE TABLE flow_user"
         );
     }
 

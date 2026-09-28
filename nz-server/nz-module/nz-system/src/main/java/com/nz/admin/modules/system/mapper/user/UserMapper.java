@@ -8,6 +8,9 @@ import com.nz.admin.modules.system.entity.dataobject.user.UserDO;
 import com.nz.admin.modules.system.entity.query.user.UserQuery;
 import org.apache.ibatis.annotations.Mapper;
 
+import java.util.Collection;
+import java.util.List;
+
 @Mapper
 public interface UserMapper extends BaseMapper<UserDO> {
 
@@ -24,7 +27,16 @@ public interface UserMapper extends BaseMapper<UserDO> {
         return selectOne(new LambdaQueryWrapper<UserDO>().eq(UserDO::getUsername, username));
     }
 
-    default java.util.List<UserDO> selectByPhoneHash(String phoneHash) {
+    default List<UserDO> selectByPhoneHash(String phoneHash) {
         return selectList(new LambdaQueryWrapper<UserDO>().eq(UserDO::getPhoneHash, phoneHash));
+    }
+
+    default List<UserDO> selectActiveByIds(Collection<Long> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return List.of();
+        }
+        return selectList(new LambdaQueryWrapper<UserDO>()
+                .in(UserDO::getId, userIds)
+                .eq(UserDO::getStatus, 0));
     }
 }

@@ -3,7 +3,7 @@ package com.nz.admin.modules.demo.service;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.nz.admin.common.core.BusinessException;
 import com.nz.admin.modules.demo.convert.DemoItemConvert;
 import com.nz.admin.modules.demo.entity.dataobject.DemoItemDO;

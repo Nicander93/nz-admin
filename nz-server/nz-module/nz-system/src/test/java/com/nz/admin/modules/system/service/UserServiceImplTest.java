@@ -28,15 +28,11 @@ class UserServiceImplTest extends BaseDbUnitTest {
 
     @Test
     void testListPage() {
-        UserDO user1 = randomPojo(UserDO.class)
-                .setId(null)
-                .setUsername("admin_test_1")
+        UserDO user1 = randomUser("admin_test_1")
                 .setNickname("管理员1");
         userMapper.insert(user1);
 
-        UserDO user2 = randomPojo(UserDO.class)
-                .setId(null)
-                .setUsername("guest_test_1")
+        UserDO user2 = randomUser("guest_test_1")
                 .setNickname("访客1");
         userMapper.insert(user2);
 
@@ -53,9 +49,7 @@ class UserServiceImplTest extends BaseDbUnitTest {
 
     @Test
     void testGetById() {
-        UserDO user = randomPojo(UserDO.class)
-                .setId(null)
-                .setUsername("admin_get_by_id");
+        UserDO user = randomUser("admin_get_by_id");
         userMapper.insert(user);
 
         UserDO result = userService.getById(user.getId());
@@ -66,9 +60,7 @@ class UserServiceImplTest extends BaseDbUnitTest {
 
     @Test
     void testGetByUsername() {
-        UserDO user = randomPojo(UserDO.class)
-                .setId(null)
-                .setUsername("admin_get_by_username");
+        UserDO user = randomUser("admin_get_by_username");
         userMapper.insert(user);
 
         UserDO result = userService.getByUsername("admin_get_by_username");
@@ -79,9 +71,7 @@ class UserServiceImplTest extends BaseDbUnitTest {
 
     @Test
     void testGetByPhone_backfillsSearchHash() {
-        UserDO user = randomPojo(UserDO.class)
-                .setId(null)
-                .setUsername("phone_login_user")
+        UserDO user = randomUser("phone_login_user")
                 .setPhone("13800138000")
                 .setPhoneHash(null);
         userMapper.insert(user);
@@ -101,9 +91,7 @@ class UserServiceImplTest extends BaseDbUnitTest {
 
     @Test
     void testSave() {
-        UserDO user = randomPojo(UserDO.class)
-                .setId(null)
-                .setUsername("new_user_for_save");
+        UserDO user = randomUser("new_user_for_save");
 
         userService.save(user);
 
@@ -113,9 +101,7 @@ class UserServiceImplTest extends BaseDbUnitTest {
 
     @Test
     void testUpdateById() {
-        UserDO user = randomPojo(UserDO.class)
-                .setId(null)
-                .setUsername("user_for_update")
+        UserDO user = randomUser("user_for_update")
                 .setNickname("原昵称");
         userMapper.insert(user);
 
@@ -131,9 +117,7 @@ class UserServiceImplTest extends BaseDbUnitTest {
 
     @Test
     void testRemoveById() {
-        UserDO user = randomPojo(UserDO.class)
-                .setId(null)
-                .setUsername("user_for_remove");
+        UserDO user = randomUser("user_for_remove");
         userMapper.insert(user);
 
         userService.removeById(user.getId());
@@ -143,14 +127,10 @@ class UserServiceImplTest extends BaseDbUnitTest {
 
     @Test
     void testCount() {
-        UserDO user1 = randomPojo(UserDO.class)
-                .setId(null)
-                .setUsername("count_user_1");
+        UserDO user1 = randomUser("count_user_1");
         userMapper.insert(user1);
 
-        UserDO user2 = randomPojo(UserDO.class)
-                .setId(null)
-                .setUsername("count_user_2");
+        UserDO user2 = randomUser("count_user_2");
         userMapper.insert(user2);
 
         long count = userService.count();
@@ -161,5 +141,12 @@ class UserServiceImplTest extends BaseDbUnitTest {
     @Test
     void testReEncryptContactsRequiresEnabledCipher() {
         assertThrows(com.nz.admin.common.core.BusinessException.class, userService::reEncryptContacts);
+    }
+
+    private UserDO randomUser(String username) {
+        return randomPojo(UserDO.class)
+                .setId(null)
+                .setUsername(username)
+                .setGender("2");
     }
 }

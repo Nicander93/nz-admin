@@ -1,0 +1,38 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:nz-e2e;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;NON_KEYWORDS=VALUE;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  flyway:
+    enabled: false
+  sql:
+    init:
+      mode: always
+      schema-locations:
+        - classpath:sql/monolith-schema.sql
+        - classpath:sql/e2e-schema.sql
+
+warm-flow:
+  enabled: false
+
+nz:
+  realtime:
+    enabled: true
+  sms:
+    enabled: true
+  social:
+    enabled: true
+  modules:
+    system:
+      initialize-data: false
+    job:
+      enabled: true
+    demo:
+      enabled: false
+    generator:
+      enabled: false
+    workflow:
+      enabled: false
+  file:
+    config-encryption-key: e2e-file-config-key-at-least-32-characters

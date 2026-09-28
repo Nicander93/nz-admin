@@ -25,6 +25,9 @@
 - 待办按具体用户或角色过滤，已办按操作人过滤，抄送按接收人过滤。
 - 支持通过任务 ID 同意、驳回和转办；转办同步更新实例办理人并保留转办历史。
 - 支持批量抄送、重复接收人去重、未读/已读状态和阅读时间。
+- 支持任务委派、受托完成后归还原办理人，并保留委派和归还历史。
+- 支持发起人或管理员催办、5 分钟频控、站内消息通知和催办轨迹。
+- Warm-Flow 已接入项目租户、审计和登录用户上下文；预设的裸用户 ID、`user:<id>` 与 `role:<roleKey>` 会解析为当前租户内的有效用户，并过滤禁用账号。
 
 分类接口前缀为 `/api/workflow/category`。权限包括：
 
@@ -58,6 +61,7 @@
 - `workflow:instance:terminate`
 - `workflow:instance:active`
 - `workflow:instance:remove`
+- `workflow:instance:urge`
 
 任务接口前缀为 `/api/workflow/task`。权限包括：
 
@@ -71,7 +75,7 @@
 
 ## 模块边界
 
-工作流代码位于 `nz-server/nz-module/nz-workflow`，只依赖 common 与 framework starter，不依赖 `nz-system`。`WorkflowDefinitionReferenceChecker` 检查分类引用，`DatabaseWorkflowDefinitionUsageChecker` 使用 `flow_instance` 检查定义版本引用。
+工作流代码位于 `nz-server/nz-module/nz-workflow`，只依赖 common 与 framework starter，不依赖 `nz-system`。`WorkflowDefinitionReferenceChecker` 检查分类引用；V25 后，`DatabaseWorkflowDefinitionUsageChecker` 通过 `nz_flow_instance_legacy` 检查现有运行时的定义版本引用。
 
 前端分类、定义、实例和任务页面位于 `nz-web/src/views/workflow`，由 `src/modules/workflow/manifest.ts` 注册。后端可通过 `nz.modules.workflow.enabled=false` 关闭自动装配；若要从交付物中彻底移除，还需删除 `nz-app` 依赖和前端模块清单。
 
@@ -85,11 +89,13 @@ V21 创建 `flow_instance` 和 `flow_instance_event`，加入实例菜单、按�
 
 V22 创建 `flow_task`、`flow_history_task` 和 `flow_task_copy`，回填 V21 存量运行实例，加入任务菜单、按钮权限和租户套餐映射。人工升级脚本是 `db/upgrade-p22-workflow-task.sql`。
 V23 为当前任务增加原办理人与委派状态，历史任务增加 `DELEGATE`、`RESOLVE` 动作，并加入委派权限。原办理人委派后，受托人只能完成委派并归还任务；归还前不能通过、驳回或转办，实例办理接口也执行同一约束。人工升级脚本是 `db/upgrade-p23-workflow-task-delegate.sql`。
+V24 增加实例催办权限，发起人或管理员可向当前用户或角色办理人发送站内消息，并写入 `URGE` 事件。人工升级脚本是 `db/upgrade-p24-workflow-instance-urge.sql`。
 
+V25 将现有运行时的三张同名表改为 `nz_flow_*_legacy`，保留全部存量数据和原有接口行为；同时创建 Warm-Flow 1.8.9 的七张标准表。新运行时默认通过 `warm-flow.enabled=false` 关闭；租户、审计和办理人解析桥接已经完成，仍需完成业务 API 适配与实例对象级权限后再启用。人工升级脚本是 `db/upgrade-p25-warm-flow-foundation.sql`。
 
 ## 尚未完成
 
-完整对齐 RuoYi-Vue-Plus 还需要加签/减签、催办、多人会签、并行网关、可视化设计器、流程图、业务状态回调和运行监控。V23 仍按单个当前任务执行；模型运行到并行网关时会明确拒绝，不会把单任务状态伪装成并行执行。
+完整对齐 RuoYi-Vue-Plus 还需要加签/减签、多人会签/或签、退回指定节点、并行网关、可视化设计器、流程图、业务状态回调和运行监控。当前业务 API 仍使用单当前任务的旧运行时；模型运行到并行网关时会明确拒绝，不会把单任务状态伪装成并行执行。
 
 ## 验证
 
@@ -97,7 +103,7 @@ V23 为当前任务增加原办理人与委派状态，历史任务增加 `DELEG
 cd nz-server
 JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 ./mvnw \
   -pl nz-module/nz-workflow,nz-app -am \
-  -Dtest=WorkflowTaskServiceImplTest,WorkflowTaskLifecycleServiceTest,WorkflowInstanceServiceImplTest,WorkflowRuntimeResolverTest,WorkflowDefinitionServiceImplTest,WorkflowModelValidatorTest,WorkflowCategoryServiceImplTest,NzWorkflowModuleManifestTest,FlywayMigrationResourcesTest \
+  -Dtest=WorkflowTaskServiceImplTest,WorkflowTaskLifecycleServiceTest,WorkflowInstanceServiceImplTest,WorkflowRuntimeResolverTest,WorkflowDefinitionServiceImplTest,WorkflowModelValidatorTest,WorkflowCategoryServiceImplTest,NzWorkflowModuleManifestTest,NzWarmFlowTenantHandlerTest,NzWarmFlowPermissionHandlerTest,NzWarmFlowDataFillHandlerTest,SystemWorkflowAssigneeResolverTest,FlywayMigrationResourcesTest,WarmFlowFoundationMigrationTest,NzAdminApplicationTest \
   -Dsurefire.failIfNoSpecifiedTests=false test
 
 cd ../nz-web

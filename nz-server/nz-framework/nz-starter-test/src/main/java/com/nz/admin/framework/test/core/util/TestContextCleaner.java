@@ -1,5 +1,6 @@
 package com.nz.admin.framework.test.core.util;
 
+import cn.dev33.satoken.context.SaHolder;
 import cn.dev33.satoken.stp.StpUtil;
 import org.slf4j.MDC;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -30,6 +31,11 @@ public final class TestContextCleaner {
         try {
             StpUtil.logout();
         } catch (Exception ignored) {
+        } finally {
+            try {
+                SaHolder.getContext().clearContext();
+            } catch (Exception ignored) {
+            }
         }
     }
 }

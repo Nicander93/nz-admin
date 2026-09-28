@@ -22,7 +22,7 @@ public class TenantProperties {
             "sys_post", "sys_user_post", "sys_config", "sys_notice", "sys_job",
             "sys_job_log", "sys_file", "sys_file_config", "demo_item",
             "sys_sms_channel", "sys_sms_template", "sys_sms_send_log", "sys_social", "sys_message",
-            "flow_category", "flow_definition", "flow_instance", "flow_instance_event",
-            "flow_task", "flow_history_task", "flow_task_copy"
+            "flow_category", "nz_flow_definition_legacy", "nz_flow_instance_legacy", "flow_instance_event",
+            "nz_flow_task_legacy", "flow_history_task", "flow_task_copy"
     ));
 }

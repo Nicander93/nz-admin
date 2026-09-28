@@ -8,6 +8,9 @@ import com.nz.admin.modules.system.entity.dataobject.role.RoleDO;
 import com.nz.admin.modules.system.entity.query.role.RoleQuery;
 import org.apache.ibatis.annotations.Mapper;
 
+import java.util.Collection;
+import java.util.List;
+
 @Mapper
 public interface RoleMapper extends BaseMapper<RoleDO> {
 
@@ -19,5 +22,14 @@ public interface RoleMapper extends BaseMapper<RoleDO> {
                 .eq(query.getDataScope() != null, RoleDO::getDataScope, query.getDataScope())
                 .orderByAsc(RoleDO::getSort);
         return selectPage(page, wrapper);
+    }
+
+    default List<RoleDO> selectActiveByKeys(Collection<String> roleKeys) {
+        if (roleKeys == null || roleKeys.isEmpty()) {
+            return List.of();
+        }
+        return selectList(new LambdaQueryWrapper<RoleDO>()
+                .in(RoleDO::getRoleKey, roleKeys)
+                .eq(RoleDO::getStatus, 0));
     }
 }

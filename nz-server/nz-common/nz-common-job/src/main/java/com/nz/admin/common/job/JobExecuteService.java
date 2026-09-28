@@ -1,22 +1,21 @@
 package com.nz.admin.common.job;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
-import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 
 /**
  * 按 invokeTarget（beanName.methodName）反射调用 Spring Bean 方法。
  */
-@Component
 public class JobExecuteService {
 
-    @Autowired
-    private ApplicationContext applicationContext;
+    private final ApplicationContext applicationContext;
+    private final JobInvokeLogSink jobInvokeLogSink;
 
-    @Autowired
-    private JobInvokeLogSink jobInvokeLogSink;
+    public JobExecuteService(ApplicationContext applicationContext, JobInvokeLogSink jobInvokeLogSink) {
+        this.applicationContext = applicationContext;
+        this.jobInvokeLogSink = jobInvokeLogSink;
+    }
 
     /**
      * invokeTarget 格式：beanName.methodName

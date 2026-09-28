@@ -14,7 +14,7 @@ import lombok.experimental.Accessors;
 @Data
 @Accessors(chain = true)
 @EqualsAndHashCode(callSuper = true)
-@TableName("flow_definition")
+@TableName("nz_flow_definition_legacy")
 public class WorkflowDefinitionDO extends BaseEntity {
 
     @TableId(value = "definition_id", type = IdType.AUTO)

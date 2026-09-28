@@ -27,6 +27,10 @@ class TenantAutoConfigurationTest {
             assertThat(handler.ignoreTable("sys_tenant")).isTrue();
             assertThat(handler.ignoreTable("sys_user")).isFalse();
             assertThat(handler.getTenantId().toString()).isEqualTo("1");
+            assertThat(handler.ignoreTable("flow_definition")).isTrue();
+            assertThat(handler.ignoreTable("flow_instance")).isTrue();
+            assertThat(handler.ignoreTable("flow_task")).isTrue();
+            assertThat(handler.ignoreTable("nz_flow_definition_legacy")).isFalse();
         });
     }
 }

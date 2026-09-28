@@ -4,7 +4,7 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.nz.admin.common.core.BusinessException;
 import @@PACKAGE@@.entity.dataobject.@@CLASS@@DO;
 import @@PACKAGE@@.entity.dto.@@CLASS@@CreateRequest;

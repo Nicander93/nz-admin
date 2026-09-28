@@ -1,14 +1,15 @@
 import { defineConfig, devices } from '@playwright/test'
 import dotenv from 'dotenv'
 
+dotenv.config({ path: '.env.e2e.local' })
 dotenv.config({ path: '.env.e2e' })
-dotenv.config({ path: '.env.e2e.local', override: true })
 
 const baseURL = process.env.E2E_BASE_URL || 'http://127.0.0.1:4173'
 
 export default defineConfig({
   testDir: './tests/e2e',
   timeout: 60 * 1000,
+  workers: Number(process.env.E2E_WORKERS || 1),
   expect: {
     timeout: 10 * 1000,
   },
