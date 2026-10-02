@@ -19,6 +19,10 @@ public interface UserService {
 
     void save(UserDO user);
 
+    void createWithPosts(UserDO user, List<Long> postIds);
+
+    void updateWithPosts(UserDO user, List<Long> postIds);
+
     void updateById(UserDO user);
 
     void removeById(Long id);

@@ -1,17 +1,15 @@
 package com.nz.admin;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import com.nz.admin.framework.test.core.http.ApiTestClient;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -24,6 +22,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 class NzAdminE2eProfileTest {
 
     private final TestRestTemplate restTemplate;
+    @Autowired
+    private JdbcTemplate jdbc;
 
     @Autowired
     NzAdminE2eProfileTest(TestRestTemplate restTemplate) {
@@ -32,36 +32,23 @@ class NzAdminE2eProfileTest {
 
     @Test
     void authenticatesAndServesCoreAdminPagesWithH2() {
-        ResponseEntity<JsonNode> loginResponse = restTemplate.postForEntity(
-                "/api/auth/login",
-                Map.of(
-                        "tenantCode", "default",
-                        "clientId", "nz-web-account",
-                        "username", "admin",
-                        "password", "admin123"
-                ),
-                JsonNode.class
-        );
-        assertThat(loginResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
-        String token = loginResponse.getBody().path("data").asText();
-        assertThat(token).isNotBlank();
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", token);
-        HttpEntity<Void> request = new HttpEntity<>(headers);
-
-        assertOk("/api/auth/info", request);
-        assertOk("/api/auth/menus", request);
-        assertOk("/api/system/config/page?pageNum=1&pageSize=10", request);
-        assertOk("/api/system/post/list", request);
-        assertOk("/api/system/workbench/snapshot", request);
+        var api = new ApiTestClient(restTemplate)
+                .login("default", "admin", "admin123");
+        for (String path : List.of("/api/auth/info", "/api/auth/menus",
+                "/api/system/config/page?pageNum=1&pageSize=10", "/api/system/post/list", "/api/system/workbench/snapshot")) {
+            api.ok(HttpMethod.GET, path, null);
+        }
+        jdbc.update("UPDATE sys_role SET data_scope=2 WHERE id=1");
+        try {
+            assertThat(api.ok(HttpMethod.GET, "/api/system/user/page", null).path("total").asLong()).isZero();
+            assertThat(api.ok(HttpMethod.GET, "/api/system/profile", null).path("id").asLong()).isEqualTo(1);
+            api.ok(HttpMethod.PUT, "/api/system/profile",
+                    Map.of("nickname", "个人修改", "gender", "0", "email", "", "phone", ""));
+            assertThat(jdbc.queryForObject("SELECT nickname FROM sys_user WHERE id=1", String.class))
+                    .isEqualTo("个人修改");
+        } finally {
+            jdbc.update("UPDATE sys_role SET data_scope=1 WHERE id=1");
+        }
     }
 
-    private void assertOk(String path, HttpEntity<Void> request) {
-        ResponseEntity<JsonNode> response =
-                restTemplate.exchange(path, HttpMethod.GET, request, JsonNode.class);
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().path("code").asInt()).isEqualTo(200);
-    }
 }

@@ -4,6 +4,7 @@ import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.nz.admin.framework.datascope.core.DataScopeContext;
 import com.nz.admin.modules.system.entity.dataobject.user.UserDO;
 import com.nz.admin.modules.system.entity.query.user.UserQuery;
 import org.apache.ibatis.annotations.Mapper;
@@ -18,13 +19,13 @@ public interface UserMapper extends BaseMapper<UserDO> {
         LambdaQueryWrapper<UserDO> wrapper = new LambdaQueryWrapper<>();
         wrapper.like(StrUtil.isNotBlank(query.getUsername()), UserDO::getUsername, query.getUsername())
                .like(StrUtil.isNotBlank(query.getNickname()), UserDO::getNickname, query.getNickname())
-               .eq(query.getStatus() != null, UserDO::getStatus, query.getStatus())
-               .apply(StrUtil.isNotBlank(query.getDataScopeSql()), query.getDataScopeSql());
+               .eq(query.getStatus() != null, UserDO::getStatus, query.getStatus());
         return selectPage(page, wrapper);
     }
 
     default UserDO selectByUsername(String username) {
-        return selectOne(new LambdaQueryWrapper<UserDO>().eq(UserDO::getUsername, username));
+        return DataScopeContext.withoutFilter(() ->
+                selectOne(new LambdaQueryWrapper<UserDO>().eq(UserDO::getUsername, username)));
     }
 
     default List<UserDO> selectByPhoneHash(String phoneHash) {

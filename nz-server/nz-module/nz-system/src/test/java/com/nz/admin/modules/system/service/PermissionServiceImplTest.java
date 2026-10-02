@@ -11,10 +11,10 @@ import com.nz.admin.modules.system.mapper.role.RoleMapper;
 import com.nz.admin.modules.system.mapper.role.RoleMenuMapper;
 import com.nz.admin.modules.system.mapper.user.UserRoleMapper;
 import com.nz.admin.modules.system.service.permission.PermissionServiceImpl;
+import jakarta.annotation.Resource;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.Import;
 
-import jakarta.annotation.Resource;
 import java.util.List;
 import java.util.Set;
 
@@ -29,6 +29,8 @@ class PermissionServiceImplTest extends BaseDbUnitTest {
     private PermissionServiceImpl permissionService;
     @Resource
     private UserRoleMapper userRoleMapper;
+    @Resource
+    private com.nz.admin.modules.system.mapper.user.UserMapper userMapper;
     @Resource
     private RoleMapper roleMapper;
     @Resource
@@ -126,11 +128,15 @@ class PermissionServiceImplTest extends BaseDbUnitTest {
 
     @Test
     void testAssignUserRoles() {
+        var user = new com.nz.admin.modules.system.entity.dataobject.user.UserDO().setId(1L).setUsername("assignment-target").setPassword("test").setStatus(0);
+        userMapper.insert(user);
         UserRoleDO old = randomPojo(UserRoleDO.class)
                 .setUserId(1L)
                 .setRoleId(999L);
         userRoleMapper.insert(old);
 
+        roleMapper.insert(randomPojo(RoleDO.class).setId(10L).setRoleKey("assign-role-10"));
+        roleMapper.insert(randomPojo(RoleDO.class).setId(20L).setRoleKey("assign-role-20"));
         List<Long> roleIds = List.of(10L, 20L);
         permissionService.assignUserRoles(1L, roleIds);
 

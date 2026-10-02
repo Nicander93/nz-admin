@@ -1,24 +1,60 @@
 package com.nz.admin.framework.datascope.config;
 
-import com.nz.admin.framework.datascope.DataScopeAspect;
-import com.nz.admin.framework.datascope.DataScopeUserResolver;
-import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
-import org.springframework.context.annotation.Bean;
+import com.baomidou.mybatisplus.extension.plugins.inner.DataPermissionInterceptor;
+import com.nz.admin.framework.datascope.core.DataScopeResolver;
+import com.nz.admin.framework.datascope.core.DataScopeRule;
+import com.nz.admin.framework.datascope.core.DataScopeRuleCustomizer;
+import com.nz.admin.framework.datascope.support.DataScopeHandler;
+import com.nz.admin.framework.mybatis.config.MybatisPlusAutoConfiguration;
+import com.nz.admin.framework.mybatis.plugin.MybatisPlusInterceptorCustomizer;
 
-/**
- * 数据权限自动配置。
- */
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
+import org.springframework.context.annotation.Bean;
+import org.springframework.core.Ordered;
+
+import java.util.ArrayList;
+import java.util.List;
+
 @AutoConfiguration
-@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
+@AutoConfigureBefore(MybatisPlusAutoConfiguration.class)
 public class NzDatascopeAutoConfiguration {
+    @Bean
+    public DataScopeHandler dataScopeHandler(
+            ObjectProvider<DataScopeRuleCustomizer> customizers,
+            ObjectProvider<DataScopeResolver> resolver) {
+        List<DataScopeRule> rules = new ArrayList<>();
+        customizers.orderedStream().forEach(customizer -> customizer.customize(rules));
+        return new DataScopeHandler(
+                rules,
+                () -> {
+                    DataScopeResolver value = resolver.getIfAvailable();
+                    if (value == null) {
+                        throw new IllegalStateException("受保护表缺少 DataScopeResolver");
+                    }
+                    return value.resolve();
+                });
+    }
 
     @Bean
-    @ConditionalOnMissingBean
-    @ConditionalOnBean(DataScopeUserResolver.class)
-    public DataScopeAspect dataScopeAspect(DataScopeUserResolver dataScopeUserResolver) {
-        return new DataScopeAspect(dataScopeUserResolver);
+    public MybatisPlusInterceptorCustomizer dataScopeInterceptorCustomizer(
+            DataScopeHandler handler) {
+        return new OrderedCustomizer(handler);
+    }
+
+    // 租户插件先运行，数据范围随后执行，分页由 MyBatis starter 最后加入。
+    private record OrderedCustomizer(DataScopeHandler handler)
+            implements MybatisPlusInterceptorCustomizer, Ordered {
+        @Override
+        public int getOrder() {
+            return 100;
+        }
+
+        @Override
+        public void customize(
+                com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor interceptor) {
+            interceptor.addInnerInterceptor(new DataPermissionInterceptor(handler));
+        }
     }
 }

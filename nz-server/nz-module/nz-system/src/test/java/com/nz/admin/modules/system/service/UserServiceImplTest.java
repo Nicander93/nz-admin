@@ -4,13 +4,12 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.nz.admin.NzSystemTestApplication;
 import com.nz.admin.framework.test.core.ut.BaseDbUnitTest;
 import com.nz.admin.modules.system.entity.dataobject.user.UserDO;
-import com.nz.admin.modules.system.mapper.user.UserMapper;
 import com.nz.admin.modules.system.entity.query.user.UserQuery;
+import com.nz.admin.modules.system.mapper.user.UserMapper;
 import com.nz.admin.modules.system.service.user.UserServiceImpl;
+import jakarta.annotation.Resource;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.Import;
-
-import jakarta.annotation.Resource;
 
 import static com.nz.admin.framework.test.core.util.RandomPojoUtils.randomPojo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -91,7 +90,7 @@ class UserServiceImplTest extends BaseDbUnitTest {
 
     @Test
     void testSave() {
-        UserDO user = randomUser("new_user_for_save");
+        UserDO user = randomUser("new_user_for_save").setDeptId(null);
 
         userService.save(user);
 

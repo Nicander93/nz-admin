@@ -5,6 +5,7 @@ import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.nz.admin.common.core.BusinessException;
+import com.nz.admin.framework.datascope.core.DataScopeContext;
 import com.nz.admin.framework.social.core.SocialAuthenticationException;
 import com.nz.admin.framework.social.core.SocialAuthorization;
 import com.nz.admin.framework.social.core.SocialAuthorizationContext;
@@ -114,7 +115,7 @@ public class SocialAccountServiceImpl
             if (binding == null) {
                 throw new BusinessException("该第三方账号尚未绑定系统用户");
             }
-            UserDO user = userService.getById(binding.getUserId());
+            UserDO user = DataScopeContext.withoutFilter(() -> userService.getById(binding.getUserId()));
             if (user == null) {
                 throw new BusinessException("绑定的系统用户不存在");
             }

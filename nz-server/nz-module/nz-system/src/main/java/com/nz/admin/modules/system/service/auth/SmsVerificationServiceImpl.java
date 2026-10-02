@@ -4,6 +4,7 @@ import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.digest.DigestUtil;
 import com.nz.admin.common.core.BusinessException;
+import com.nz.admin.framework.datascope.core.DataScopeContext;
 import com.nz.admin.framework.tenant.core.TenantContextHolder;
 import com.nz.admin.modules.system.config.SmsVerificationProperties;
 import com.nz.admin.modules.system.entity.dataobject.user.UserDO;
@@ -44,7 +45,7 @@ public class SmsVerificationServiceImpl implements SmsVerificationService {
         if (issueResult == SmsVerificationCodeStore.IssueResult.TOO_FREQUENT) {
             throw new BusinessException("验证码发送过于频繁，请稍后再试");
         }
-        UserDO user = userService.getByPhone(normalizedPhone);
+        UserDO user = DataScopeContext.withoutFilter(() -> userService.getByPhone(normalizedPhone));
         if (user == null || !Integer.valueOf(0).equals(user.getStatus())) {
             return;
         }
@@ -70,7 +71,7 @@ public class SmsVerificationServiceImpl implements SmsVerificationService {
                 default -> "验证码错误";
             });
         }
-        UserDO user = userService.getByPhone(normalizedPhone);
+        UserDO user = DataScopeContext.withoutFilter(() -> userService.getByPhone(normalizedPhone));
         if (user == null) {
             throw new BusinessException("验证码错误");
         }

@@ -17,6 +17,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.core.task.TaskDecorator;
 
 import java.util.Locale;
@@ -58,6 +59,7 @@ public class TenantAutoConfiguration {
     }
 
     @Bean
+    @Order(0)
     public MybatisPlusInterceptorCustomizer tenantInterceptorCustomizer(TenantLineHandler handler) {
         return interceptor -> interceptor.addInnerInterceptor(new TenantLineInnerInterceptor(handler));
     }

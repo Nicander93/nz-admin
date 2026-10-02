@@ -76,3 +76,72 @@ jobs:
             --profile redis \
             --profile storage \
             build backend frontend
+
+  e2e:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: nz_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres -d nz_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      NZ_TEST_PG_URL: jdbc:postgresql://localhost:5432/nz_test
+      NZ_TEST_PG_USERNAME: postgres
+      NZ_TEST_PG_PASSWORD: postgres
+      NZ_DATASOURCE_URL: jdbc:postgresql://localhost:5432/nz_test
+      NZ_DATASOURCE_USERNAME: postgres
+      NZ_DATASOURCE_PASSWORD: postgres
+      NZ_FILE_CONFIG_KEY: integration-test-key-at-least-32-characters
+      NZ_INITIALIZE_DATA: "false"
+      E2E_USERNAME: admin
+      E2E_PASSWORD: admin123
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.13"
+          cache: pnpm
+          cache-dependency-path: nz-web/pnpm-lock.yaml
+      - name: Verify real PostgreSQL migrations and HTTP permissions
+        working-directory: nz-server
+        run: ./mvnw -q -pl nz-app -am install -Dtest=DataScopePostgresTest -Dsurefire.failIfNoSpecifiedTests=false
+      - name: Install browser dependencies
+        working-directory: nz-web
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm exec playwright install --with-deps chromium
+      - name: Start backend
+        run: |
+          cd nz-server
+          ./mvnw -q -pl nz-app spring-boot:run -Dspring-boot.run.profiles=prod > /tmp/nz-backend.log 2>&1 &
+          for attempt in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:8080/actuator/health/readiness; then exit 0; fi
+            sleep 2
+          done
+          cat /tmp/nz-backend.log
+          exit 1
+      - name: Run browser E2E
+        working-directory: nz-web
+        run: pnpm e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: e2e-diagnostics
+          path: |
+            nz-web/test-results
+            nz-web/playwright-report
+            /tmp/nz-backend.log

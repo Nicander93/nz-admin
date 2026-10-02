@@ -18,6 +18,12 @@ import org.springframework.stereotype.Service;
 @Service
 public class DemoItemServiceImpl extends ServiceImpl<DemoItemMapper, DemoItemDO> implements DemoItemService {
 
+    private final com.nz.admin.framework.auth.core.LoginUserContext loginUserContext;
+
+    public DemoItemServiceImpl(com.nz.admin.framework.auth.core.LoginUserContext loginUserContext) {
+        this.loginUserContext = loginUserContext;
+    }
+
     @Override
     public Page<DemoItemDO> page(Integer pageNum, Integer pageSize, String name, String category, Integer status) {
         LambdaQueryWrapper<DemoItemDO> wrapper = new LambdaQueryWrapper<DemoItemDO>()
@@ -41,6 +47,11 @@ public class DemoItemServiceImpl extends ServiceImpl<DemoItemMapper, DemoItemDO>
     @Override
     public Long create(DemoItemCreateRequest request) {
         DemoItemDO item = DemoItemConvert.toDO(request);
+        Long userId = loginUserContext.getLoginUserIdOrNull();
+        if (userId == null) {
+            throw new BusinessException("创建示例条目需要登录身份");
+        }
+        item.setOwnerId(userId);
         baseMapper.insert(item);
         return item.getId();
     }
@@ -48,12 +59,16 @@ public class DemoItemServiceImpl extends ServiceImpl<DemoItemMapper, DemoItemDO>
     @Override
     public void update(DemoItemUpdateRequest request) {
         getRequired(request.getId());
-        baseMapper.updateById(DemoItemConvert.toDO(request));
+        if (baseMapper.updateById(DemoItemConvert.toDO(request)) != 1) {
+            throw new BusinessException("示例条目不存在或无权修改");
+        }
     }
 
     @Override
     public void delete(Long id) {
         getRequired(id);
-        baseMapper.deleteById(id);
+        if (baseMapper.deleteById(id) != 1) {
+            throw new BusinessException("示例条目不存在或无权删除");
+        }
     }
 }

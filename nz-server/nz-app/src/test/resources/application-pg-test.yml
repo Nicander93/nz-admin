@@ -1,0 +1,18 @@
+spring:
+  datasource:
+    url: ${NZ_TEST_PG_URL}
+    username: ${NZ_TEST_PG_USERNAME:postgres}
+    password: ${NZ_TEST_PG_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+  flyway:
+    enabled: true
+    clean-disabled: true
+  sql:
+    init:
+      mode: never
+nz:
+  modules:
+    system:
+      initialize-data: false
+  file:
+    config-encryption-key: integration-test-key-at-least-32-characters

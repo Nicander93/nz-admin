@@ -15,7 +15,7 @@
 - `BaseDbUnitTest` 可用于 H2 + MyBatis-Plus 相关测试。
 - `BaseWebContextUnitTest` 可用于需要 `RequestContextHolder` 和 Sa-Token 登录态的轻量测试。
 - `TestContextCleaner` 可统一清理 `RequestContextHolder`、MDC 和 Sa-Token 上下文，避免测试互相污染。
-- `nz-framework/nz-starter-datascope` 已有 `DataScopeAspectTest`，可作为框架行为测试参考。
+- `nz-framework/nz-starter-datascope` 已有 `DataScopeIntegrationTest`，可作为框架行为测试参考。
 - `nz-module/nz-system` 已有部分 Service 单测，可作为业务层测试风格参考。
 
 主要缺口：

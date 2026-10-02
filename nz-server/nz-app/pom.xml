@@ -15,6 +15,7 @@
     <description>后端启动模块，负责应用入口、运行配置、启动期装配和基础数据初始化。</description>
 
     <dependencies>
+        <dependency><groupId>com.nz</groupId><artifactId>nz-starter-test</artifactId><scope>test</scope></dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>

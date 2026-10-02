@@ -9,3 +9,5 @@ DELETE FROM sys_menu;
 DELETE FROM sys_user;
 DELETE FROM sys_role;
 DELETE FROM sys_dept;
+
+DELETE FROM sys_role_dept;

@@ -89,6 +89,11 @@
              <el-radio :value="5">仅本人数据权限</el-radio>
            </el-radio-group>
          </el-form-item>
+         <el-form-item v-if="form.model.dataScope === 2" label="自定义部门">
+           <el-select v-model="form.model.deptIds" multiple placeholder="请选择部门">
+             <el-option v-for="dept in departments" :key="dept.id" :label="dept.name" :value="dept.id" />
+           </el-select>
+         </el-form-item>
          <el-form-item label="备注">
            <el-input v-model="form.model.remark" type="textarea" />
          </el-form-item>
@@ -114,8 +119,11 @@ import { ref, onMounted } from 'vue'
 import { useRoleCrud } from './hooks'
 import RoleMenuDialog from './RoleMenuDialog.vue'
 
-const { table, form, actions } = useRoleCrud()
+const { table, form, actions, departments, loadDepartments } = useRoleCrud()
 const menuDialogRef = ref<InstanceType<typeof RoleMenuDialog>>()
 
-onMounted(() => table.refresh())
+onMounted(() => {
+  table.refresh()
+  loadDepartments()
+})
 </script>

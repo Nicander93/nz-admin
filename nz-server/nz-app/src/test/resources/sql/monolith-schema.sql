@@ -21,3 +21,5 @@ CREATE TABLE sys_file_config
     create_time             TIMESTAMP,
     update_time             TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS sys_role_dept (tenant_id BIGINT DEFAULT 1 NOT NULL, role_id BIGINT NOT NULL, dept_id BIGINT NOT NULL, PRIMARY KEY(tenant_id, role_id, dept_id));

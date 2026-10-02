@@ -1,0 +1,18 @@
+{
+  "name": "@nz/test",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./unit": "./src/unit.ts",
+    "./e2e": "./src/e2e.ts",
+    "./config": "./src/config.ts"
+  },
+  "peerDependencies": {
+    "@playwright/test": "^1.62.1",
+    "@vitejs/plugin-vue": "^6.0.8",
+    "vitest": "^4.1.4",
+    "vue": "^3.5.41",
+    "vite": "^8.0.8"
+  }
+}

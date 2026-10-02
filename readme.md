@@ -96,6 +96,9 @@ cp deploy/.env.example deploy/.env
 
 ## 文档
 
+- [数据权限接入与升级](docs/data-permission.md)
+- [通用测试包与 E2E](docs/testing.md)
+
 - [P2 脚手架阶段说明](docs/p2-phase-overview.md)
 - [CRUD 范式](docs/crud-paradigm.md)
 - [模块开发指南](docs/module-development-guide.md)

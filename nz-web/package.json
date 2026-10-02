@@ -52,6 +52,7 @@
     "vite": "8.0.8",
     "vitest": "4.1.4",
     "vue-eslint-parser": "^10",
-    "vue-tsc": "^3.3.11"
+    "vue-tsc": "^3.3.11",
+    "@nz/test": "workspace:*"
   }
 }

@@ -212,3 +212,12 @@ VALUES (1, 1, 'dev', '开发工程师', 1, 0, 'H2 E2E seed');
 
 INSERT INTO sys_config (id, tenant_id, config_name, config_key, config_value, config_type, status, remark)
 VALUES (1, 1, '主框架页签', 'sys.index.tabs', 'true', 1, 0, 'H2 E2E seed');
+
+CREATE TABLE IF NOT EXISTS sys_role_dept (tenant_id BIGINT DEFAULT 1 NOT NULL, role_id BIGINT NOT NULL, dept_id BIGINT NOT NULL, PRIMARY KEY(tenant_id, role_id, dept_id));
+
+CREATE TABLE IF NOT EXISTS sys_user_post (
+    tenant_id BIGINT NOT NULL DEFAULT 1,
+    user_id BIGINT NOT NULL,
+    post_id BIGINT NOT NULL,
+    PRIMARY KEY (tenant_id, user_id, post_id)
+);

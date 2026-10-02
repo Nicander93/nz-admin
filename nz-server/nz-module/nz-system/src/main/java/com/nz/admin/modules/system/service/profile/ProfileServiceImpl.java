@@ -4,6 +4,7 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.digest.BCrypt;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.nz.admin.common.core.BusinessException;
+import com.nz.admin.framework.datascope.core.DataScopeContext;
 import com.nz.admin.framework.file.FileSecurityValidator;
 import com.nz.admin.modules.system.entity.dataobject.dept.PostDO;
 import com.nz.admin.modules.system.entity.dataobject.file.FileDO;
@@ -62,7 +63,7 @@ public class ProfileServiceImpl implements ProfileService {
     public ProfileVO getProfile(Long userId) {
         UserDO user = requireUser(userId);
         Set<Long> roleIds = new HashSet<>(permissionService.getRoleIdsByUserId(userId));
-        Set<Long> postIds = new HashSet<>(userService.getPostIdsByUserId(userId));
+        Set<Long> postIds = new HashSet<>(DataScopeContext.withoutFilter(() -> userService.getPostIdsByUserId(userId)));
         String roleGroup = joinRoleNames(roleIds);
         String postGroup = joinPostNames(postIds);
         return new ProfileVO(
@@ -78,7 +79,7 @@ public class ProfileServiceImpl implements ProfileService {
         String email = StrUtil.trim(request.email());
         String phone = StrUtil.trim(request.phone());
         checkContactsUnique(userId, email, phone);
-        userService.updateById(new UserDO()
+        updateCurrentUser(new UserDO()
                 .setId(userId)
                 .setNickname(request.nickname().trim())
                 .setEmail(StrUtil.isBlank(email) ? null : email)
@@ -97,7 +98,7 @@ public class ProfileServiceImpl implements ProfileService {
         if (BCrypt.checkpw(request.newPassword(), user.getPassword())) {
             throw new BusinessException("新密码不能与旧密码相同");
         }
-        userService.updateById(new UserDO()
+        updateCurrentUser(new UserDO()
                 .setId(userId)
                 .setPassword(BCrypt.hashpw(request.newPassword())));
     }
@@ -108,7 +109,7 @@ public class ProfileServiceImpl implements ProfileService {
         validateAvatar(file);
         FileDO uploaded = fileService.upload(file, userId);
         try {
-            userService.updateById(new UserDO()
+            updateCurrentUser(new UserDO()
                     .setId(userId)
                     .setAvatarFileId(uploaded.getId()));
         } catch (RuntimeException e) {
@@ -131,7 +132,7 @@ public class ProfileServiceImpl implements ProfileService {
     }
 
     private UserDO requireUser(Long userId) {
-        UserDO user = userService.getById(userId);
+        UserDO user = DataScopeContext.withoutFilter(() -> userService.getById(userId));
         if (user == null) {
             throw new BusinessException("当前用户不存在");
         }
@@ -139,7 +140,7 @@ public class ProfileServiceImpl implements ProfileService {
     }
 
     private void checkContactsUnique(Long userId, String email, String phone) {
-        for (UserDO candidate : userMapper.selectList(null)) {
+        for (UserDO candidate : DataScopeContext.withoutFilter(() -> userMapper.selectList(null))) {
             if (Objects.equals(userId, candidate.getId())) {
                 continue;
             }
@@ -156,11 +157,14 @@ public class ProfileServiceImpl implements ProfileService {
         if (StrUtil.isNotBlank(email) && StrUtil.isNotBlank(phone)) {
             return;
         }
-        userMapper.update(null, new LambdaUpdateWrapper<UserDO>()
-                .set(StrUtil.isBlank(email), UserDO::getEmail, null)
-                .set(StrUtil.isBlank(phone), UserDO::getPhone, null)
-                .set(StrUtil.isBlank(phone), UserDO::getPhoneHash, null)
-                .eq(UserDO::getId, userId));
+        DataScopeContext.withoutFilter(() -> {
+            userMapper.update(null, new LambdaUpdateWrapper<UserDO>()
+                    .set(StrUtil.isBlank(email), UserDO::getEmail, null)
+                    .set(StrUtil.isBlank(phone), UserDO::getPhone, null)
+                    .set(StrUtil.isBlank(phone), UserDO::getPhoneHash, null)
+                    .eq(UserDO::getId, userId));
+            return null;
+        });
     }
 
     private String joinRoleNames(Set<Long> roleIds) {
@@ -190,4 +194,11 @@ public class ProfileServiceImpl implements ProfileService {
             throw new BusinessException("头像必须是图片文件");
         }
     }
+    private void updateCurrentUser(UserDO user) {
+        DataScopeContext.withoutFilter(() -> {
+            userService.updateById(user);
+            return null;
+        });
+    }
+
 }

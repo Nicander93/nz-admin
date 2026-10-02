@@ -2,6 +2,7 @@ package com.nz.admin.modules.system.config;
 
 import com.nz.admin.framework.auth.core.AuthUserResolver;
 import com.nz.admin.framework.auth.core.LoginUser;
+import com.nz.admin.framework.datascope.core.DataScopeContext;
 import com.nz.admin.modules.system.entity.dataobject.user.UserDO;
 import com.nz.admin.modules.system.service.permission.PermissionService;
 import com.nz.admin.modules.system.service.user.UserService;
@@ -26,7 +27,7 @@ public class SystemAuthUserResolver implements AuthUserResolver {
         LoginUser loginUser = new LoginUser();
         loginUser.setUserId(userId);
 
-        UserDO user = userService.getById(userId);
+        UserDO user = DataScopeContext.withoutFilter(() -> userService.getById(userId));
         if (user != null) {
             loginUser.setUsername(user.getUsername());
             loginUser.setTenantId(user.getTenantId());

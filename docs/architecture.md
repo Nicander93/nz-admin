@@ -44,14 +44,14 @@ nz-app -> nz-module -> nz-framework -> nz-common
 
 - `nz-starter-web`：统一异常、Web 配置、文档、请求上下文。
 - `nz-starter-auth`：认证上下文、权限注解、Sa-Token 接入。
-- `nz-starter-datascope`：数据权限注解、切面和当前用户解析扩展点。
+- `nz-starter-datascope`：受保护表规则、SQL AST 行过滤和范围解析扩展点。
 - `nz-starter-mybatis`：持久层自动配置、分页、查询辅助、审计字段填充。
 - `nz-starter-tenant`：可信租户上下文、异步上下文传递和 MyBatis 行级隔离。
 - `nz-starter-log`：操作日志注解、切面、采集与记录扩展点。
 - `nz-starter-file`：文件存储抽象、本地/OSS 实现与安全校验。
 - `nz-starter-encryption`：字段加密协议、密钥轮换、MyBatis 类型处理器和脱敏工具。
 - `nz-starter-quartz`：定时任务调度装配、任务执行封装和调度辅助。
-- `nz-starter-test`：测试基类、测试配置和上下文清理工具。
+- `nz-starter-test`：测试基类、HTTP 测试客户端、测试配置和上下文清理工具。
 
 ## 公共对象边界
 
@@ -237,3 +237,7 @@ com.nz.admin.modules.system
 - `rename` 只替换受控文本文件内容，不重命名目录或 Java 包。
 
 修改型命令要求 `--dry-run` 或 `--yes`。实际写入先在 `.nz-cli/backups` 保存原文件，`rollback` 根据操作清单恢复。CLI 不承载业务逻辑，也不绕过模块协议和 Flyway。
+
+## 数据权限与测试支持
+
+数据范围解析由 system 实现，SQL 过滤由 datascope starter 实现，framework 不查询用户、角色或部门表。前端通用测试支持集中在 workspace 包 `@nz/test`。具体接入和升级说明见 [data-permission.md](data-permission.md) 与 [testing.md](testing.md)。

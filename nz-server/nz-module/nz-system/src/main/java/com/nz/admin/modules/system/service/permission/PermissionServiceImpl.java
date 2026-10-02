@@ -15,6 +15,7 @@ import com.nz.admin.modules.system.mapper.tenant.TenantMapper;
 import com.nz.admin.modules.system.mapper.user.UserRoleMapper;
 import com.nz.admin.modules.system.service.permission.PermissionService;
 import com.nz.admin.modules.system.service.tenant.TenantPackageService;
+import com.nz.admin.modules.system.service.user.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +31,8 @@ public class PermissionServiceImpl implements PermissionService {
 
     @Autowired
     private UserRoleMapper userRoleMapper;
+    @Autowired
+    private UserService userService;
     @Autowired
     private RoleMapper roleMapper;
     @Autowired
@@ -49,7 +52,9 @@ public class PermissionServiceImpl implements PermissionService {
     @Override
     public Set<String> getRoleKeysByUserId(Long userId) {
         List<Long> roleIds = getRoleIdsByUserId(userId);
-        if (roleIds.isEmpty()) return Collections.emptySet();
+        if (roleIds.isEmpty()) {
+            return Collections.emptySet();
+        }
         return roleIds.stream()
                 .map(roleMapper::selectById)
                 .filter(Objects::nonNull)
@@ -63,7 +68,9 @@ public class PermissionServiceImpl implements PermissionService {
     @Override
     public Set<String> getPermsByUserId(Long userId) {
         List<Long> roleIds = getRoleIdsByUserId(userId);
-        if (roleIds.isEmpty()) return Collections.emptySet();
+        if (roleIds.isEmpty()) {
+            return Collections.emptySet();
+        }
 
         Set<Long> menuIds = new HashSet<>();
         for (Long roleId : roleIds) {
@@ -71,7 +78,9 @@ public class PermissionServiceImpl implements PermissionService {
                     .map(RoleMenuDO::getMenuId)
                     .forEach(menuIds::add);
         }
-        if (menuIds.isEmpty()) return Collections.emptySet();
+        if (menuIds.isEmpty()) {
+            return Collections.emptySet();
+        }
         retainMenusWithinTenantPackage(menuIds);
 
         return menuIds.stream()
@@ -88,7 +97,9 @@ public class PermissionServiceImpl implements PermissionService {
     @Override
     public List<MenuDO> getMenusByUserId(Long userId) {
         List<Long> roleIds = getRoleIdsByUserId(userId);
-        if (roleIds.isEmpty()) return Collections.emptyList();
+        if (roleIds.isEmpty()) {
+            return Collections.emptyList();
+        }
 
         Set<Long> menuIds = new HashSet<>();
         for (Long roleId : roleIds) {
@@ -96,7 +107,9 @@ public class PermissionServiceImpl implements PermissionService {
                     .map(RoleMenuDO::getMenuId)
                     .forEach(menuIds::add);
         }
-        if (menuIds.isEmpty()) return Collections.emptyList();
+        if (menuIds.isEmpty()) {
+            return Collections.emptyList();
+        }
         retainMenusWithinTenantPackage(menuIds);
 
         return menuMapper.selectBatchIds(menuIds).stream()
@@ -121,6 +134,12 @@ public class PermissionServiceImpl implements PermissionService {
     @Override
     @Transactional
     public void assignUserRoles(Long userId, List<Long> roleIds) {
+        if (userService.getById(userId) == null) {
+            throw new com.nz.admin.common.core.BusinessException("用户不存在或无权访问");
+        }
+        if (roleIds == null || roleIds.stream().anyMatch(id -> roleMapper.selectById(id) == null)) {
+            throw new com.nz.admin.common.core.BusinessException("角色不存在");
+        }
         // 这里走覆盖式分配：先清掉旧关系，再写入新关系。
         userRoleMapper.deleteByUserId(userId);
         for (Long roleId : roleIds) {

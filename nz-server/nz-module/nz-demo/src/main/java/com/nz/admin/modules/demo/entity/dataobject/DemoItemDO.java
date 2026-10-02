@@ -19,6 +19,7 @@ public class DemoItemDO extends BaseEntity {
 
     @TableId(type = IdType.AUTO)
     private Long id;
+    private Long ownerId;
     private String name;
     private String category;
     private Integer status;

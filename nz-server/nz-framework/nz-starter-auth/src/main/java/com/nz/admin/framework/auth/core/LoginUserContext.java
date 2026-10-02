@@ -8,10 +8,10 @@ import org.springframework.beans.factory.ObjectProvider;
  */
 public class LoginUserContext {
 
-    private final AuthUserResolver authUserResolver;
+    private final ObjectProvider<AuthUserResolver> authUserResolverProvider;
 
     public LoginUserContext(ObjectProvider<AuthUserResolver> authUserResolverProvider) {
-        this.authUserResolver = authUserResolverProvider.getIfAvailable();
+        this.authUserResolverProvider = authUserResolverProvider;
     }
 
     public boolean isLogin() {
@@ -38,6 +38,7 @@ public class LoginUserContext {
         if (userId == null) {
             return null;
         }
+        AuthUserResolver authUserResolver = authUserResolverProvider.getIfAvailable();
         if (authUserResolver == null) {
             LoginUser loginUser = new LoginUser();
             loginUser.setUserId(userId);

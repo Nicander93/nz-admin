@@ -5,14 +5,14 @@ import com.nz.admin.NzSystemTestApplication;
 import com.nz.admin.framework.test.core.ut.BaseDbUnitTest;
 import com.nz.admin.modules.system.entity.dataobject.role.RoleDO;
 import com.nz.admin.modules.system.entity.dataobject.role.RoleMenuDO;
+import com.nz.admin.modules.system.entity.query.role.RoleQuery;
 import com.nz.admin.modules.system.mapper.role.RoleMapper;
 import com.nz.admin.modules.system.mapper.role.RoleMenuMapper;
-import com.nz.admin.modules.system.entity.query.role.RoleQuery;
 import com.nz.admin.modules.system.service.role.RoleServiceImpl;
+import jakarta.annotation.Resource;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.Import;
 
-import jakarta.annotation.Resource;
 import java.util.List;
 
 import static com.nz.admin.framework.test.core.util.RandomPojoUtils.randomPojo;
@@ -75,7 +75,7 @@ class RoleServiceImplTest extends BaseDbUnitTest {
     void testSave() {
         RoleDO role = randomPojo(RoleDO.class)
                 .setId(null)
-                .setName("测试角色");
+                .setName("测试角色").setDataScope(5);
 
         roleService.save(role);
 
@@ -144,4 +144,14 @@ class RoleServiceImplTest extends BaseDbUnitTest {
         assertTrue(dbRows.stream().anyMatch(item -> item.getMenuId().equals(101L)));
         assertTrue(dbRows.stream().anyMatch(item -> item.getMenuId().equals(102L)));
     }
+    @Test
+    void testPartialUpdatePreservesDataScope() {
+        RoleDO role = new RoleDO().setName("范围保留").setRoleKey("preserve-scope").setStatus(0).setDataScope(1);
+        roleService.save(role);
+
+        roleService.updateById(new RoleDO().setId(role.getId()).setStatus(1));
+
+        assertEquals(1, roleService.getById(role.getId()).getDataScope());
+    }
+
 }

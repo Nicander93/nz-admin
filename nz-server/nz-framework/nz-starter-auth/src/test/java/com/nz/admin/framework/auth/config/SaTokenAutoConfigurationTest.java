@@ -1,6 +1,10 @@
 package com.nz.admin.framework.auth.config;
 
 import com.nz.admin.framework.auth.core.LoginUserContext;
+import com.nz.admin.framework.auth.core.AuthUserResolver;
+import com.nz.admin.framework.auth.core.LoginUser;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import com.nz.admin.framework.auth.properties.AuthFrameworkProperties;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
@@ -40,4 +44,24 @@ class SaTokenAutoConfigurationTest {
             assertThat(context).hasSingleBean(LoginUserContext.class);
         });
     }
+    @Test
+    void shouldResolveBusinessIdentityAfterContextCreation() {
+        applicationContextRunner.withUserConfiguration(ResolverConfiguration.class).run(context -> {
+            assertThat(context).hasNotFailed();
+            assertThat(context).hasSingleBean(AuthUserResolver.class);
+        });
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    static class ResolverConfiguration {
+        @Bean
+        AuthUserResolver resolver(LoginUserContext loginUserContext) {
+            return userId -> {
+                LoginUser user = new LoginUser();
+                user.setUserId(userId);
+                return user;
+            };
+        }
+    }
+
 }

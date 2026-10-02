@@ -1,9 +1,7 @@
-import { expect, test } from '@playwright/test'
-import { loginByUi } from '../helpers/auth'
+import { expect, test } from '@nz/test/e2e'
 
 test.describe('系统参数冒烟', () => {
-  test('参数管理页面可访问并看到关键元素', async ({ page }) => {
-    await loginByUi(page)
+  test('参数管理页面可访问并看到关键元素', async ({ authenticatedPage: page }) => {
     await page.goto('/system/config')
 
     await expect(page.getByRole('button', { name: '新增' })).toBeVisible()

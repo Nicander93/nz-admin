@@ -1,10 +1,8 @@
+import { pageResponse } from '@nz/test/unit'
 import { describe, it, expect, vi } from 'vitest'
 
 vi.mock('@/api/system/role', () => ({
-  pageRoles: vi.fn().mockResolvedValue({
-    code: 200,
-    data: { records: [{ id: 1, name: '管理员', roleKey: 'admin', sort: 0, status: 0 }], total: 1 },
-  }),
+  pageRoles: vi.fn().mockImplementation(async () => pageResponse([{ id: 1, name: '管理员', roleKey: 'admin', sort: 0, status: 0 }])),
   addRole: vi.fn().mockResolvedValue({ code: 200 }),
   updateRole: vi.fn().mockResolvedValue({ code: 200 }),
   deleteRole: vi.fn().mockResolvedValue({ code: 200 }),
@@ -42,5 +40,7 @@ describe('useRoleCrud', () => {
     expect(form.visible).toBe(true)
     expect(form.mode).toBe('add')
     expect(form.model.roleKey).toBe('')
+    expect(form.model.dataScope).toBe(5)
+    expect(form.model.deptIds).toEqual([])
   })
 })

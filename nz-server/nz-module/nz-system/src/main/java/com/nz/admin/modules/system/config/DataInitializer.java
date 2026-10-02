@@ -1,20 +1,22 @@
 package com.nz.admin.modules.system.config;
 
 import cn.hutool.crypto.digest.BCrypt;
+import com.nz.admin.framework.datascope.core.DataScopeContext;
 import com.nz.admin.framework.tenant.core.TenantContextHolder;
+import com.nz.admin.modules.job.entity.dataobject.job.JobDO;
+import com.nz.admin.modules.job.service.job.JobService;
 import com.nz.admin.modules.system.entity.dataobject.config.ConfigDO;
 import com.nz.admin.modules.system.entity.dataobject.dept.DeptDO;
 import com.nz.admin.modules.system.entity.dataobject.dept.PostDO;
 import com.nz.admin.modules.system.entity.dataobject.dict.DictDataDO;
 import com.nz.admin.modules.system.entity.dataobject.dict.DictTypeDO;
-import com.nz.admin.modules.job.entity.dataobject.job.JobDO;
 import com.nz.admin.modules.system.entity.dataobject.menu.MenuDO;
 import com.nz.admin.modules.system.entity.dataobject.notice.NoticeDO;
 import com.nz.admin.modules.system.entity.dataobject.role.RoleDO;
 import com.nz.admin.modules.system.entity.dataobject.tenant.TenantDO;
 import com.nz.admin.modules.system.entity.dataobject.user.UserDO;
-import com.nz.admin.modules.system.mapper.tenant.TenantMapper;
 import com.nz.admin.modules.system.entity.query.dict.DictTypeQuery;
+import com.nz.admin.modules.system.mapper.tenant.TenantMapper;
 import com.nz.admin.modules.system.service.config.ConfigService;
 import com.nz.admin.modules.system.service.dept.DeptService;
 import com.nz.admin.modules.system.service.dept.PostService;
@@ -24,7 +26,6 @@ import com.nz.admin.modules.system.service.menu.MenuService;
 import com.nz.admin.modules.system.service.notice.NoticeService;
 import com.nz.admin.modules.system.service.permission.PermissionService;
 import com.nz.admin.modules.system.service.role.RoleService;
-import com.nz.admin.modules.job.service.job.JobService;
 import com.nz.admin.modules.system.service.user.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -76,31 +77,35 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        log.info("初始化基础数据...");
+        DataScopeContext.withoutFilter(() -> {
+            log.info("初始化基础数据...");
 
-        DeptDO rootDept = ensureRootDept();
-        ensurePosts();
-        UserDO admin = ensureAdminUser(rootDept);
-        RoleDO adminRole = ensureAdminRole();
-        ensureMenus();
-        ensureDicts();
-        ensureConfigs();
-        ensureNotice();
-        ensureJob();
+            DeptDO rootDept = ensureRootDept();
+            ensurePosts();
+            UserDO admin = ensureAdminUser(rootDept);
+            RoleDO adminRole = ensureAdminRole();
+            ensureMenus();
+            ensureDicts();
+            ensureConfigs();
+            ensureNotice();
+            ensureJob();
 
-        // 明文联系方式查看必须显式授权，初始化时不自动开放。
-        var allMenus = menuService.listAll();
-        roleService.assignMenus(adminRole.getId(), allMenus.stream()
-                .filter(menu -> !"system:user:contact:plain".equals(menu.getPerm()))
-                .map(MenuDO::getId)
-                .toList());
+            // 明文联系方式查看必须显式授权，初始化时不自动开放。
+            var allMenus = menuService.listAll();
+            roleService.assignMenus(adminRole.getId(), allMenus.stream()
+                    .filter(menu -> !"system:user:contact:plain".equals(menu.getPerm()))
+                    .map(MenuDO::getId)
+                    .toList());
 
-        // 分配管理员角色
-        permissionService.assignUserRoles(admin.getId(), java.util.List.of(adminRole.getId()));
+            // 分配管理员角色
+            permissionService.assignUserRoles(admin.getId(), java.util.List.of(adminRole.getId()));
 
-        initializeSchedulerForActiveTenants();
+            initializeSchedulerForActiveTenants();
 
-        log.info("初始化完成，管理员账号为 admin");
+            log.info("初始化完成，管理员账号为 admin");
+
+            return null;
+        });
     }
 
     private void initializeSchedulerForActiveTenants() {
@@ -161,6 +166,7 @@ public class DataInitializer implements CommandLineRunner {
                     adminRole.setRoleKey("admin");
                     adminRole.setSort(0);
                     adminRole.setStatus(0);
+                    adminRole.setDataScope(1);
                     adminRole.setRemark("系统内置角色，拥有全部权限");
                     roleService.save(adminRole);
                     return adminRole;
@@ -276,7 +282,9 @@ public class DataInitializer implements CommandLineRunner {
         query.setPageSize(200);
         boolean exists = dictTypeService.listPage(query).getRecords().stream()
                 .anyMatch(dictType -> type.equals(dictType.getType()));
-        if (exists) return;
+        if (exists) {
+            return;
+        }
         DictTypeDO dictType = new DictTypeDO();
         dictType.setName(name);
         dictType.setType(type);
@@ -288,7 +296,9 @@ public class DataInitializer implements CommandLineRunner {
     private void ensureDictData(String dictType, String label, String value, int sort) {
         boolean exists = dictDataService.listByDictType(dictType).stream()
                 .anyMatch(dictData -> value.equals(dictData.getValue()));
-        if (exists) return;
+        if (exists) {
+            return;
+        }
         DictDataDO dictData = new DictDataDO();
         dictData.setDictType(dictType);
         dictData.setLabel(label);
@@ -306,7 +316,9 @@ public class DataInitializer implements CommandLineRunner {
     private void ensureConfig(String name, String key, String value, String remark) {
         boolean exists = configService.listPage(1, 200, null, null, null).getRecords().stream()
                 .anyMatch(config -> key.equals(config.getConfigKey()));
-        if (exists) return;
+        if (exists) {
+            return;
+        }
         ConfigDO config = new ConfigDO();
         config.setConfigName(name);
         config.setConfigKey(key);
@@ -321,7 +333,9 @@ public class DataInitializer implements CommandLineRunner {
         boolean exists = noticeService.listPage(new com.nz.admin.modules.system.entity.query.notice.NoticeQuery())
                 .getRecords().stream()
                 .anyMatch(notice -> "欢迎使用 nz-admin".equals(notice.getTitle()));
-        if (exists) return;
+        if (exists) {
+            return;
+        }
         NoticeDO notice = new NoticeDO();
         notice.setTitle("欢迎使用 nz-admin");
         notice.setContent("系统初始化完成，请使用部署时配置的管理员密码登录。");
@@ -334,7 +348,9 @@ public class DataInitializer implements CommandLineRunner {
     private void ensureJob() {
         boolean exists = jobService.listPage(1, 200, null, null, null).getRecords().stream()
                 .anyMatch(job -> "系统演示任务".equals(job.getJobName()));
-        if (exists) return;
+        if (exists) {
+            return;
+        }
         JobDO job = new JobDO();
         job.setJobName("系统演示任务");
         job.setJobGroup("SYSTEM");
@@ -374,7 +390,9 @@ public class DataInitializer implements CommandLineRunner {
             String[] button = buttons.get(i);
             boolean exists = menuService.listAll().stream()
                     .anyMatch(menu -> Objects.equals(parentId, menu.getParentId()) && button[1].equals(menu.getPerm()));
-            if (exists) continue;
+            if (exists) {
+                continue;
+            }
             MenuDO btn = createMenu(parentId, button[0], null, null, null, sortBase * 100 + i, "F", button[1], 0);
             menuService.save(btn);
         }

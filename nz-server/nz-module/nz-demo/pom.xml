@@ -16,6 +16,7 @@
     <description>可独立装配和移除的示例业务模块。</description>
 
     <dependencies>
+        <dependency><groupId>com.nz</groupId><artifactId>nz-starter-datascope</artifactId></dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>

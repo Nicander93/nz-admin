@@ -3,6 +3,7 @@ package com.nz.admin.modules.system.controller.auth;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.util.StrUtil;
 import com.nz.admin.common.core.R;
+import com.nz.admin.framework.datascope.core.DataScopeContext;
 import com.nz.admin.framework.protection.annotation.RateLimit;
 import com.nz.admin.framework.protection.annotation.RepeatSubmit;
 import com.nz.admin.framework.realtime.core.RealtimeConnectionManager;
@@ -111,7 +112,7 @@ public class LoginController {
     @GetMapping("/info")
     public R<Map<String, Object>> info() {
         long userId = StpUtil.getLoginIdAsLong();
-        UserDO user = userService.getById(userId);
+        UserDO user = DataScopeContext.withoutFilter(() -> userService.getById(userId));
         user.setPassword(null);
 
         Map<String, Object> result = new HashMap<>();

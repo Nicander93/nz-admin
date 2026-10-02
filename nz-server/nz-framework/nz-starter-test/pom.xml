@@ -12,7 +12,7 @@
 
     <artifactId>nz-starter-test</artifactId>
     <name>nz-starter-test</name>
-    <description>测试支撑 starter，提供单元测试、数据库测试和随机对象生成工具。</description>
+    <description>测试支撑 starter，提供单元测试、数据库测试、HTTP 测试客户端和随机对象生成工具。</description>
 
     <dependencies>
         <dependency>

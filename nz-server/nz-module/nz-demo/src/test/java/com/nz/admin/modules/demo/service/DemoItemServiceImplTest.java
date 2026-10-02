@@ -28,6 +28,9 @@ class DemoItemServiceImplTest extends BaseMockitoUnitTest {
     private DemoItemServiceImpl demoItemService;
 
     @Mock
+    private com.nz.admin.framework.auth.core.LoginUserContext loginUserContext;
+
+    @Mock
     private DemoItemMapper demoItemMapper;
 
     @BeforeEach
@@ -37,6 +40,7 @@ class DemoItemServiceImplTest extends BaseMockitoUnitTest {
 
     @Test
     void createShouldMapAndInsertItem() {
+        when(loginUserContext.getLoginUserIdOrNull()).thenReturn(100L);
         when(demoItemMapper.insert(any(DemoItemDO.class))).thenAnswer(invocation -> {
             DemoItemDO item = invocation.getArgument(0);
             item.setId(12L);

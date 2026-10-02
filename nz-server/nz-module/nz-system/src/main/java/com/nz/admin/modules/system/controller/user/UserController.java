@@ -1,12 +1,13 @@
 package com.nz.admin.modules.system.controller.user;
 
-import com.nz.admin.framework.auth.annotation.SaCheckPermission;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.digest.BCrypt;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.nz.admin.common.core.PageResult;
 import com.nz.admin.common.core.R;
+import com.nz.admin.common.core.BusinessException;
+import com.nz.admin.framework.auth.annotation.SaCheckPermission;
 import com.nz.admin.framework.encryption.mask.SensitiveDataUtils;
 import com.nz.admin.framework.log.annotation.BusinessType;
 import com.nz.admin.framework.log.annotation.Log;
@@ -50,6 +51,9 @@ public class UserController {
                             @RequestParam(defaultValue = "false") boolean revealContacts) {
         checkContactPermission(revealContacts);
         UserDO user = userService.getById(id);
+        if (user == null) {
+            throw new BusinessException("用户不存在或无权访问");
+        }
         UserVO vo = UserConvert.INSTANCE.toVO(user);
         vo.setPostIds(userService.getPostIdsByUserId(id));
         applyContactVisibility(vo, revealContacts);
@@ -70,8 +74,7 @@ public class UserController {
         List<Long> postIds = user.getPostIds();
         user.setPassword(BCrypt.hashpw(user.getPassword()));
         user.setPostIds(null);
-        userService.save(user);
-        userService.assignUserPosts(user.getId(), postIds != null ? postIds : Collections.emptyList());
+        userService.createWithPosts(user, postIds != null ? postIds : Collections.emptyList());
         return R.ok();
     }
 
@@ -86,10 +89,7 @@ public class UserController {
             user.setPassword(null);
         }
         user.setPostIds(null);
-        userService.updateById(user);
-        if (postIds != null) {
-            userService.assignUserPosts(user.getId(), postIds);
-        }
+        userService.updateWithPosts(user, postIds);
         return R.ok();
     }
 
@@ -104,6 +104,9 @@ public class UserController {
     @SaCheckPermission("system:user:edit")
     @GetMapping("/{userId}/roleIds")
     public R<List<Long>> getRoleIds(@PathVariable Long userId) {
+        if (userService.getById(userId) == null) {
+            throw new BusinessException("用户不存在或无权访问");
+        }
         return R.ok(permissionService.getRoleIdsByUserId(userId));
     }
 
