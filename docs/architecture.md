@@ -186,7 +186,7 @@ com.nz.admin.modules.system
 - 模板在业务层渲染，发送记录在调用供应商前落为 `PENDING`，调用结束后更新最终状态。
 - system 认证层提供账号密码与短信验证码两种客户端授权模式；短信入口按租户和手机号隔离，验证码只保存摘要并限制重发间隔、有效期和尝试次数。
 - 登录前接口不挂菜单权限，租户和客户端的启用状态、`login_type` 是认证边界。
-- 当前验证码存储为单节点内存实现；多节点部署必须替换为共享的原子存储。
+- 验证码通过原子状态存储实现；单节点默认内存，开启 `nz.cluster.enabled` 后使用 Redis，消费成功不会释放发送频控。
 
 配置、接口和扩展方式见 [sms-management.md](sms-management.md)。
 
@@ -197,7 +197,7 @@ com.nz.admin.modules.system
 - PKCE verifier 和一次性 state 只保存在服务端，state 同时绑定授权用途、租户、客户端和用户。
 - OIDC ID Token 必须通过签名、有效期、issuer 和 audience 校验；标准 OAuth2 通过 userinfo 获取稳定身份。
 - `nz-system` 负责 `sys_social` 绑定关系、social 客户端授权类型、登录会话和当前用户解绑权限。
-- 服务商令牌不落库。默认 state 存储是单节点内存实现，多实例生产部署必须提供共享实现。
+- 服务商令牌不落库。state 通过原子状态存储跨节点一次性消费，默认使用内存，集群模式使用 Redis。
 
 配置、接口和部署限制见 [social-login.md](social-login.md)。
 
@@ -241,3 +241,13 @@ com.nz.admin.modules.system
 ## 数据权限与测试支持
 
 数据范围解析由 system 实现，SQL 过滤由 datascope starter 实现，framework 不查询用户、角色或部门表。前端通用测试支持集中在 workspace 包 `@nz/test`。具体接入和升级说明见 [data-permission.md](data-permission.md) 与 [testing.md](testing.md)。
+
+## 共享状态、请求保护与新引擎
+
+`nz-starter-cache` 提供 `AtomicStateStore`：TTL、NX、读取即删除、CAS 和固定窗口计数。`nz.cluster.enabled=false` 时采用内存，开启后采用 Redis，故障不回退到本地状态。认证 starter 共享 Sa-Token 会话，保护 starter 共享防重与限流；验证码、OAuth state 和实时票据复用同一存储协议。实时连接属于各节点，Redis Pub/Sub 转发用户、租户消息及退出通知；统计与投递数量仍表示本节点，Pub/Sub 不提供离线消息可靠投递。
+
+认证上下文过滤器先于租户恢复过滤器。按钮权限切面通过自动装配注册，并在调用期间暴露当前功能权限；数据范围只合并拥有该功能的启用角色。目录菜单和禁用菜单不参与范围授权。无功能上下文的内部调用维持原角色并集，业务方需要按接口组织入口。
+
+`@Idempotent` 使用 PostgreSQL 唯一键与行锁串行化相同用户、接口和请求键；业务数据库变更与原成功响应在同一事务中提交。失败回滚后允许重试。该协议覆盖同一数据源内的事务效果，外部支付、消息或 HTTP 调用应配合对方幂等协议或事务 outbox，不能依靠数据库回滚撤销外部效果。
+
+`nz-workflow` 保留 legacy 运行时，新增 `/api/workflow/engine` 入口。Warm-Flow 标准表的租户列为字符串，通过模块内独立的 MyBatis 租户拦截器过滤。接口另行验证实例参与人和任务办理人。声明式导入不开放监听器或任意表达式执行；新实例可以使用网关和多人审批比例。

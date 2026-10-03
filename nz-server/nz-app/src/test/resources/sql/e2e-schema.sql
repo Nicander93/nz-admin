@@ -198,6 +198,7 @@ VALUES (1, 1, '超级管理员', 'admin', 0, 0, 1);
 INSERT INTO sys_menu (id, parent_id, name, path, component, icon, sort, type, perm, visible, status) VALUES
     (900, 0, '工作台', 'workbench', 'workbench/index', 'House', -10, 'C', 'system:workbench:view', 0, 0),
     (1000, 0, '系统管理', '/system', NULL, 'Setting', 0, 'M', NULL, 0, 0),
+    (1100, 1000, '用户管理', 'user', 'system/user/index', 'User', 1, 'C', 'system:user:list', 0, 0),
     (1500, 1000, '岗位管理', 'post', 'system/post/index', 'User', 5, 'C', 'system:post:list', 0, 0),
     (1511, 1500, '新增岗位', NULL, NULL, NULL, 1511, 'F', 'system:post:add', 0, 0),
     (1700, 1000, '参数管理', 'config', 'system/config/index', 'Tools', 7, 'C', 'system:config:list', 0, 0),

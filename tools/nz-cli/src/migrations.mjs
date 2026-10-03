@@ -1,4 +1,4 @@
-import { readdir } from 'node:fs/promises'
+import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { CliError } from './errors.mjs'
 
@@ -51,6 +51,18 @@ export async function inspectMigrations(root) {
   }
   for (const version of upgradeVersions.keys()) {
     if (!seen.has(version)) errors.push(`upgrade-p${version} 没有对应 Flyway 迁移`)
+  }
+
+  const resources = await readFile(path.join(root, 'nz-server/nz-app/src/test/java/com/nz/admin/migration/FlywayMigrationResourcesTest.java'), 'utf8')
+  for (const migration of migrations) {
+    if (!resources.includes(`"db/migration/${migration.name}"`)) errors.push(`${migration.name} 未登记在迁移资源测试中`)
+  }
+  try {
+    const readme = await readFile(path.join(root, 'readme.md'), 'utf8')
+    const declared = /V1-V(\d+)/.exec(readme)
+    if (declared && Number(declared[1]) !== migrations.at(-1)?.version) errors.push('README 迁移版本与实际迁移不同步')
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error
   }
 
   return {

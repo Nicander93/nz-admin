@@ -16,6 +16,9 @@
     <description>数据库元数据驱动的 CRUD 代码生成模块。</description>
 
     <dependencies>
+        <dependency><groupId>com.nz</groupId><artifactId>nz-starter-protection</artifactId></dependency>
+        <dependency><groupId>com.nz</groupId><artifactId>nz-starter-tenant</artifactId></dependency>
+        <dependency><groupId>com.nz</groupId><artifactId>nz-starter-datascope</artifactId></dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>

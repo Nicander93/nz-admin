@@ -6,7 +6,7 @@
   "exports": {
     "./unit": "./src/unit.ts",
     "./e2e": "./src/e2e.ts",
-    "./config": "./src/config.ts"
+    "./config": { "types": "./src/config.d.mts", "import": "./src/config.mjs" }
   },
   "peerDependencies": {
     "@playwright/test": "^1.62.1",

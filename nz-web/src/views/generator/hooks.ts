@@ -1,5 +1,6 @@
-import { computed, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import { computed, reactive, ref } from 'vue'
+
 import {
   downloadGenerator,
   listGeneratorColumns,
@@ -31,10 +32,13 @@ function toCamelCase(value: string) {
   return pascal.charAt(0).toLowerCase() + pascal.slice(1)
 }
 
-export function createGeneratorRequest(table: GeneratorTable): GeneratorRequest {
+export function createGeneratorRequest(
+  table: GeneratorTable,
+): GeneratorRequest {
   const parts = table.tableName.split('_').filter(Boolean)
   const moduleName = parts.length > 1 ? parts[0].toLowerCase() : 'business'
-  const businessSource = parts.length > 1 ? parts.slice(1).join('_') : table.tableName
+  const businessSource =
+    parts.length > 1 ? parts.slice(1).join('_') : table.tableName
   return {
     schemaName: table.schemaName,
     tableName: table.tableName,
@@ -45,6 +49,10 @@ export function createGeneratorRequest(table: GeneratorTable): GeneratorRequest 
     featureName: table.tableComment || table.tableName,
     author: 'nz-admin',
     parentMenuId: 0,
+    tenantColumn: '',
+    deptColumn: '',
+    ownerColumn: '',
+    dataScopeEnabled: true,
   }
 }
 
@@ -74,9 +82,15 @@ export function useGenerator(api: Partial<GeneratorApi> = {}) {
     featureName: '',
     author: 'nz-admin',
     parentMenuId: 0,
+    tenantColumn: '',
+    deptColumn: '',
+    ownerColumn: '',
+    dataScopeEnabled: true,
   })
   const fileNames = computed(() => Object.keys(preview.value?.files ?? {}))
-  const activeContent = computed(() => preview.value?.files[activeFile.value] ?? '')
+  const activeContent = computed(
+    () => preview.value?.files[activeFile.value] ?? '',
+  )
 
   async function loadTables() {
     loading.value = true
@@ -95,6 +109,11 @@ export function useGenerator(api: Partial<GeneratorApi> = {}) {
       tableName: table.tableName,
     })
     columns.value = response.data
+    const has = (name: string) =>
+      columns.value.some((column) => column.columnName === name)
+    form.tenantColumn = has('tenant_id') ? 'tenant_id' : ''
+    form.deptColumn = has('dept_id') ? 'dept_id' : ''
+    form.ownerColumn = has('owner_id') ? 'owner_id' : ''
     configureVisible.value = true
   }
 

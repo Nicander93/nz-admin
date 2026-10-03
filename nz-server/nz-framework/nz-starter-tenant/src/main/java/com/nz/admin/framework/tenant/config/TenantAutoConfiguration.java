@@ -35,8 +35,10 @@ public class TenantAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public TenantLineHandler tenantLineHandler(TenantProperties properties) {
-        Set<String> includedTables = properties.getIncludedTables().stream()
+    public TenantLineHandler tenantLineHandler(TenantProperties properties, org.springframework.beans.factory.ObjectProvider<com.nz.admin.framework.tenant.core.TenantTableRuleCustomizer> customizers) {
+        Set<String> configured = new java.util.LinkedHashSet<>(properties.getIncludedTables());
+        customizers.orderedStream().forEach(customizer -> customizer.customize(configured));
+        Set<String> includedTables = configured.stream()
                 .map(table -> table.toLowerCase(Locale.ROOT))
                 .collect(Collectors.toUnmodifiableSet());
         return new TenantLineHandler() {
@@ -56,6 +58,14 @@ public class TenantAutoConfiguration {
                 return tableName == null || !includedTables.contains(tableName.toLowerCase(Locale.ROOT));
             }
         };
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = "nz.tenant.validate-tables", havingValue = "true")
+    org.springframework.boot.ApplicationRunner tenantTableAudit(javax.sql.DataSource source,
+            TenantLineHandler handler, TenantProperties properties) {
+        return args -> new com.nz.admin.framework.tenant.core.TenantTableAudit(source, handler,
+                properties.getExternallyManagedTables()).verify();
     }
 
     @Bean

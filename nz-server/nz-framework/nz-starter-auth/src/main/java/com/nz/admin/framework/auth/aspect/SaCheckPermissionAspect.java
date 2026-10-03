@@ -18,13 +18,14 @@ import java.lang.reflect.Method;
  * 自定义按钮权限校验切面。
  */
 @Aspect
+@org.springframework.core.annotation.Order(org.springframework.core.Ordered.HIGHEST_PRECEDENCE + 100)
 @Component
 public class SaCheckPermissionAspect {
 
-    private final PermissionResolver permissionResolver;
+    private final ObjectProvider<PermissionResolver> permissionResolvers;
 
     public SaCheckPermissionAspect(ObjectProvider<PermissionResolver> permissionResolverProvider) {
-        this.permissionResolver = permissionResolverProvider.getIfAvailable();
+        this.permissionResolvers = permissionResolverProvider;
     }
 
     @Around("@annotation(com.nz.admin.framework.auth.annotation.SaCheckPermission) || @within(com.nz.admin.framework.auth.annotation.SaCheckPermission)")
@@ -33,7 +34,12 @@ public class SaCheckPermissionAspect {
         if (annotation != null) {
             checkPermission(annotation);
         }
-        return joinPoint.proceed();
+        if (annotation == null) return joinPoint.proceed();
+        var authorized = java.util.Arrays.stream(annotation.value()).filter(this::hasPermission)
+                .collect(java.util.stream.Collectors.toSet());
+        try (var scope = com.nz.admin.framework.auth.core.PermissionContext.open(authorized)) {
+            return joinPoint.proceed();
+        }
     }
 
     private void checkPermission(SaCheckPermission annotation) {
@@ -60,6 +66,7 @@ public class SaCheckPermissionAspect {
     }
 
     private void checkPermission(String permission) {
+        var permissionResolver = permissionResolvers.getIfAvailable();
         if (permissionResolver != null) {
             permissionResolver.checkPermission(permission);
             return;
@@ -68,6 +75,7 @@ public class SaCheckPermissionAspect {
     }
 
     private boolean hasPermission(String permission) {
+        var permissionResolver = permissionResolvers.getIfAvailable();
         if (permissionResolver != null) {
             return permissionResolver.hasPermission(permission);
         }

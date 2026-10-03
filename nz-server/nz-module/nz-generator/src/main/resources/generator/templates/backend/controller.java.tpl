@@ -53,6 +53,7 @@ public class @@CLASS@@Controller {
 
     @Log(title = "@@FEATURE_JAVA@@", businessType = BusinessType.INSERT)
     @SaCheckPermission("@@PERMISSION_PREFIX@@:add")
+    @com.nz.admin.framework.protection.annotation.Idempotent
     @PostMapping
     public R<@@PK_TYPE@@> create(@Valid @RequestBody @@CLASS@@CreateRequest request) {
         return R.ok(@@CLASS_CAMEL@@Service.create(request));

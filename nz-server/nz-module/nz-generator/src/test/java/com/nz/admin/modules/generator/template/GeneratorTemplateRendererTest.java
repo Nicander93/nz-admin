@@ -30,7 +30,7 @@ public class GeneratorTemplateRendererTest {
     void rendersCompleteNzAdminCrudSliceWithoutUnresolvedTokens() {
         Map<String, String> files = renderer.render(request(), columns());
 
-        assertThat(files).hasSize(14);
+        assertThat(files).hasSize(15);
         assertThat(files).containsKeys(
                 "nz-server/nz-module/nz-demo/src/main/java/com/nz/admin/modules/demo/entity/dataobject/DemoItemDO.java",
                 "nz-server/nz-module/nz-demo/src/main/java/com/nz/admin/modules/demo/controller/DemoItemController.java",
@@ -40,7 +40,7 @@ public class GeneratorTemplateRendererTest {
         );
         assertThat(files.values()).allSatisfy(content -> assertThat(content).doesNotContain("@@"));
         assertThat(files.values()).anySatisfy(content -> assertThat(content)
-                .contains("@TableName(\"demo_item\")", "private Long id;", "private String itemName;"));
+                .contains("@TableName(value = \"demo_item\", schema = \"public\")", "private Long id;", "private String itemName;"));
         assertThat(files.values()).anySatisfy(content -> assertThat(content)
                 .contains("entity.getId()", "request.getId()", "DemoItemDO::getId"));
         assertThat(files.get("sql/demo_item_menu.sql"))

@@ -80,6 +80,12 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     services:
+      redis:
+        image: redis:7.4-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 5s --health-retries 10
       postgres:
         image: postgres:16-alpine
         env:
@@ -91,6 +97,8 @@ jobs:
           --health-cmd "pg_isready -U postgres -d nz_test"
           --health-interval 5s --health-timeout 5s --health-retries 10
     env:
+      NZ_TEST_REDIS_PORT: "6379"
+      NZ_WARM_FLOW_ENABLED: "true"
       NZ_TEST_PG_URL: jdbc:postgresql://localhost:5432/nz_test
       NZ_TEST_PG_USERNAME: postgres
       NZ_TEST_PG_PASSWORD: postgres
@@ -99,6 +107,7 @@ jobs:
       NZ_DATASOURCE_PASSWORD: postgres
       NZ_FILE_CONFIG_KEY: integration-test-key-at-least-32-characters
       NZ_INITIALIZE_DATA: "false"
+      E2E_WARM_FLOW_ENABLED: "true"
       E2E_USERNAME: admin
       E2E_PASSWORD: admin123
     steps:
@@ -118,7 +127,7 @@ jobs:
           cache-dependency-path: nz-web/pnpm-lock.yaml
       - name: Verify real PostgreSQL migrations and HTTP permissions
         working-directory: nz-server
-        run: ./mvnw -q -pl nz-app -am install -Dtest=DataScopePostgresTest -Dsurefire.failIfNoSpecifiedTests=false
+        run: ./mvnw -q -pl nz-app -am install -Dtest=DataScopePostgresTest,IdempotencyPostgresTest,ClusterStateRedisTest,RedisAtomicStateStoreTest,WarmFlowPostgresTest -Dsurefire.failIfNoSpecifiedTests=false
       - name: Install browser dependencies
         working-directory: nz-web
         run: |

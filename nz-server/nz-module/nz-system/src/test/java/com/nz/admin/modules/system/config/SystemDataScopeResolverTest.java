@@ -26,6 +26,8 @@ class SystemDataScopeResolverTest extends BaseMockitoUnitTest {
     @Mock RoleMapper roleMapper;
     @Mock RoleDeptMapper roleDeptMapper;
     @Mock DeptMapper deptMapper;
+    @Mock RoleMenuMapper roleMenuMapper;
+    @Mock com.nz.admin.modules.system.mapper.menu.MenuMapper menuMapper;
     @InjectMocks SystemDataScopeResolver resolver;
 
     @BeforeEach
@@ -77,6 +79,24 @@ class SystemDataScopeResolverTest extends BaseMockitoUnitTest {
         assertThat(resolver.resolve().deptIds()).containsExactly(10L);
         role(1, 1, 0);
         assertThat(resolver.resolve().all()).isTrue();
+    }
+
+    @Test
+    void unrelatedBroadRoleCannotExpandEditingScope() {
+        role(1, 3, 0);
+        role(2, 1, 0);
+        when(userRoleMapper.selectByUserId(100L)).thenReturn(List.of(
+                new UserRoleDO().setRoleId(1L), new UserRoleDO().setRoleId(2L)));
+        when(roleMenuMapper.selectByRoleId(1L)).thenReturn(List.of(new RoleMenuDO().setMenuId(11L)));
+        when(roleMenuMapper.selectByRoleId(2L)).thenReturn(List.of(new RoleMenuDO().setMenuId(12L)));
+        when(menuMapper.selectById(11L)).thenReturn(new com.nz.admin.modules.system.entity.dataobject.menu.MenuDO().setPerm("orders:edit").setStatus(0));
+        when(menuMapper.selectById(12L)).thenReturn(new com.nz.admin.modules.system.entity.dataobject.menu.MenuDO().setPerm("reports:view").setStatus(0));
+        try (var context = com.nz.admin.framework.auth.core.PermissionContext.open(java.util.Set.of("orders:edit"))) {
+            var scope = resolver.resolve();
+            assertThat(scope.all()).isFalse();
+            assertThat(scope.deptIds()).containsExactly(10L);
+        }
+        assertThat(com.nz.admin.framework.auth.core.PermissionContext.get()).isEmpty();
     }
 
     @Test

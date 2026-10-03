@@ -35,7 +35,11 @@ class FlywayMigrationResourcesTest {
             "db/migration/V22__workflow_task.sql",
             "db/migration/V23__workflow_task_delegate.sql",
             "db/migration/V24__workflow_instance_urge.sql",
-            "db/migration/V25__warm_flow_foundation.sql"
+            "db/migration/V25__warm_flow_foundation.sql",
+            "db/migration/V26__data_scope.sql",
+            "db/migration/V27__idempotency.sql",
+            "db/migration/V28__workflow_engine_entry.sql",
+            "db/migration/V29__warm_flow_schema_alignment.sql"
     );
 
     @Test

@@ -37,6 +37,9 @@ class DataScopePostgresTest {
         jdbc.update(
                 "INSERT INTO sys_role(id,tenant_id,name,role_key,sort,status,data_scope)"
                     + " VALUES(900001,1,'测试角色','scope-integration',0,0,3)");
+        jdbc.update("INSERT INTO sys_tenant(id,tenant_code,tenant_name,package_id,account_count,status) SELECT 900004,'scope-tenant','隔离测试',package_id,100,0 FROM sys_tenant WHERE id=1");
+        jdbc.update("INSERT INTO sys_dept(id,tenant_id,parent_id,name,sort,status) VALUES(900004,900004,0,'其他租户',0,0)");
+        jdbc.update("INSERT INTO sys_role(id,tenant_id,name,role_key,sort,status,data_scope) VALUES(900004,900004,'隔离管理员','admin',0,0,1),(900005,1,'无关报表角色','unrelated-report',0,0,1)");
         String password = BCrypt.hashpw("test-password");
         jdbc.update(
                 "INSERT INTO sys_user(id,tenant_id,dept_id,username,password,nickname,status)"
@@ -44,7 +47,10 @@ class DataScopePostgresTest {
                 password,
                 password,
                 password);
-        jdbc.update("INSERT INTO sys_user_role(tenant_id,user_id,role_id) VALUES(1,900001,900001)");
+        jdbc.update("INSERT INTO sys_user(id,tenant_id,dept_id,username,password,nickname,status) VALUES(900004,900004,900004,'scope-isolated',?,'隔离用户',0)", password);
+        jdbc.update("INSERT INTO sys_user_role(tenant_id,user_id,role_id) VALUES(1,900001,900001),(1,900001,900005),(900004,900004,900004)");
+        jdbc.update("INSERT INTO sys_role_menu(tenant_id,role_id,menu_id) SELECT 1,900005,id FROM sys_menu WHERE perm='system:role:list'");
+        jdbc.update("INSERT INTO sys_role_menu(tenant_id,role_id,menu_id) SELECT 900004,900004,id FROM sys_menu WHERE perm IN ('system:user:list','system:user:query','system:user:edit','system:user:remove')");
         jdbc.update(
                 "INSERT INTO sys_role_menu(tenant_id,role_id,menu_id) SELECT 1,900001,id FROM"
                     + " sys_menu WHERE perm IN"
@@ -56,19 +62,24 @@ class DataScopePostgresTest {
 
     @AfterEach
     void cleanup() {
-        jdbc.update("DELETE FROM sys_role_dept WHERE role_id=900001");
-        jdbc.update("DELETE FROM sys_role_menu WHERE role_id=900001");
-        jdbc.update("DELETE FROM sys_user_role WHERE user_id IN (900001,900002,900003)");
-        jdbc.update("DELETE FROM sys_user WHERE id IN (900001,900002,900003)");
-        jdbc.update("DELETE FROM sys_role WHERE id=900001");
-        jdbc.update("DELETE FROM sys_dept WHERE id IN (900001,900002,900003)");
+        jdbc.update("DELETE FROM sys_role_dept WHERE role_id IN (900001,900004,900005)");
+        jdbc.update("DELETE FROM sys_role_menu WHERE role_id IN (900001,900004,900005)");
+        jdbc.update("DELETE FROM sys_user_role WHERE user_id IN (900001,900002,900003,900004)");
+        jdbc.update("DELETE FROM sys_user WHERE id IN (900001,900002,900003,900004)");
+        jdbc.update("DELETE FROM sys_role WHERE id IN (900001,900004,900005)");
+        jdbc.update("DELETE FROM sys_dept WHERE id IN (900001,900002,900003,900004)");
+        jdbc.update("DELETE FROM sys_tenant WHERE id=900004");
     }
 
     @Test
     void roleConfigurationControlsRealHttpReadsAndWrites() {
         var api = new ApiTestClient(rest).login("default", "scope-owner", "test-password");
         String page = "/api/system/user/page?pageNum=1&pageSize=10&username=scope-";
+        var isolated = new ApiTestClient(rest).login("scope-tenant", "scope-isolated", "test-password");
+        assertThat(isolated.ok(HttpMethod.GET, page, null).path("records").get(0).path("id").asLong()).isEqualTo(900004);
+        assertThat(isolated.exchange(HttpMethod.GET, "/api/system/user/900001", null).path("code").asInt()).isNotEqualTo(200);
         assertThat(api.ok(HttpMethod.GET, page, null).path("total").asInt()).isEqualTo(1);
+        assertThat(api.exchange(HttpMethod.GET, "/api/system/config/page", null).path("code").asInt()).isNotEqualTo(200);
         assertThat(
                         api.exchange(HttpMethod.GET, "/api/system/user/900003", null)
                                 .path("code")

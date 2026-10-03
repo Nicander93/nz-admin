@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class @@CLASS@@ServiceImpl extends ServiceImpl<@@CLASS@@Mapper, @@CLASS@@DO> implements @@CLASS@@Service {
 
+@@OWNERSHIP_FIELDS@@
     @Override
     public Page<@@CLASS@@DO> page(@@CLASS@@Query query) {
         LambdaQueryWrapper<@@CLASS@@DO> wrapper = new LambdaQueryWrapper<@@CLASS@@DO>()
@@ -41,7 +42,7 @@ public class @@CLASS@@ServiceImpl extends ServiceImpl<@@CLASS@@Mapper, @@CLASS@@
     @Override
     public @@PK_TYPE@@ create(@@CLASS@@CreateRequest request) {
         @@CLASS@@DO entity = BeanUtil.toBean(request, @@CLASS@@DO.class);
-        baseMapper.insert(entity);
+@@OWNERSHIP_ASSIGNMENT@@        baseMapper.insert(entity);
         return entity.get@@PK_GETTER@@();
     }
 
@@ -49,12 +50,12 @@ public class @@CLASS@@ServiceImpl extends ServiceImpl<@@CLASS@@Mapper, @@CLASS@@
     public void update(@@CLASS@@UpdateRequest request) {
         @@CLASS@@DO entity = getRequired(request.get@@PK_GETTER@@());
         BeanUtil.copyProperties(request, entity);
-        baseMapper.updateById(entity);
+        if (baseMapper.updateById(entity) != 1) throw new BusinessException("记录已变更或无权操作");
     }
 
     @Override
     public void delete(@@PK_TYPE@@ @@PK_FIELD@@) {
         getRequired(@@PK_FIELD@@);
-        baseMapper.deleteById(@@PK_FIELD@@);
+        if (baseMapper.deleteById(@@PK_FIELD@@) != 1) throw new BusinessException("记录已变更或无权操作");
     }
 }

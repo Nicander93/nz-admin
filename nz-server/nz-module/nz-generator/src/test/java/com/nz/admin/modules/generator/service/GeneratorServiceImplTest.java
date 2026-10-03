@@ -46,7 +46,7 @@ class GeneratorServiceImplTest extends BaseMockitoUnitTest {
         GeneratorPreview preview = service.preview(request);
 
         assertThat(preview.getColumns()).hasSize(6);
-        assertThat(preview.getFiles()).hasSize(14);
+        assertThat(preview.getFiles()).hasSize(15);
         assertThat(preview.getFiles().keySet()).anyMatch(path -> path.endsWith("DemoItemController.java"));
     }
 
@@ -90,7 +90,7 @@ class GeneratorServiceImplTest extends BaseMockitoUnitTest {
             }
         }
 
-        assertThat(entries).hasSize(14);
+        assertThat(entries).hasSize(15);
         assertThat(entries).contains("sql/demo_item_menu.sql");
         assertThat(controller).contains("@RequestMapping(\"/api/demo/item\")");
     }

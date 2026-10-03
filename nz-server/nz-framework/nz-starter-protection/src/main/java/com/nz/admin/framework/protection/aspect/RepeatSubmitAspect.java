@@ -4,6 +4,7 @@ import com.nz.admin.common.core.BusinessException;
 import com.nz.admin.common.core.CommonErrorCode;
 import com.nz.admin.framework.protection.annotation.RepeatSubmit;
 import com.nz.admin.framework.protection.core.InMemoryProtectionStore;
+import com.nz.admin.framework.protection.core.ProtectionStore;
 import com.nz.admin.framework.protection.core.ProtectionKeyResolver;
 import jakarta.servlet.http.HttpServletRequest;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -18,10 +19,10 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 @Aspect
 public class RepeatSubmitAspect {
 
-    private final InMemoryProtectionStore protectionStore;
+    private final ProtectionStore protectionStore;
     private final ProtectionKeyResolver protectionKeyResolver;
 
-    public RepeatSubmitAspect(InMemoryProtectionStore protectionStore, ProtectionKeyResolver protectionKeyResolver) {
+    public RepeatSubmitAspect(ProtectionStore protectionStore, ProtectionKeyResolver protectionKeyResolver) {
         this.protectionStore = protectionStore;
         this.protectionKeyResolver = protectionKeyResolver;
     }
@@ -29,7 +30,9 @@ public class RepeatSubmitAspect {
     @Around("@annotation(repeatSubmit)")
     public Object around(ProceedingJoinPoint joinPoint, RepeatSubmit repeatSubmit) throws Throwable {
         HttpServletRequest request = currentRequest();
-        String key = protectionKeyResolver.resolve("repeat-submit", repeatSubmit.key(), request);
+        String key = protectionKeyResolver.resolve("repeat-submit", repeatSubmit.key(), request)
+                + ":" + joinPoint.getSignature().toLongString() + ":"
+                + com.nz.admin.framework.protection.core.RequestFingerprint.of(joinPoint.getArgs());
         if (protectionStore.isRepeatSubmit(key, repeatSubmit.intervalSeconds())) {
             throw new BusinessException(CommonErrorCode.REPEAT_SUBMIT);
         }

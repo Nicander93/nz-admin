@@ -1,11 +1,15 @@
 import { describe, expect, it, vi } from 'vitest'
-import { getFrontendModuleManifests, getModuleCodeForComponent } from '@/core/modules/registry'
+
+import type { GeneratorColumn, GeneratorTable } from '@/api/generator'
+import {
+  getFrontendModuleManifests,
+  getModuleCodeForComponent,
+} from '@/core/modules/registry'
 import {
   createGeneratorRequest,
   useGenerator,
   type GeneratorApi,
 } from '@/views/generator/hooks'
-import type { GeneratorColumn, GeneratorTable } from '@/api/generator'
 
 const table: GeneratorTable = {
   schemaName: 'public',
@@ -39,8 +43,12 @@ const columns: GeneratorColumn[] = [
 
 function createApi() {
   return {
-    listTables: vi.fn().mockResolvedValue({ code: 200, msg: '成功', data: [table] }),
-    listColumns: vi.fn().mockResolvedValue({ code: 200, msg: '成功', data: columns }),
+    listTables: vi
+      .fn()
+      .mockResolvedValue({ code: 200, msg: '成功', data: [table] }),
+    listColumns: vi
+      .fn()
+      .mockResolvedValue({ code: 200, msg: '成功', data: columns }),
     preview: vi.fn().mockResolvedValue({
       code: 200,
       msg: '成功',
@@ -52,8 +60,12 @@ function createApi() {
 
 describe('generator module', () => {
   it('is discovered by the frontend module registry', () => {
-    expect(getFrontendModuleManifests().map((item) => item.code)).toContain('generator')
-    expect(getModuleCodeForComponent('@/views/generator/index.vue')).toBe('generator')
+    expect(getFrontendModuleManifests().map((item) => item.code)).toContain(
+      'generator',
+    )
+    expect(getModuleCodeForComponent('@/views/generator/index.vue')).toBe(
+      'generator',
+    )
   })
 
   it('infers editable generation defaults from a selected table', () => {
@@ -67,6 +79,10 @@ describe('generator module', () => {
       featureName: '示例条目',
       author: 'nz-admin',
       parentMenuId: 0,
+      tenantColumn: '',
+      deptColumn: '',
+      ownerColumn: '',
+      dataScopeEnabled: true,
     })
   })
 
@@ -83,9 +99,11 @@ describe('generator module', () => {
     expect(generator.form.className).toBe('DemoItem')
     expect(generator.fileNames.value).toEqual(['DemoItemDO.java'])
     expect(generator.activeContent.value).toContain('class DemoItemDO')
-    expect(api.preview).toHaveBeenCalledWith(expect.objectContaining({
-      tableName: 'demo_item',
-      moduleName: 'demo',
-    }))
+    expect(api.preview).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tableName: 'demo_item',
+        moduleName: 'demo',
+      }),
+    )
   })
 })

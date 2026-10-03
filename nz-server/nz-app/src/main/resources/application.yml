@@ -51,8 +51,15 @@ warm-flow:
   enabled: ${NZ_WARM_FLOW_ENABLED:false}
   banner: false
   ui: false
+  tenant-handler-path: com.nz.admin.modules.workflow.handler.NzWarmFlowTenantHandler
+  data-fill-handler-path: com.nz.admin.modules.workflow.handler.NzWarmFlowDataFillHandler
+  permission-handler-path: com.nz.admin.modules.workflow.handler.NzWarmFlowPermissionHandler
 
 nz:
+  cluster:
+    enabled: ${NZ_CLUSTER_ENABLED:false}
+  cache:
+    key-prefix: ${NZ_CACHE_KEY_PREFIX:nz-admin}
   realtime:
     ticket-ttl: ${NZ_REALTIME_TICKET_TTL:30s}
     sse-timeout: ${NZ_REALTIME_SSE_TIMEOUT:30m}
@@ -94,6 +101,7 @@ nz:
         avatar-attribute: avatar_url
   tenant:
     enabled: true
+    validate-tables: ${NZ_TENANT_VALIDATE_TABLES:true}
     default-tenant-id: 1
   field-encryption:
     enabled: ${NZ_FIELD_ENCRYPTION_ENABLED:false}

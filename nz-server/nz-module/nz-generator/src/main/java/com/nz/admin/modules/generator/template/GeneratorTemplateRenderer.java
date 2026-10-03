@@ -1,5 +1,7 @@
 package com.nz.admin.modules.generator.template;
 
+import com.nz.admin.common.core.BusinessException;
+
 import cn.hutool.core.util.StrUtil;
 import com.nz.admin.modules.generator.model.GeneratorColumn;
 import com.nz.admin.modules.generator.model.GeneratorRequest;
@@ -69,13 +71,57 @@ public class GeneratorTemplateRenderer {
             files.put(replaceTokens(definition.outputPath(), context),
                     replaceTokens(readTemplate(definition.resourcePath()), context));
         }
+        files.put("INSTALL-" + request.getModuleName() + "-" + request.getBusinessName() + ".md",
+                "# 生成业务安装\n\n目标业务模块需依赖 nz-starter-tenant、nz-starter-datascope、nz-starter-auth。\n"
+                + "配置类放在模块扫描包下，自动注册租户与数据权限。归属字段由服务端写入，更新不会变更归属。\n"
+                + "菜单 SQL 应通过新的 Flyway 迁移交付；已发布版本不得修改。\n"
+                + "验收必须覆盖跨租户不可见、越权详情/更新/删除，以及客户端伪造归属字段。\n");
+        String tenant = ownershipColumn(request.getTenantColumn(), "tenant_id", models);
+        if (tenant != null && !"tenant_id".equals(tenant))
+            throw new BusinessException("租户列必须使用框架约定 tenant_id");
+        String dept = ownershipColumn(request.getDeptColumn(), "dept_id", models);
+        String owner = ownershipColumn(request.getOwnerColumn(), "owner_id", models);
+        if (tenant != null || request.isDataScopeEnabled() && (dept != null || owner != null)) {
+            String beans = tenant == null ? "" : "    @Bean\n    public com.nz.admin.framework.tenant.core.TenantTableRuleCustomizer tenantTables() {\n"
+                    + "        return tables -> tables.add(\"" + request.getTableName() + "\");\n    }\n";
+            if (request.isDataScopeEnabled() && (dept != null || owner != null)) {
+                beans += "    @Bean\n    public com.nz.admin.framework.datascope.core.DataScopeRuleCustomizer dataScopeRules() {\n"
+                        + "        return rules -> rules.add(new com.nz.admin.framework.datascope.core.DataScopeRule(\""
+                        + request.getTableName() + "\", " + quoted(dept) + ", " + quoted(owner) + "));\n    }\n";
+            }
+            files.put("nz-server/nz-module/nz-" + request.getModuleName() + "/src/main/java/"
+                    + request.getPackageName().replace('.', '/') + "/config/" + request.getClassName() + "AccessConfiguration.java",
+                    "package " + request.getPackageName() + ".config;\n\nimport org.springframework.context.annotation.Bean;\n"
+                    + "import org.springframework.context.annotation.Configuration;\n\n@Configuration(proxyBeanMethods = false)\n"
+                    + "public class " + request.getClassName() + "AccessConfiguration {\n" + beans + "}\n");
+        }
         return files;
+    }
+
+    private String quoted(String value) { return value == null ? "null" : "\"" + value + "\""; }
+
+    private String ownershipColumn(String configured, String standard, List<ColumnModel> columns) {
+        String name = StrUtil.isBlank(configured) ? standard : configured;
+        var found = columns.stream().filter(column -> column.columnName().equals(name)).findFirst();
+        if (found.isEmpty()) {
+            if (StrUtil.isNotBlank(configured)) throw new IllegalArgumentException("归属字段不存在：" + name);
+            return null;
+        }
+        if (!"Long".equals(found.get().javaType()) || found.get().primaryKey())
+            throw new IllegalArgumentException("归属字段必须为非主键 BIGINT：" + name);
+        return name;
     }
 
     private Map<String, String> buildContext(GeneratorRequest request, List<ColumnModel> columns,
                                              ColumnModel primaryKey) {
         List<ColumnModel> entityColumns = columns.stream().filter(column -> !column.audit()).toList();
-        List<ColumnModel> writableColumns = entityColumns.stream().filter(column -> !column.primaryKey()).toList();
+        var protectedColumns = new LinkedHashSet<>(Set.of("tenant_id", "owner_id", "dept_id", "create_by", "update_by"));
+        String tenant = ownershipColumn(request.getTenantColumn(), "tenant_id", columns);
+        String dept = ownershipColumn(request.getDeptColumn(), "dept_id", columns);
+        String owner = ownershipColumn(request.getOwnerColumn(), "owner_id", columns);
+        for (String field : new String[]{tenant, dept, owner}) if (field != null) protectedColumns.add(field);
+        List<ColumnModel> writableColumns = entityColumns.stream()
+                .filter(column -> !column.primaryKey() && !protectedColumns.contains(column.columnName())).toList();
         List<ColumnModel> queryColumns = writableColumns.stream().filter(column -> !column.binary()).toList();
 
         Map<String, String> context = new LinkedHashMap<>();
@@ -84,6 +130,22 @@ public class GeneratorTemplateRenderer {
         context.put("CLASS", request.getClassName());
         context.put("CLASS_CAMEL", lowerFirst(request.getClassName()));
         context.put("TABLE", request.getTableName());
+        context.put("SCHEMA", request.getSchemaName());
+        context.put("OWNERSHIP_FIELDS", tenant == null && dept == null && owner == null ? "" :
+                "    @org.springframework.beans.factory.annotation.Autowired\n"
+                + "    private com.nz.admin.framework.auth.core.LoginUserContext loginUserContext;\n");
+        String assignment = "";
+        if (tenant != null) assignment += "        Long tenant = com.nz.admin.framework.tenant.core.TenantContextHolder.getTenantIdOrNull();\n"
+                + "        if (tenant == null) throw new BusinessException(\"缺少可信租户身份\");\n"
+                + "        entity.set" + upperFirst(toCamelCase(tenant)) + "(tenant);\n";
+        if (dept != null || owner != null) {
+            assignment += "        var identity = loginUserContext.getLoginUserOrNull();\n"
+                    + "        if (identity == null) throw new BusinessException(\"需要登录身份\");\n";
+            if (owner != null) assignment += "        entity.set" + upperFirst(toCamelCase(owner)) + "(identity.getUserId());\n";
+            if (dept != null) assignment += "        if (identity.getDeptId() == null) throw new BusinessException(\"当前用户未关联部门\");\n"
+                    + "        entity.set" + upperFirst(toCamelCase(dept)) + "(identity.getDeptId());\n";
+        }
+        context.put("OWNERSHIP_ASSIGNMENT", assignment);
         context.put("MODULE", request.getModuleName());
         context.put("BUSINESS", request.getBusinessName());
         context.put("FEATURE_DOC", javadoc(request.getFeatureName()));

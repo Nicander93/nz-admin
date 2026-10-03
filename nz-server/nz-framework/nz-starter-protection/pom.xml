@@ -15,6 +15,10 @@
     <description>保护 starter，提供防重复提交、接口限流和输入清理基础能力。</description>
 
     <dependencies>
+        <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-jdbc</artifactId></dependency>
+        <dependency><groupId>cn.hutool</groupId><artifactId>hutool-json</artifactId><version>${hutool.version}</version></dependency>
+        <dependency><groupId>cn.hutool</groupId><artifactId>hutool-crypto</artifactId><version>${hutool.version}</version></dependency>
+        <dependency><groupId>com.nz</groupId><artifactId>nz-starter-cache</artifactId></dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>

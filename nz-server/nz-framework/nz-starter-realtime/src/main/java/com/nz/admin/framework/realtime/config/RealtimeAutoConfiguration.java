@@ -21,7 +21,7 @@ import java.time.Clock;
 /**
  * 实时通信自动装配。
  */
-@AutoConfiguration
+@AutoConfiguration(after=com.nz.admin.framework.cache.config.AtomicStateAutoConfiguration.class)
 @EnableWebSocket
 @EnableConfigurationProperties(RealtimeProperties.class)
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
@@ -30,8 +30,12 @@ public class RealtimeAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    RealtimeTicketService realtimeTicketService(RealtimeProperties properties) {
-        return new InMemoryRealtimeTicketService(properties.getTicketTtl(), Clock.systemUTC());
+    RealtimeTicketService realtimeTicketService(RealtimeProperties properties,
+            org.springframework.beans.factory.ObjectProvider<com.nz.admin.framework.cache.core.AtomicStateStore> states,
+            ObjectMapper mapper) {
+        var store=states.getIfAvailable();
+        return store==null ? new InMemoryRealtimeTicketService(properties.getTicketTtl(),Clock.systemUTC())
+                : new com.nz.admin.framework.realtime.core.SharedRealtimeTicketService(store,mapper,properties.getTicketTtl());
     }
 
     @Bean
@@ -46,6 +50,29 @@ public class RealtimeAutoConfiguration {
     @ConditionalOnMissingBean(RealtimePublisher.class)
     RealtimePublisher realtimePublisher(RealtimeConnectionRegistry registry) {
         return registry;
+    }
+
+    @Bean
+    @org.springframework.context.annotation.Primary
+    @ConditionalOnProperty(name="nz.cluster.enabled",havingValue="true")
+    com.nz.admin.framework.realtime.core.RedisRealtimePublisher clusterRealtimePublisher(
+            RealtimeConnectionRegistry registry,org.springframework.data.redis.core.StringRedisTemplate redis,
+            ObjectMapper mapper,org.springframework.core.env.Environment env) {
+        return new com.nz.admin.framework.realtime.core.RedisRealtimePublisher(registry,redis,mapper,
+                env.getProperty("nz.cache.key-prefix","nz-admin")+":realtime");
+    }
+
+    @Bean
+    @ConditionalOnProperty(name="nz.cluster.enabled",havingValue="true")
+    org.springframework.data.redis.listener.RedisMessageListenerContainer realtimeRedisListener(
+            com.nz.admin.framework.realtime.core.RedisRealtimePublisher publisher,
+            org.springframework.data.redis.connection.RedisConnectionFactory factory,
+            org.springframework.core.env.Environment env) {
+        var listener=new org.springframework.data.redis.listener.RedisMessageListenerContainer();
+        listener.setConnectionFactory(factory);
+        listener.addMessageListener(publisher,new org.springframework.data.redis.listener.ChannelTopic(
+                env.getProperty("nz.cache.key-prefix","nz-admin")+":realtime"));
+        return listener;
     }
 
     @Bean

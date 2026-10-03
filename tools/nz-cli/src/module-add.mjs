@@ -214,6 +214,13 @@ export async function planModuleAdd(root, input) {
     appendMigrationResource(await readUtf8(migrationTestPath), `db/migration/${migrationName}`),
   )
 
+  const readmePath = path.join(root, 'readme.md')
+  try {
+    const readme = await readUtf8(readmePath)
+    if (/V1-V\d+/.test(readme)) changes.set(readmePath, readme.replace(/V1-V\d+/g, `V1-V${version}`))
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error
+  }
   return { code, title, description, version, menuId, migrationName, upgradeName, changes }
 }
 

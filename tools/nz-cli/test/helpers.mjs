@@ -14,6 +14,7 @@ async function copy(relative, root) {
 
 export async function createProjectFixture() {
   const root = await mkdtemp(path.join(os.tmpdir(), 'nz-cli-test-'))
+  await copy('readme.md', root)
   await copy('nz-server/mvnw', root)
   await copy('nz-server/mvnw.cmd', root)
   await copy('nz-server/pom.xml', root)

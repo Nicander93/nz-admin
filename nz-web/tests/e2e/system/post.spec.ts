@@ -6,7 +6,11 @@ test.describe('岗位管理冒烟', () => {
 
     await page.getByRole('button', { name: '新增' }).click()
     await expect(page.getByRole('dialog')).toBeVisible()
-    await expect(page.getByText('岗位编码', { exact: true })).toBeVisible()
-    await expect(page.getByText('岗位名称', { exact: true })).toBeVisible()
+    await expect(
+      page.getByRole('dialog').getByText('岗位编码', { exact: true }),
+    ).toBeVisible()
+    await expect(
+      page.getByRole('dialog').getByText('岗位名称', { exact: true }),
+    ).toBeVisible()
   })
 })

@@ -16,6 +16,7 @@ import java.io.IOException;
 /**
  * 从服务端令牌会话恢复租户，不读取可伪造的租户请求头。
  */
+@lombok.extern.slf4j.Slf4j
 public class TenantContextFilter extends OncePerRequestFilter {
 
     @Override
@@ -33,7 +34,12 @@ public class TenantContextFilter extends OncePerRequestFilter {
                 }
             }
         } catch (RuntimeException ignored) {
+            log.warn("令牌租户上下文恢复失败", ignored);
             TenantContextHolder.clear();
+            response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+            response.setContentType("application/json;charset=UTF-8");
+            response.getWriter().write("{\"code\":503,\"msg\":\"登录状态暂不可用\"}");
+            return;
         }
 
         try {

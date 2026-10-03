@@ -27,6 +27,8 @@ public class SystemDataScopeResolver implements DataScopeResolver {
     private final RoleMapper roleMapper;
     private final RoleDeptMapper roleDeptMapper;
     private final DeptMapper deptMapper;
+    private final com.nz.admin.modules.system.mapper.role.RoleMenuMapper roleMenuMapper;
+    private final com.nz.admin.modules.system.mapper.menu.MenuMapper menuMapper;
 
     @Override
     public DataScopeResult resolve() {
@@ -43,6 +45,14 @@ public class SystemDataScopeResolver implements DataScopeResolver {
         for (var relation : userRoleMapper.selectByUserId(userId)) {
             var role = roleMapper.selectById(relation.getRoleId());
             if (role == null || !Objects.equals(role.getStatus(), 0)) {
+                continue;
+            }
+            var required = com.nz.admin.framework.auth.core.PermissionContext.get();
+            if (!required.isEmpty() && roleMenuMapper.selectByRoleId(role.getId()).stream()
+                    .map(relationMenu -> menuMapper.selectById(relationMenu.getMenuId()))
+                    .filter(Objects::nonNull)
+                    .filter(menu -> menu.getPerm() != null && Objects.equals(menu.getStatus(), 0))
+                    .noneMatch(menu -> required.contains(menu.getPerm()))) {
                 continue;
             }
             if (Objects.equals(role.getDataScope(), 1)) {

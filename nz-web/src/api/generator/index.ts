@@ -29,6 +29,10 @@ export interface GeneratorRequest {
   featureName: string
   author: string
   parentMenuId: number
+  tenantColumn?: string
+  deptColumn?: string
+  ownerColumn?: string
+  dataScopeEnabled?: boolean
 }
 
 export interface GeneratorPreview {
@@ -36,11 +40,17 @@ export interface GeneratorPreview {
   files: Record<string, string>
 }
 
-export function listGeneratorTables(params: { schemaName: string; keyword?: string }) {
+export function listGeneratorTables(params: {
+  schemaName: string
+  keyword?: string
+}) {
   return request.get<GeneratorTable[]>('/api/generator/tables', { params })
 }
 
-export function listGeneratorColumns(params: { schemaName: string; tableName: string }) {
+export function listGeneratorColumns(params: {
+  schemaName: string
+  tableName: string
+}) {
   return request.get<GeneratorColumn[]>('/api/generator/columns', { params })
 }
 

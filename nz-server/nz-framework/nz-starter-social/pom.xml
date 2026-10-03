@@ -12,6 +12,7 @@
     <name>${project.artifactId}</name>
     <description>OAuth2/OIDC 社交认证框架，提供 PKCE、一次性状态与身份解析。</description>
     <dependencies>
+        <dependency><groupId>com.nz</groupId><artifactId>nz-starter-cache</artifactId></dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>

@@ -7,6 +7,13 @@ import { checkMigrations, inspectMigrations } from '../src/migrations.mjs'
 import { createProjectFixture } from './helpers.mjs'
 
 describe('migration checks', () => {
+  it('rejects a stale README migration version', async () => {
+    const root = await createProjectFixture()
+    try {
+      await writeFile(path.join(root, 'readme.md'), '迁移 V1-V1')
+      await assert.rejects(() => checkMigrations(root), /README/)
+    } finally { await rm(root, { recursive: true, force: true }) }
+  })
   it('accepts contiguous Flyway and upgrade scripts', async () => {
     const root = await createProjectFixture()
     try {

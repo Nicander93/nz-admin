@@ -19,12 +19,12 @@ export function get@@CLASS@@(@@PK_FIELD@@: @@CLASS@@['@@PK_FIELD@@']) {
   return request.get<@@CLASS@@>('/api/@@MODULE@@/@@BUSINESS@@/' + @@PK_FIELD@@)
 }
 
-export function add@@CLASS@@(data: @@CLASS@@Form) {
-  return request.post<@@CLASS@@['@@PK_FIELD@@']>('/api/@@MODULE@@/@@BUSINESS@@', data)
+export function add@@CLASS@@(data: @@CLASS@@Form, key?: string) {
+  return request.post<@@CLASS@@['@@PK_FIELD@@']>('/api/@@MODULE@@/@@BUSINESS@@', data, key ? { headers: { 'Idempotency-Key': key } } : undefined)
 }
 
 export function update@@CLASS@@(data: @@CLASS@@Form) {
-  return request.put<void>('/api/@@MODULE@@/@@BUSINESS@@', data)
+  return request.put<void>('/api/@@MODULE@@/@@BUSINESS@@', data, key ? { headers: { 'Idempotency-Key': key } } : undefined)
 }
 
 export function delete@@CLASS@@(@@PK_FIELD@@: @@CLASS@@['@@PK_FIELD@@']) {

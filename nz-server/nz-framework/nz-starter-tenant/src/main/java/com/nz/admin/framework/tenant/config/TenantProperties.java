@@ -14,6 +14,9 @@ import java.util.Set;
 public class TenantProperties {
 
     private boolean enabled = false;
+    // Warm-Flow 自带租户处理器；其他例外必须显式登记并说明隔离来源。
+    private Set<String> externallyManagedTables = new LinkedHashSet<>(Set.of(
+            "flow_definition", "flow_node", "flow_skip", "flow_instance", "flow_task", "flow_his_task", "flow_user"));
     private Long defaultTenantId = 1L;
     private String tenantColumn = "tenant_id";
     private Set<String> includedTables = new LinkedHashSet<>(Set.of(

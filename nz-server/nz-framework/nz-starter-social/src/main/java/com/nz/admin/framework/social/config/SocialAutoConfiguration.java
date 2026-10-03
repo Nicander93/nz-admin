@@ -16,7 +16,7 @@ import java.security.SecureRandom;
 import java.time.Clock;
 
 /** 社交认证自动装配。 */
-@AutoConfiguration
+@AutoConfiguration(after=com.nz.admin.framework.cache.config.AtomicStateAutoConfiguration.class)
 @EnableConfigurationProperties(SocialProperties.class)
 @ConditionalOnProperty(prefix = "nz.social", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class SocialAutoConfiguration {
@@ -34,8 +34,12 @@ public class SocialAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public SocialAuthorizationStateStore socialAuthorizationStateStore(Clock clock) {
-        return new InMemorySocialAuthorizationStateStore(clock);
+    public SocialAuthorizationStateStore socialAuthorizationStateStore(Clock clock,
+            org.springframework.beans.factory.ObjectProvider<com.nz.admin.framework.cache.core.AtomicStateStore> states,
+            org.springframework.beans.factory.ObjectProvider<com.fasterxml.jackson.databind.ObjectMapper> mappers) {
+        var store=states.getIfAvailable();
+        return store == null ? new InMemorySocialAuthorizationStateStore(clock)
+                : new com.nz.admin.framework.social.core.SharedSocialAuthorizationStateStore(store,mappers.getIfAvailable(() -> new com.fasterxml.jackson.databind.ObjectMapper().findAndRegisterModules()),clock);
     }
 
     @Bean

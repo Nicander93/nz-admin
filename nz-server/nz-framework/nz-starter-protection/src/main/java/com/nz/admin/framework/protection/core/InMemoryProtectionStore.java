@@ -1,41 +1,57 @@
 package com.nz.admin.framework.protection.core;
 
-import java.time.Instant;
+import java.time.Clock;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
-/**
- * 本地保护存储。
- */
-public class InMemoryProtectionStore {
+/** 单实例保护存储，操作原子执行，并按分钟清理过期键。 */
+public class InMemoryProtectionStore implements ProtectionStore {
+    private final ConcurrentHashMap<String, Long> repeats = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Window> limits = new ConcurrentHashMap<>();
+    private final Clock clock;
+    private final AtomicLong nextCleanup = new AtomicLong();
 
-    private final ConcurrentHashMap<String, Long> repeatSubmitStore = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, CounterWindow> rateLimitStore = new ConcurrentHashMap<>();
+    public InMemoryProtectionStore() { this(Clock.systemUTC()); }
+    public InMemoryProtectionStore(Clock clock) { this.clock = clock; }
 
-    public boolean isRepeatSubmit(String key, int intervalSeconds) {
-        long now = Instant.now().toEpochMilli();
-        long expireAt = now + intervalSeconds * 1000L;
-        Long previous = repeatSubmitStore.put(key, expireAt);
-        if (previous == null || previous < now) {
-            return false;
-        }
-        repeatSubmitStore.put(key, previous);
-        return true;
-    }
-
-    public boolean tryAcquire(String key, int permits, int windowSeconds) {
-        long now = Instant.now().toEpochMilli();
-        long windowEnd = now + windowSeconds * 1000L;
-        CounterWindow counterWindow = rateLimitStore.compute(key, (ignored, current) -> {
-            if (current == null || current.windowEnd < now) {
-                return new CounterWindow(new AtomicInteger(1), windowEnd);
+    @Override
+    public boolean isRepeatSubmit(String key, int seconds) {
+        if (seconds <= 0) throw new IllegalArgumentException("防重间隔必须大于零");
+        long now = clock.millis();
+        cleanup(now);
+        AtomicBoolean repeat = new AtomicBoolean();
+        repeats.compute(key, (ignored, expiry) -> {
+            if (expiry != null && expiry > now) {
+                repeat.set(true);
+                return expiry;
             }
-            current.counter.incrementAndGet();
-            return current;
+            return now + seconds * 1000L;
         });
-        return counterWindow.counter.get() <= permits;
+        return repeat.get();
     }
 
-    private record CounterWindow(AtomicInteger counter, long windowEnd) {
+    @Override
+    public boolean tryAcquire(String key, int permits, int seconds) {
+        if (permits <= 0 || seconds <= 0) throw new IllegalArgumentException("限流参数必须大于零");
+        long now = clock.millis();
+        cleanup(now);
+        AtomicBoolean allowed = new AtomicBoolean();
+        limits.compute(key, (ignored, current) -> {
+            Window window = current == null || current.expiry() <= now
+                    ? new Window(0, now + seconds * 1000L) : current;
+            allowed.set(window.count() < permits);
+            return new Window(Math.min(window.count() + 1, permits), window.expiry());
+        });
+        return allowed.get();
     }
+
+    private void cleanup(long now) {
+        long next = nextCleanup.get();
+        if (now >= next && nextCleanup.compareAndSet(next, now + 60_000)) {
+            repeats.entrySet().removeIf(entry -> entry.getValue() <= now);
+            limits.entrySet().removeIf(entry -> entry.getValue().expiry() <= now);
+        }
+    }
+    private record Window(int count, long expiry) {}
 }

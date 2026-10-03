@@ -14,7 +14,10 @@ public class SmsVerificationConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(SmsVerificationCodeStore.class)
-    public SmsVerificationCodeStore smsVerificationCodeStore() {
-        return new InMemorySmsVerificationCodeStore();
+    public SmsVerificationCodeStore smsVerificationCodeStore(
+            org.springframework.beans.factory.ObjectProvider<com.nz.admin.framework.cache.core.AtomicStateStore> stores) {
+        var store=stores.getIfAvailable();
+        return store==null ? new InMemorySmsVerificationCodeStore()
+                : new com.nz.admin.modules.system.service.auth.SharedSmsVerificationCodeStore(store);
     }
 }

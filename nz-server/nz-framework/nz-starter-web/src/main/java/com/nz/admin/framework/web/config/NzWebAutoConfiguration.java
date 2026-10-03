@@ -1,5 +1,6 @@
 package com.nz.admin.framework.web.config;
 
+import com.nz.admin.framework.web.exception.GlobalExceptionHandler;
 import com.nz.admin.framework.web.properties.WebFrameworkProperties;
 import com.nz.admin.framework.web.support.RequestTraceFilter;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -18,6 +19,13 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @EnableConfigurationProperties(WebFrameworkProperties.class)
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 public class NzWebAutoConfiguration {
+
+    @Bean
+    @ConditionalOnMissingBean
+    public GlobalExceptionHandler globalExceptionHandler() {
+        return new GlobalExceptionHandler();
+    }
+
 
     /**
      * 配置全局跨域。

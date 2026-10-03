@@ -1,5 +1,6 @@
 import { reactive } from 'vue'
 import { useCrud } from '@/utils/CRUD'
+import { withIdempotency } from '@/utils/idempotency'
 import {
   add@@CLASS@@,
   delete@@CLASS@@,
@@ -15,7 +16,7 @@ export function use@@CLASS@@Crud() {
     name: '@@FEATURE_TS@@',
     api: {
       page: page@@CLASS@@s,
-      add: add@@CLASS@@,
+      add: withIdempotency(add@@CLASS@@),
       update: update@@CLASS@@,
       delete: (ids: Array<@@CLASS@@['@@PK_FIELD@@']>) => delete@@CLASS@@(ids[0]),
     },

@@ -4,7 +4,7 @@ import { defineConfig as defineBrowserConfig, devices } from '@playwright/test'
 import vue from '@vitejs/plugin-vue'
 import { defineConfig as defineUnitConfig } from 'vitest/config'
 
-export function unitTestConfig(root: string) {
+export function unitTestConfig(root) {
   return defineUnitConfig({
     root,
     plugins: [vue()],
@@ -13,13 +13,9 @@ export function unitTestConfig(root: string) {
   })
 }
 
-export interface BrowserTestOptions {
-  baseURL?: string
-  serverCommand?: string
-}
-
-export function browserTestConfig(options: BrowserTestOptions = {}) {
-  const baseURL = options.baseURL ?? process.env.E2E_BASE_URL ?? 'http://127.0.0.1:4173'
+export function browserTestConfig(options = {}) {
+  const baseURL =
+    options.baseURL ?? process.env.E2E_BASE_URL ?? 'http://127.0.0.1:4173'
   return defineBrowserConfig({
     testDir: './tests/e2e',
     timeout: 60_000,
@@ -28,7 +24,12 @@ export function browserTestConfig(options: BrowserTestOptions = {}) {
     fullyParallel: false,
     retries: process.env.CI ? 2 : 0,
     reporter: [['list'], ['html', { open: 'never' }]],
-    use: { baseURL, trace: 'on-first-retry', screenshot: 'only-on-failure', video: 'retain-on-failure' },
+    use: {
+      baseURL,
+      trace: 'on-first-retry',
+      screenshot: 'only-on-failure',
+      video: 'retain-on-failure',
+    },
     projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
     webServer: {
       command: options.serverCommand ?? 'pnpm dev --host 127.0.0.1 --port 4173',

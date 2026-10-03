@@ -25,7 +25,7 @@ Windows 使用 `.\nz.cmd`。模块创建、迁移检查、代码生成、容器�
 
 ### 1. 初始化数据库
 
-创建空的 PostgreSQL 数据库。后端首次启动时会通过 Flyway 自动执行 V1-V15，不需要手工导入基线脚本。
+创建空的 PostgreSQL 数据库。后端首次启动时会通过 Flyway 自动执行 V1-V29，不需要手工导入基线脚本。
 
 已有数据库升级前先备份；不能由应用执行 Flyway 时，按版本顺序使用 `nz-app/src/main/resources/db/upgrade-p*.sql`。
 

@@ -4,6 +4,7 @@ import com.nz.admin.common.core.BusinessException;
 import com.nz.admin.common.core.CommonErrorCode;
 import com.nz.admin.framework.protection.annotation.RateLimit;
 import com.nz.admin.framework.protection.core.InMemoryProtectionStore;
+import com.nz.admin.framework.protection.core.ProtectionStore;
 import com.nz.admin.framework.protection.core.ProtectionKeyResolver;
 import jakarta.servlet.http.HttpServletRequest;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -18,10 +19,10 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 @Aspect
 public class RateLimitAspect {
 
-    private final InMemoryProtectionStore protectionStore;
+    private final ProtectionStore protectionStore;
     private final ProtectionKeyResolver protectionKeyResolver;
 
-    public RateLimitAspect(InMemoryProtectionStore protectionStore, ProtectionKeyResolver protectionKeyResolver) {
+    public RateLimitAspect(ProtectionStore protectionStore, ProtectionKeyResolver protectionKeyResolver) {
         this.protectionStore = protectionStore;
         this.protectionKeyResolver = protectionKeyResolver;
     }

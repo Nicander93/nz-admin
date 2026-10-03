@@ -15,6 +15,7 @@
     <description>认证鉴权 starter，提供 Sa-Token 接入、权限注解、鉴权切面和异常处理。</description>
 
     <dependencies>
+        <dependency><groupId>com.nz</groupId><artifactId>nz-starter-cache</artifactId></dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>

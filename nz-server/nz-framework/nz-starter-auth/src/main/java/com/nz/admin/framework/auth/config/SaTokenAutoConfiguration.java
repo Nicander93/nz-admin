@@ -18,6 +18,23 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 public class SaTokenAutoConfiguration implements WebMvcConfigurer {
 
+    @org.springframework.context.annotation.Bean
+    @org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
+    public SaTokenExceptionHandler saTokenExceptionHandler() {
+        return new SaTokenExceptionHandler();
+    }
+
+
+    /** MVC 拦截器之前的租户过滤器也需要 Sa-Token 上下文。 */
+    @org.springframework.context.annotation.Bean
+    public org.springframework.boot.web.servlet.FilterRegistrationBean<cn.dev33.satoken.filter.SaTokenContextFilterForJakartaServlet> saTokenContextFilter() {
+        var registration = new org.springframework.boot.web.servlet.FilterRegistrationBean<>(new cn.dev33.satoken.filter.SaTokenContextFilterForJakartaServlet());
+        registration.setName("saTokenContextFilter");
+        registration.setOrder(org.springframework.core.Ordered.HIGHEST_PRECEDENCE + 10);
+        registration.addUrlPatterns("/*");
+        return registration;
+    }
+
     private final AuthFrameworkProperties properties;
 
     public SaTokenAutoConfiguration(AuthFrameworkProperties properties) {

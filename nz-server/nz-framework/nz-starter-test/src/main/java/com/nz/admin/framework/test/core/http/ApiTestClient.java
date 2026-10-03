@@ -43,7 +43,13 @@ public class ApiTestClient {
     }
 
     public JsonNode exchange(HttpMethod method, String path, Object body) {
+        return exchange(method, path, body, Map.of());
+    }
+
+    /** 为并发、幂等和客户端协议测试提供显式请求头。 */
+    public JsonNode exchange(HttpMethod method, String path, Object body, Map<String, String> extraHeaders) {
         HttpHeaders headers = new HttpHeaders();
+        extraHeaders.forEach(headers::set);
         if (token != null) {
             headers.set("Authorization", token);
         }

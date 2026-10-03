@@ -1,1 +1,3 @@
 com.nz.admin.framework.cache.config.NzCacheAutoConfiguration
+
+com.nz.admin.framework.cache.config.AtomicStateAutoConfiguration

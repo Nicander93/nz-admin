@@ -91,11 +91,11 @@ V22 创建 `flow_task`、`flow_history_task` 和 `flow_task_copy`，回填 V21 �
 V23 为当前任务增加原办理人与委派状态，历史任务增加 `DELEGATE`、`RESOLVE` 动作，并加入委派权限。原办理人委派后，受托人只能完成委派并归还任务；归还前不能通过、驳回或转办，实例办理接口也执行同一约束。人工升级脚本是 `db/upgrade-p23-workflow-task-delegate.sql`。
 V24 增加实例催办权限，发起人或管理员可向当前用户或角色办理人发送站内消息，并写入 `URGE` 事件。人工升级脚本是 `db/upgrade-p24-workflow-instance-urge.sql`。
 
-V25 将现有运行时的三张同名表改为 `nz_flow_*_legacy`，保留全部存量数据和原有接口行为；同时创建 Warm-Flow 1.8.9 的七张标准表。新运行时默认通过 `warm-flow.enabled=false` 关闭；租户、审计和办理人解析桥接已经完成，仍需完成业务 API 适配与实例对象级权限后再启用。人工升级脚本是 `db/upgrade-p25-warm-flow-foundation.sql`。
+V25 将现有运行时的三张同名表改为 `nz_flow_*_legacy`，保留全部存量数据和原有接口行为；同时创建 Warm-Flow 1.8.9 的七张标准表。新运行时默认通过 `warm-flow.enabled=false` 关闭；租户、审计和办理人解析桥接已经完成，新入口的业务 API、实例参与人权限和任务办理人权限已接入；V29 升级完成后可显式启用。人工升级脚本是 `db/upgrade-p25-warm-flow-foundation.sql`。
 
 ## 尚未完成
 
-完整对齐 RuoYi-Vue-Plus 还需要加签/减签、多人会签/或签、退回指定节点、并行网关、可视化设计器、流程图、业务状态回调和运行监控。当前业务 API 仍使用单当前任务的旧运行时；模型运行到并行网关时会明确拒绝，不会把单任务状态伪装成并行执行。
+旧业务入口仍使用单当前任务运行时，遇到并行网关会拒绝。新工作台提供节点/连线编辑、网关预览和声明式模型导入；新引擎已验证顺序、并行及多人会签。自由拖拽画布、加减签管理、退回任意节点、业务状态回调和全局运行监控尚未交付，不能视为与完整 RuoYi-Vue-Plus 功能对齐。
 
 ## 验证
 
@@ -110,3 +110,23 @@ cd ../nz-web
 pnpm test
 pnpm build
 ```
+
+## 新引擎工作台与迁移
+
+完成 V27–V29 后设置 `NZ_WARM_FLOW_ENABLED=true`。菜单“工作流程 → 新引擎工作台”可以编辑节点、连线、办理人与网关，或导入同一声明式 JSON。读取已有定义后，重新导入会创建新版本；发布新版本不改写在途实例。旧流程页面继续办理旧实例，不能把旧模型 JSON 原样提交给新入口。
+
+| 接口 | 权限与边界 |
+| --- | --- |
+| `GET /api/workflow/engine/capabilities` | `workflow:engine:query`，返回是否启用 |
+| `POST /api/workflow/engine/definitions` | `workflow:engine:design`，导入新版本 |
+| `GET /api/workflow/engine/definitions/{id}` | `workflow:engine:design`，读取本租户模型 |
+| `POST /api/workflow/engine/definitions/{id}/publish` | `workflow:engine:design`，只发布本租户定义 |
+| `POST /api/workflow/engine/instances` | `workflow:engine:start`，必须带 `Idempotency-Key` |
+| `GET /api/workflow/engine/instances/{id}` | `workflow:engine:query`，还须为发起人、待办人或历史办理人 |
+| `POST /api/workflow/engine/tasks/{id}/action` | `workflow:engine:action`，还须为该任务办理人，必须带幂等键 |
+| `DELETE /api/workflow/engine/instances/{id}` | design 权限与发起人身份，且实例没有待办任务 |
+| `DELETE /api/workflow/engine/definitions/{id}` | design 权限，只删除没有实例引用的本租户定义 |
+
+审批节点 `permissionFlag` 使用 `user:<id>` 或 `role:<roleKey>`，多个用逗号分隔。`nodeRatio` 为 0–100 的数字字符串：0 是或签、100 是会签，中间值是票签通过比例；默认 0。条件只开放内置比较，例如 `ge@@amount|100`。节点类型 0 开始、1 审批、2 结束、3 互斥网关、4 并行网关、5 包容网关。导入要求唯一开始/结束、全部节点可达且能到达结束；ID、租户、审计字段和执行监听器由服务端管理。
+
+定义和实例 ID 以字符串交付，避免浏览器损失 Snowflake 大整数精度。新引擎表的 SQL 租户过滤与接口对象权限共同生效，同流程编码可在不同租户分别发布。

@@ -43,4 +43,10 @@ public class GeneratorRequest {
 
     @NotNull
     private Long parentMenuId = 0L;
+
+    /** 留空时识别标准归属字段，字段只从可信登录上下文写入。 */
+    private String tenantColumn;
+    private String deptColumn;
+    private String ownerColumn;
+    private boolean dataScopeEnabled = true;
 }

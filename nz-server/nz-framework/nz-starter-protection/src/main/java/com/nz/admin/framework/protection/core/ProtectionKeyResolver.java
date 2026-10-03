@@ -15,10 +15,8 @@ public class ProtectionKeyResolver {
     }
 
     public String resolve(String prefix, String customKey, HttpServletRequest request) {
-        String requestUri = request == null ? "unknown" : request.getRequestURI();
-        if (customKey != null && !customKey.isBlank()) {
-            return prefix + ":" + customKey;
-        }
+        String requestUri = request == null ? "unknown" : request.getMethod() + ":" + request.getRequestURI();
+        if (customKey != null && !customKey.isBlank()) requestUri = customKey;
         Long userId = loginUserContext == null ? null : loginUserContext.getLoginUserIdOrNull();
         if (userId != null) {
             return prefix + ":" + requestUri + ":" + userId;
