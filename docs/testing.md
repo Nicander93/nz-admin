@@ -52,7 +52,7 @@ E2E_USERNAME=admin E2E_PASSWORD=admin123 pnpm e2e
 
 E2E 默认启动本地 Vite，需先启动后端（默认 8080），账号通过环境变量提供；租户编码默认 default。`E2E_BASE_URL`、`E2E_WORKERS` 可覆盖地址和并发。
 
-CI 的 e2e job 使用独立 PostgreSQL，先验证迁移和真实 HTTP 数据权限，再启动后端运行五个浏览器测试。失败时上传 trace、截图和后端日志。新增核心操作应按需补浏览器行为测试，不能仅用冒烟测试代替数据权限服务端验证。
+CI 的 e2e job 使用独立 PostgreSQL，先验证迁移和真实 HTTP 数据权限，再启动两个后端节点运行六个浏览器测试及双节点脚本。失败时上传 trace、截图和后端日志。新增核心操作应按需补浏览器行为测试，不能仅用冒烟测试代替数据权限服务端验证。
 
 ## 真实状态与交付验收
 
@@ -67,7 +67,7 @@ export NZ_TEST_REDIS_PORT=6379
   -Dsurefire.failIfNoSpecifiedTests=false
 ```
 
-覆盖实际跨租户 HTTP 拒绝、无关全量角色、按钮权限装配、数据库并发幂等/失败回滚、两连接共享会话与日期字段、验证码发送门限、一次性 state/票据、票据撤销和跨节点消息/退出。工作流验收覆盖顺序审批、并行等待、多人会签、无关用户拒绝及同编码跨租户发布。生成器测试调用 JavaCompiler 编译实际输出，包含租户/归属规则配置。
+覆盖实际跨租户 HTTP 拒绝、无关全量角色、按钮权限装配、数据库并发幂等/失败回滚、两连接共享会话与日期字段、验证码发送门限、一次性 state/票据、票据撤销和跨节点消息/退出。工作流验收覆盖顺序审批、并行等待、多人会签、无关用户拒绝、同编码跨租户发布、设计器白名单、业务用途绑定、回调失败重试，以及撤回/转办/委派/退回/加减签。生成器测试调用 JavaCompiler 编译实际输出，包含租户/归属规则配置。
 
 浏览器新增新引擎完整链路，需要后端 `NZ_WARM_FLOW_ENABLED=true` 与前端测试 `E2E_WARM_FLOW_ENABLED=true`。CI 提供 PostgreSQL、Redis，先跑集成测试再启动后端。未启用新引擎时仅跳过该流程用例。
 
@@ -75,3 +75,7 @@ export NZ_TEST_REDIS_PORT=6379
 
 
 应用集成测试按类使用独立 JVM。Warm-Flow 1.8.9 的静态 Spring 上下文只保留首次绑定，不能在同一进程中切换 H2 与 PostgreSQL 应用容器。流程用例之间仅清理测试专属命名空间的登录限流窗口，生产限流保持启用。
+
+双节点验证：在同一个独立 PostgreSQL 测试库和 Redis 上启动 8080、8081 两个应用，开启 `NZ_CLUSTER_ENABLED=true` 和 `NZ_WARM_FLOW_ENABLED=true`，执行 `E2E_USERNAME=admin E2E_PASSWORD=admin123 node tools/tests/workflow-cluster.mjs`。脚本检查并发定义版本与发布、不同幂等键重复提交、跨节点相同幂等键审批、业务回调、SSE 消息、票据一次性消费和退出撤销。后端故障注入测试应使用另一个独立数据库，避免实际节点提前投递模拟失败事件。
+
+浏览器 `authenticatedPage` 在同一 worker 内复用登录得到的存储状态，每个用例仍使用独立上下文。UI 登录只执行一次，不关闭生产频控；需要不同用户时自行创建上下文并登录。文档站不依赖后端或账号，运行 `pnpm docs:e2e` 验证构建后的静态站。

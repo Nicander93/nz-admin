@@ -25,7 +25,8 @@ public class TenantContextFilter extends OncePerRequestFilter {
         try {
             String token = StpUtil.getTokenValue();
             if (StrUtil.isNotBlank(token)) {
-                SaSession session = StpUtil.getTokenSessionByToken(token);
+                // 只恢复已有会话；失效令牌交给鉴权入口返回 401，不创建新会话。
+                SaSession session = StpUtil.getStpLogic().getTokenSessionByToken(token, false);
                 if (session != null) {
                     Object tenantId = session.get(TenantConstants.TOKEN_SESSION_TENANT_ID);
                     if (tenantId != null) {

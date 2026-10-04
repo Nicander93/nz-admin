@@ -20,12 +20,16 @@ import java.util.*;
 @ConditionalOnProperty(name = "warm-flow.enabled", havingValue = "true")
 public class WarmFlowRuntime {
     private final LoginUserContext users;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbc;
+    private final WorkflowBusinessEvents events;
 
-    public WarmFlowRuntime(LoginUserContext users) {
+    public WarmFlowRuntime(LoginUserContext users, org.springframework.jdbc.core.JdbcTemplate jdbc, WorkflowBusinessEvents events) {
         this.users = users;
+        this.jdbc = jdbc;
+        this.events = events;
     }
 
-    private LoginUser identity() {
+    LoginUser identity() {
         var user = users.getLoginUserOrNull();
         if (user == null
                 || user.getTenantId() == null
@@ -34,7 +38,7 @@ public class WarmFlowRuntime {
         return user;
     }
 
-    private void checkTenant(String tenant, LoginUser user) {
+    void checkTenant(String tenant, LoginUser user) {
         if (!Objects.equals(tenant, user.getTenantId().toString()))
             throw new BusinessException("流程不存在或无权访问");
     }
@@ -48,7 +52,17 @@ public class WarmFlowRuntime {
     /** 导入生成新版本，忽略客户端 ID、租户和监听器；不会覆盖在途实例。 */
     @Transactional
     public Long importDefinition(EngineDefinitionRequest request) {
-        identity();
+        var user = identity();
+        var clean = convertModel(request);
+        lockDefinitionCode(request.flowCode(), user);
+        var previous = jdbc.queryForList("SELECT business_type FROM flow_definition WHERE tenant_id=? AND flow_code=? AND del_flag='0' ORDER BY id DESC LIMIT 1", user.getTenantId().toString(), request.flowCode());
+        Long id = FlowEngine.defService().importDef(clean).getId();
+        if (!previous.isEmpty() && previous.get(0).get("business_type") != null)
+            jdbc.update("UPDATE flow_definition SET business_type=? WHERE id=? AND tenant_id=?", previous.get(0).get("business_type"), id, user.getTenantId().toString());
+        return id;
+    }
+
+    DefJson convertModel(EngineDefinitionRequest request) {
         validateModel(request);
         Set<String> codes = new HashSet<>();
         for (var node : request.nodeList())
@@ -107,7 +121,7 @@ public class WarmFlowRuntime {
             nodes.add(converted);
         }
         definition.setNodeList(nodes);
-        return FlowEngine.defService().importDef(definition).getId();
+        return definition;
     }
 
     private void validateModel(EngineDefinitionRequest request) {
@@ -160,7 +174,7 @@ public class WarmFlowRuntime {
         return model(FlowEngine.defService().queryDesign(id));
     }
 
-    private EngineDefinitionRequest model(DefJson definition) {
+    EngineDefinitionRequest model(DefJson definition) {
         return new EngineDefinitionRequest(
                 definition.getFlowCode(),
                 definition.getFlowName(),
@@ -198,18 +212,30 @@ public class WarmFlowRuntime {
                         .toList());
     }
 
+    /** PostgreSQL 事务锁按租户和流程编码串行化版本创建与发布，支持跨后端节点。 */
+    void lockDefinitionCode(String code, LoginUser user) {
+        jdbc.query("SELECT pg_advisory_xact_lock(hashtext(?),hashtext(?))", rs -> {}, user.getTenantId().toString(), code);
+    }
+
     @Transactional
     public void publish(Long id) {
         var user = identity();
         var definition = FlowEngine.defService().getById(id);
         if (definition == null) throw new BusinessException("流程定义不存在");
         checkTenant(definition.getTenantId(), user);
+        lockDefinitionCode(definition.getFlowCode(), user);
+        jdbc.queryForList("SELECT id FROM flow_definition WHERE id=? AND tenant_id=? FOR UPDATE", Long.class, id, user.getTenantId().toString());
+        definition = FlowEngine.defService().getById(id);
+        if (Objects.equals(definition.getIsPublish(), 1)) return;
+        if (!Objects.equals(definition.getIsPublish(), 0)) throw new BusinessException("历史版本不能重新发布，请创建新版本");
+        convertModel(model(FlowEngine.defService().queryDesign(id)));
         if (!FlowEngine.defService().publish(id)) throw new BusinessException("流程发布失败");
     }
 
     @Transactional
     public Long start(String code, String businessId, Map<String, Object> variables) {
         var user = identity();
+        lockDefinitionCode(code, user);
         var definition = FlowEngine.defService().getPublishByFlowCode(code);
         if (definition == null) throw new BusinessException("已发布的流程定义不存在");
         checkTenant(definition.getTenantId(), user);
@@ -220,6 +246,12 @@ public class WarmFlowRuntime {
                                 .flowCode(code)
                                 .variable(variables == null ? Map.of() : variables))
                 .getId();
+    }
+
+    public List<Map<String, Object>> publishedDefinitions() {
+        var user = identity();
+        return jdbc.query("SELECT flow_code,flow_name FROM flow_definition WHERE del_flag='0' AND tenant_id=? AND is_publish=1 ORDER BY flow_name LIMIT 200",
+                (rs, row) -> Map.of("flowCode", rs.getString("flow_code"), "flowName", rs.getString("flow_name")), user.getTenantId().toString());
     }
 
     /** 参与人可读取实例及其轨迹，菜单权限本身不授予对象访问权。 */
@@ -245,11 +277,11 @@ public class WarmFlowRuntime {
         return new Snapshot(
                 new InstanceView(
                         instance.getId().toString(),
-                        instance.getFlowName(),
+                        instance.getFlowName() == null ? FlowEngine.defService().getById(instance.getDefinitionId()).getFlowName() : instance.getFlowName(),
                         instance.getBusinessId(),
-                        instance.getFlowStatus()),
+                        instance.getFlowStatus(), Objects.equals(instance.getCreateBy(), actor), instance.getNodeType() != 2),
                 tasks.stream()
-                        .map(task -> new TaskView(task.getId().toString(), task.getNodeName()))
+                        .map(task -> new TaskView(task.getId().toString(), task.getNodeName(), FlowEngine.userService().getPermission(task.getId()).contains(actor)))
                         .toList(),
                 history.stream()
                         .map(
@@ -259,37 +291,129 @@ public class WarmFlowRuntime {
                                                 task.getApprover(),
                                                 task.getMessage(),
                                                 task.getSkipType()))
-                        .toList());
+                        .toList(), events.detail(id, user.getTenantId().toString()), events.status(id, user.getTenantId().toString()));
     }
 
     @Transactional
     public Long action(Long id, String type, String comment, Map<String, Object> variables) {
         var user = identity();
+        var task = ownedTask(id, user);
+        if (!Set.of("PASS", "REJECT").contains(type)) throw new BusinessException("不支持的办理类型");
+        var params = parameters(user).skipType(type).message(comment).variable(variables == null ? Map.of() : variables);
+        boolean rejectRoute = FlowEngine.skipService().getByDefId(task.getDefinitionId()).stream()
+                .anyMatch(edge -> task.getNodeCode().equals(edge.getNowNodeCode()) && "REJECT".equals(edge.getSkipType()));
+        // 没有退回连线时将申请退回到业务草稿；引擎不允许跳转开始节点。
+        var result = "REJECT".equals(type) && !rejectRoute
+                ? FlowEngine.taskService().termination(id, params.flowStatus("9"))
+                : FlowEngine.taskService().skip(id, params);
+        events.record(result.getId(), user.getTenantId().toString(), user.getUserId().toString(), type);
+        return result.getId();
+    }
+
+    @Transactional
+    public Long revoke(Long id, String comment) {
+        var user = identity();
+        lockInstance(id, user);
+        var instance = FlowEngine.insService().getById(id);
+        if (!Objects.equals(instance.getCreateBy(), user.getUserId().toString())) throw new BusinessException("只有发起人可以撤回");
+        if (FlowEngine.taskService().getByInsId(id).isEmpty()) throw new BusinessException("流程已结束，不能撤回");
+        // 上游 revoke 会重新产生首个审批节点的任务；业务撤回采用原生结束操作并记录 CANCEL 状态。
+        // ignore 仅在服务端核验申请人后设置，客户端无法授予此权限。
+        FlowEngine.taskService().terminationByInsId(id, parameters(user).message(comment).flowStatus("6").ignore(true));
+        events.record(id, user.getTenantId().toString(), user.getUserId().toString(), "REVOKE");
+        return id;
+    }
+
+    public List<Map<String, String>> returnNodes(Long taskId) {
+        var user = identity();
+        var task = FlowEngine.taskService().getById(taskId);
+        if (task == null) throw new BusinessException("待办已办理");
+        checkTenant(task.getTenantId(), user);
+        if (!FlowEngine.userService().getPermission(taskId).contains(user.getUserId().toString())) throw new BusinessException("不是该任务的办理人");
+        var visited = FlowEngine.hisTaskService().getByInsId(task.getInstanceId()).stream().map(HisTask::getNodeCode).collect(java.util.stream.Collectors.toSet());
+        return FlowEngine.nodeService().getByDefId(task.getDefinitionId()).stream()
+                .filter(n -> (n.getNodeType() == 1) && visited.contains(n.getNodeCode()) && !n.getNodeCode().equals(task.getNodeCode()))
+                .map(n -> Map.of("nodeCode", n.getNodeCode(), "nodeName", n.getNodeName())).toList();
+    }
+
+    @Transactional
+    public Long manage(Long taskId, String operation, List<String> targets, String nodeCode, String comment) {
+        var user = identity();
+        var task = ownedTask(taskId, user);
+        var params = parameters(user).message(comment);
+        if (Set.of("TRANSFER", "DEPUTE", "ADD", "REDUCE").contains(operation)) {
+            if (targets == null || targets.isEmpty() || targets.size() > 20
+                    || targets.stream().anyMatch(v -> !v.matches("[1-9][0-9]*"))) throw new BusinessException("请选择有效办理人");
+            var resolved = FlowEngine.permissionHandler().convertPermissions(targets);
+            if (!new HashSet<>(resolved).equals(new HashSet<>(targets))) throw new BusinessException("办理人必须属于当前租户且处于启用状态");
+            if (Set.of("TRANSFER", "DEPUTE").contains(operation) && (targets.size() != 1 || targets.contains(user.getUserId().toString())))
+                throw new BusinessException("转办或委派需选择一名其他办理人");
+            if ("REDUCE".equals(operation)) {
+                var current = FlowEngine.userService().getPermission(taskId);
+                if (!current.containsAll(targets) || new HashSet<>(targets).size() >= new HashSet<>(current).size()) throw new BusinessException("减签必须保留至少一名现有办理人");
+            }
+            params.addHandlers(targets).reductionHandlers(targets);
+        }
+        switch (operation) {
+            case "TRANSFER" -> FlowEngine.taskService().transfer(taskId, params);
+            case "DEPUTE" -> FlowEngine.taskService().depute(taskId, params);
+            case "ADD" -> FlowEngine.taskService().addSignature(taskId, params.reductionHandlers(null));
+            case "REDUCE" -> FlowEngine.taskService().reductionSignature(taskId, params.addHandlers(null));
+            case "RETURN" -> {
+                if (returnNodes(taskId).stream().noneMatch(n -> Objects.equals(n.get("nodeCode"), nodeCode))) throw new BusinessException("只能退回本实例已到达的审批节点");
+                FlowEngine.taskService().skip(taskId, params.skipType("REJECT").nodeCode(nodeCode));
+            }
+            case "TERMINATE" -> FlowEngine.taskService().termination(taskId, params);
+            default -> throw new BusinessException("不支持的操作");
+        }
+        events.record(task.getInstanceId(), user.getTenantId().toString(), user.getUserId().toString(), operation);
+        return task.getInstanceId();
+    }
+
+    private Task ownedTask(Long id, LoginUser user) {
         var task = FlowEngine.taskService().getById(id);
         if (task == null) throw new BusinessException("待办任务不存在或已办理");
         checkTenant(task.getTenantId(), user);
-        if (!FlowEngine.userService().getPermission(id).contains(user.getUserId().toString()))
-            throw new BusinessException("不是该任务的办理人");
-        if (!Set.of("PASS", "REJECT").contains(type)) throw new BusinessException("不支持的办理类型");
-        return FlowEngine.taskService()
-                .skip(
-                        id,
-                        parameters(user)
-                                .skipType(type)
-                                .message(comment)
-                                .variable(variables == null ? Map.of() : variables))
-                .getId();
+        lockInstance(task.getInstanceId(), user);
+        task = FlowEngine.taskService().getById(id);
+        if (task == null || !FlowEngine.userService().getPermission(id).contains(user.getUserId().toString()))
+            throw new BusinessException("不是该任务的办理人，或任务已经办理");
+        return task;
+    }
+
+    private void lockInstance(Long id, LoginUser user) {
+        if (jdbc.queryForList("SELECT id FROM flow_instance WHERE id=? AND tenant_id=? FOR UPDATE",
+                Long.class, id, user.getTenantId().toString()).isEmpty()) throw new BusinessException("流程不存在或无权访问");
+    }
+
+    /** 列表始终限定当前租户及本人，不用前端传入用户标识。 */
+    public List<Map<String, Object>> center(String category, int page, int size) {
+        var user = identity();
+        String predicate = switch (category) {
+            case "applications" -> "i.create_by=?";
+            case "pending" -> "EXISTS (SELECT 1 FROM flow_task t JOIN flow_user u ON u.associated=t.id AND u.tenant_id=t.tenant_id WHERE t.del_flag='0' AND u.del_flag='0' AND t.instance_id=i.id AND t.tenant_id=i.tenant_id AND u.processed_by=?)";
+            case "completed" -> "EXISTS (SELECT 1 FROM flow_his_task h WHERE h.del_flag='0' AND h.instance_id=i.id AND h.tenant_id=i.tenant_id AND h.approver=?)";
+            default -> throw new BusinessException("未知流程列表");
+        };
+        return jdbc.query("SELECT i.id,COALESCE(i.flow_name,d.flow_name,'审批流程') AS flow_name,i.business_id,i.flow_status,i.create_time FROM flow_instance i LEFT JOIN flow_definition d ON d.id=i.definition_id AND d.tenant_id=i.tenant_id WHERE i.del_flag='0' AND i.tenant_id=? AND " + predicate + " ORDER BY i.create_time DESC,i.id DESC LIMIT ? OFFSET ?",
+                (rs, row) -> Map.of("id", rs.getString("id"), "flowName", rs.getString("flow_name"),
+                        "businessId", rs.getString("business_id"), "flowStatus", rs.getString("flow_status"),
+                        "createTime", rs.getTimestamp("create_time") == null ? "" : rs.getTimestamp("create_time").toLocalDateTime().toString()),
+                user.getTenantId().toString(), user.getUserId().toString(), size, (page - 1) * size);
     }
 
     @Transactional
     public void deleteInstance(Long id) {
         var user = identity();
+        lockInstance(id, user);
         var instance = FlowEngine.insService().getById(id);
         if (instance == null) throw new BusinessException("流程实例不存在");
         checkTenant(instance.getTenantId(), user);
         if (!Objects.equals(instance.getCreateBy(), user.getUserId().toString())
                 || !FlowEngine.taskService().getByInsId(id).isEmpty())
             throw new BusinessException("只有发起人可删除已结束的实例");
+        if (!jdbc.queryForList("SELECT instance_id FROM nz_workflow_event WHERE tenant_id=? AND instance_id=? LIMIT 1", user.getTenantId().toString(), id).isEmpty())
+            throw new BusinessException("业务关联实例需保留审批轨迹，不能单独删除");
         FlowEngine.insService().remove(List.of(id));
     }
 
@@ -299,17 +423,18 @@ public class WarmFlowRuntime {
         var definition = FlowEngine.defService().getById(id);
         if (definition == null) throw new BusinessException("流程定义不存在");
         checkTenant(definition.getTenantId(), user);
+        lockDefinitionCode(definition.getFlowCode(), user);
         if (!FlowEngine.insService().getByDefId(id).isEmpty())
             throw new BusinessException("定义存在引用实例，不能删除");
         FlowEngine.defService().removeDef(List.of(id));
     }
 
-    public record InstanceView(String id, String flowName, String businessId, String flowStatus) {}
+    public record InstanceView(String id, String flowName, String businessId, String flowStatus, boolean creator, boolean active) {}
 
-    public record TaskView(String id, String nodeName) {}
+    public record TaskView(String id, String nodeName, boolean actionable) {}
 
     public record HistoryView(String nodeName, String approver, String message, String skipType) {}
 
     public record Snapshot(
-            InstanceView instance, List<TaskView> tasks, List<HistoryView> history) {}
+            InstanceView instance, List<TaskView> tasks, List<HistoryView> history, Map<String, Object> business, Map<String, Boolean> sync) {}
 }

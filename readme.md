@@ -25,7 +25,7 @@ Windows 使用 `.\nz.cmd`。模块创建、迁移检查、代码生成、容器�
 
 ### 1. 初始化数据库
 
-创建空的 PostgreSQL 数据库。后端首次启动时会通过 Flyway 自动执行 V1-V29，不需要手工导入基线脚本。
+创建空的 PostgreSQL 数据库。后端首次启动时会通过 Flyway 自动执行 V1-V30，不需要手工导入基线脚本。
 
 已有数据库升级前先备份；不能由应用执行 Flyway 时，按版本顺序使用 `nz-app/src/main/resources/db/upgrade-p*.sql`。
 
@@ -93,6 +93,18 @@ cp deploy/.env.example deploy/.env
 - `max-file-size-bytes`：业务层单文件大小上限（与 `spring.servlet.multipart` 配合，建议 multipart 略大）
 
 使用 OSS 时需配置 `nz.file.oss.endpoint`、`access-key-id`、`access-key-secret`、`bucket-name`，可选 `domain` 作为访问域名。
+
+## 文档网站
+
+项目介绍、能力总览、开发者指南和运维手册位于同一份 `docs/` 内容源：
+
+```bash
+cd docs
+pnpm install --frozen-lockfile
+pnpm dev
+```
+
+默认访问 `http://localhost:4175`；`pnpm build` 生成静态网站。维护与部署见 [文档站指南](docs/documentation-site.md)。
 
 ## 文档
 

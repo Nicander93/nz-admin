@@ -25,7 +25,7 @@ public class WarmFlowBridgeConfiguration {
                         "flow_instance",
                         "flow_task",
                         "flow_his_task",
-                        "flow_user");
+                        "flow_user", "nz_workflow_business", "nz_workflow_event");
         return interceptor ->
                 interceptor.addInnerInterceptor(
                         new com.baomidou.mybatisplus.extension.plugins.inner

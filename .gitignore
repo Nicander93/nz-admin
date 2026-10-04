@@ -52,3 +52,7 @@ cobertura.ser
 # Maven
 .m2/
 .flattened-pom.xml
+
+# Documentation site
+docs/.vitepress/cache/
+!docs/pnpm-lock.yaml

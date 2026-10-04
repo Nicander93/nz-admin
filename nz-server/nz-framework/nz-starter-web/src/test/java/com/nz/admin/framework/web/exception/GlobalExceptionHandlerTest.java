@@ -7,6 +7,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -74,6 +76,14 @@ class GlobalExceptionHandlerTest {
         verify(apiExceptionLogRecorder, times(1)).record(any(RuntimeException.class), any());
     }
 
+    @Test
+    void shouldPreserveTransportAuthenticationFailure() throws Exception {
+        mockMvc.perform(get("/test/expired-ticket").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value(401))
+                .andExpect(jsonPath("$.msg").value("连接票据已失效"));
+    }
+
     @RestController
     @RequestMapping("/test")
     static class TestController {
@@ -91,6 +101,11 @@ class GlobalExceptionHandlerTest {
         @GetMapping("/unknown")
         public void unknown() {
             throw new RuntimeException("db down");
+        }
+
+        @GetMapping("/expired-ticket")
+        public void expiredTicket() {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "连接票据已失效");
         }
 
         @GetMapping("/required")

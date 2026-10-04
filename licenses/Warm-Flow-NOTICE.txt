@@ -1,0 +1,8 @@
+Warm-Flow 1.8.9
+Copyright 2024-2025, Warm-Flow (290631660@qq.com).
+Project: https://github.com/dromara/warm-flow
+License: Apache License, Version 2.0 (see Apache-2.0.txt).
+
+nz-admin distributes the original warm-flow-plugin-vue3-ui 1.8.9 artifact as a Maven dependency.
+Its packaged UI resources are served without modifications. The integration controllers,
+authorization, tenant checks, business contracts and host pages are implemented in nz-admin.

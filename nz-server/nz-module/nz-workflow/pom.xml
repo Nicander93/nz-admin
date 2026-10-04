@@ -9,7 +9,7 @@
     </parent>
     <artifactId>nz-workflow</artifactId>
     <name>nz-workflow</name>
-    <description>可独立装配的工作流业务模块，承载流程分类、定义、实例和任务。</description>
+    <description>工作流业务模块，提供官方设计器、流程中心和业务接入，不依赖系统模块。</description>
     <dependencies>
         <dependency><groupId>org.projectlombok</groupId><artifactId>lombok</artifactId><optional>true</optional></dependency>
         <dependency><groupId>com.nz</groupId><artifactId>nz-common-module</artifactId></dependency>
@@ -23,6 +23,7 @@
         <dependency><groupId>com.nz</groupId><artifactId>nz-starter-excel</artifactId></dependency>
         <dependency><groupId>cn.hutool</groupId><artifactId>hutool-all</artifactId></dependency>
         <dependency><groupId>org.dromara.warm</groupId><artifactId>warm-flow-mybatis-plus-sb3-starter</artifactId></dependency>
+        <dependency><groupId>org.dromara.warm</groupId><artifactId>warm-flow-plugin-vue3-ui</artifactId><version>${warm-flow.version}</version></dependency>
         <dependency><groupId>com.nz</groupId><artifactId>nz-starter-test</artifactId><scope>test</scope></dependency>
     </dependencies>
 </project>

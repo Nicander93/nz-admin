@@ -20,6 +20,8 @@ export const useUserStore = defineStore('user', () => {
   function setToken(val: string) {
     token.value = val
     localStorage.setItem('token', val)
+    if (localStorage.getItem('Warm-Authorization') !== null)
+      localStorage.setItem('Warm-Authorization', val)
   }
 
   function logout() {
@@ -33,6 +35,7 @@ export const useUserStore = defineStore('user', () => {
     enabledModuleCodes.value = new Set()
     routesLoaded.value = false
     localStorage.removeItem('token')
+    localStorage.removeItem('Warm-Authorization')
   }
 
   async function fetchUserInfo() {

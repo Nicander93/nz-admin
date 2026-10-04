@@ -11,7 +11,7 @@ public record EngineDefinitionRequest(
         @NotBlank @Size(max = 100) String flowName,
         @NotEmpty @Size(max = 100) List<@Valid Node> nodeList) {
     public record Node(
-            @NotBlank @Pattern(regexp = "[A-Za-z][A-Za-z0-9_-]{0,63}") String nodeCode,
+            @NotBlank @Pattern(regexp = "[A-Za-z0-9_-]{1,64}") String nodeCode,
             @NotBlank @Size(max = 100) String nodeName,
             @NotNull @Min(0) @Max(5) Integer nodeType,
             @Size(max = 2000)
@@ -23,7 +23,7 @@ public record EngineDefinitionRequest(
             @Size(max = 100) List<@Valid Transition> skipList) {}
 
     public record Transition(
-            @NotBlank @Pattern(regexp = "[A-Za-z][A-Za-z0-9_-]{0,63}") String nextNodeCode,
+            @NotBlank @Pattern(regexp = "[A-Za-z0-9_-]{1,64}") String nextNodeCode,
             @Pattern(regexp = "PASS|REJECT") String skipType,
             @Size(max = 256) String skipCondition) {}
 }

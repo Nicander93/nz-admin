@@ -12,6 +12,8 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.Objects;
@@ -99,11 +101,18 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 处理兜底异常。
+     * 保留传输层明确给出的 HTTP 状态，避免连接鉴权失败变成成功响应。
      *
      * @param e 系统异常
      * @return 统一响应
      */
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<R<Void>> handleResponseStatus(ResponseStatusException e) {
+        return ResponseEntity.status(e.getStatusCode()).body(R.fail(e.getStatusCode().value(),
+                Objects.requireNonNullElse(e.getReason(), "请求失败")));
+    }
+
+    /** 记录未分类的系统异常。 */
     @ExceptionHandler(Exception.class)
     public R<Void> handleException(Exception e, HttpServletRequest request) {
         log.error("系统异常", e);

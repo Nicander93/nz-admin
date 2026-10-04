@@ -39,7 +39,8 @@ class FlywayMigrationResourcesTest {
             "db/migration/V26__data_scope.sql",
             "db/migration/V27__idempotency.sql",
             "db/migration/V28__workflow_engine_entry.sql",
-            "db/migration/V29__warm_flow_schema_alignment.sql"
+            "db/migration/V29__warm_flow_schema_alignment.sql",
+            "db/migration/V30__workflow_business_integration.sql"
     );
 
     @Test

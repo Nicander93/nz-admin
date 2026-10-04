@@ -142,7 +142,7 @@ com.nz.admin.modules.system
 
 `nz-workflow` 同样遵循可移除模块边界，已交付流程分类、定义发布、实例执行、运行轨迹和任务中心。
 实例保存定义与变量快照；当前待办、历史已办和抄送分别落在 `flow_task`、`flow_history_task` 和 `flow_task_copy`。
-当前运行器支持顺序流、条件互斥分支和单任务转办，多人协作与并行执行边界见 [workflow.md](workflow.md)。
+legacy 运行器支持顺序流、条件互斥分支和单任务转办；新引擎支持网关与多人协作，具体边界见 [workflow.md](workflow.md)。
 
 ## 代码生成模块
 
@@ -172,7 +172,7 @@ com.nz.admin.modules.system
 - SSE 与 WebSocket 使用相同的 `RealtimeMessage` 信封和 `RealtimePublisher` 发布端口。
 - 浏览器先通过已鉴权 API 领取一次性票据，再连接不在 `/api` 下的传输端点；登录令牌不进入长连接 URL。
 - `RealtimeService` 从 `LoginUserContext` 和 `TenantContextHolder` 固化连接身份，用户定向发布同时校验租户 ID。
-- 票据、连接与统计保存在当前 JVM。多节点部署需要共享票据并增加跨节点消息总线，不能把节点内广播当成集群广播。
+- 单节点默认使用内存状态；开启集群模式后票据由 Redis 共享，消息和退出通过 Redis Pub/Sub 转发。连接与统计仍属于当前节点。
 
 接口、代理配置和多节点限制见 [realtime-communication.md](realtime-communication.md)。
 
@@ -251,3 +251,9 @@ com.nz.admin.modules.system
 `@Idempotent` 使用 PostgreSQL 唯一键与行锁串行化相同用户、接口和请求键；业务数据库变更与原成功响应在同一事务中提交。失败回滚后允许重试。该协议覆盖同一数据源内的事务效果，外部支付、消息或 HTTP 调用应配合对方幂等协议或事务 outbox，不能依靠数据库回滚撤销外部效果。
 
 `nz-workflow` 保留 legacy 运行时，新增 `/api/workflow/engine` 入口。Warm-Flow 标准表的租户列为字符串，通过模块内独立的 MyBatis 租户拦截器过滤。接口另行验证实例参与人和任务办理人。声明式导入不开放监听器或任意表达式执行；新实例可以使用网关和多人审批比例。
+
+## 流程业务接入
+
+官方 Warm-Flow 1.8.9 经典画布作为静态资源依赖，由 workflow 模块的受控控制器适配。用户/角色选择通过公共 `NzWorkflowParticipantProvider` 由 system 实现；业务启动和结果同步通过 `NzWorkflowBusinessLauncher` / `NzWorkflowBusinessHandler`，demo 请假模块不引用 workflow 实现。定义用途在设计权限下绑定，业务入口只接受属于自身用途的发布流程。
+
+V30 增加业务绑定、事件投递与请假表，扩展官方坐标与用途字段。字符串租户表由模块独立拦截器管理，业务 JDBC 查询显式限定可信租户。事务事件保存每次审批的业务快照，双节点竞争投递，失败重试，处理方按实例与序号幂等；跨数据源外部副作用仍需要接收方幂等。具体协议与边界见 [workflow.md](workflow.md)。

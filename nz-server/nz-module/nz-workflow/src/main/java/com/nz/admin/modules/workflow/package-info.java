@@ -1,2 +1,2 @@
-/** 工作流业务模块，按分类、定义、实例和任务领域分包，不依赖 nz-system。 */
+/** 工作流模块提供官方设计器、流程中心与可靠业务事件，通过公共 SPI 接入办理人与单据。 */
 package com.nz.admin.modules.workflow;

@@ -77,6 +77,44 @@ jobs:
             --profile storage \
             build backend frontend
 
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.13"
+          cache: pnpm
+          cache-dependency-path: |
+            docs/pnpm-lock.yaml
+            nz-web/pnpm-lock.yaml
+      - name: Build documentation site
+        working-directory: docs
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm build
+      - name: Verify documentation in Chromium
+        working-directory: nz-web
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm exec playwright install --with-deps chromium
+          pnpm docs:e2e
+      - uses: actions/upload-artifact@v4
+        with:
+          name: documentation-site
+          path: docs/.vitepress/dist
+          include-hidden-files: true
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: docs-diagnostics
+          path: nz-web/test-results
+
   e2e:
     runs-on: ubuntu-latest
     services:
@@ -99,6 +137,9 @@ jobs:
     env:
       NZ_TEST_REDIS_PORT: "6379"
       NZ_WARM_FLOW_ENABLED: "true"
+      NZ_CLUSTER_ENABLED: "true"
+      NZ_REDIS_ENABLED: "true"
+      NZ_CACHE_KEY_PREFIX: workflow-ci
       NZ_TEST_PG_URL: jdbc:postgresql://localhost:5432/nz_test
       NZ_TEST_PG_USERNAME: postgres
       NZ_TEST_PG_PASSWORD: postgres
@@ -143,9 +184,21 @@ jobs:
           done
           cat /tmp/nz-backend.log
           exit 1
+      - name: Start second backend node
+        run: |
+          cd nz-server
+          SERVER_PORT=8081 ./mvnw -q -pl nz-app spring-boot:run -Dspring-boot.run.profiles=prod > /tmp/nz-backend-8081.log 2>&1 &
+          for attempt in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:8081/actuator/health/readiness; then exit 0; fi
+            sleep 2
+          done
+          cat /tmp/nz-backend-8081.log
+          exit 1
       - name: Run browser E2E
         working-directory: nz-web
         run: pnpm e2e
+      - name: Verify two backend nodes
+        run: node tools/tests/workflow-cluster.mjs
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
@@ -154,3 +207,4 @@ jobs:
             nz-web/test-results
             nz-web/playwright-report
             /tmp/nz-backend.log
+            /tmp/nz-backend-8081.log

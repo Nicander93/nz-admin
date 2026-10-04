@@ -17,6 +17,7 @@ public class AuthFrameworkProperties {
     private List<String> excludePaths = new ArrayList<>(List.of(
             "/api/auth/login",
             "/api/auth/sms/**",
-            "/api/auth/social/**"
+            "/api/auth/social/**",
+            "/api/workflow/designer/ui/**"
     ));
 }

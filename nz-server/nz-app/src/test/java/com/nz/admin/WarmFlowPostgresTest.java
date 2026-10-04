@@ -41,6 +41,10 @@ class WarmFlowPostgresTest {
     private Long definitionId;
     private Long instanceId;
     private Long foreignDefinitionId;
+    private String leaveId;
+    @Autowired com.nz.admin.modules.workflow.engine.WorkflowBusinessEvents events;
+    @org.springframework.test.context.bean.override.mockito.MockitoSpyBean
+    com.nz.admin.modules.demo.service.LeaveApplicationService leaves;
 
     @BeforeEach
     void seed() {
@@ -57,6 +61,10 @@ class WarmFlowPostgresTest {
         jdbc.update(
                 "INSERT INTO sys_user_role(tenant_id,user_id,role_id) SELECT 1,910001,id FROM"
                         + " sys_role WHERE tenant_id=1 AND role_key='admin'");
+        jdbc.update("INSERT INTO sys_role(id,tenant_id,name,role_key,sort,status,data_scope) VALUES(910003,1,'普通申请人','workflow_applicant',0,0,1)");
+        jdbc.update("INSERT INTO sys_user(id,tenant_id,dept_id,username,password,nickname,status) VALUES(910003,1,1,'engine-applicant',?,'普通申请人',0)", BCrypt.hashpw("test-password"));
+        jdbc.update("INSERT INTO sys_user_role(tenant_id,user_id,role_id) VALUES(1,910003,910003)");
+        jdbc.update("INSERT INTO sys_role_menu(tenant_id,role_id,menu_id) SELECT 1,910003,id FROM sys_menu WHERE perm LIKE 'demo:leave:%' OR perm IN ('workflow:engine:query','workflow:engine:start')");
         jdbc.update(
                 "INSERT INTO sys_tenant(id,tenant_code,tenant_name,package_id,account_count,status)"
                         + " SELECT 910002,'engine-tenant','引擎隔离测试',package_id,100,0 FROM sys_tenant"
@@ -81,26 +89,28 @@ class WarmFlowPostgresTest {
 
     @AfterEach
     void cleanup() {
-        jdbc.update("DELETE FROM nz_idempotency WHERE scope LIKE '%/api/workflow/engine/%'");
-        if (instanceId != null) {
-            jdbc.update(
-                    "DELETE FROM flow_user WHERE associated IN (SELECT id FROM flow_task WHERE"
-                            + " instance_id=?)",
-                    instanceId);
-            jdbc.update(
-                    "DELETE FROM flow_user WHERE associated IN (SELECT id FROM flow_his_task WHERE"
-                            + " instance_id=?)",
-                    instanceId);
-            jdbc.update("DELETE FROM flow_task WHERE instance_id=?", instanceId);
-            jdbc.update("DELETE FROM flow_his_task WHERE instance_id=?", instanceId);
-            jdbc.update("DELETE FROM flow_instance WHERE id=?", instanceId);
+        jdbc.update("DELETE FROM nz_idempotency WHERE scope LIKE '%/api/workflow/engine/%' OR scope LIKE '%/api/workflow/designer/%' OR scope LIKE '%/api/demo/leave%'");
+        if (leaveId != null) {
+            jdbc.update("DELETE FROM nz_workflow_event WHERE business_type='leave' AND business_id=?", leaveId);
+            jdbc.update("DELETE FROM nz_workflow_business WHERE business_type='leave' AND business_id=?", leaveId);
+            jdbc.update("DELETE FROM demo_leave WHERE id=?", leaveId);
         }
-        for (Long id : Arrays.asList(definitionId, foreignDefinitionId))
+        for (Long instance : jdbc.queryForList("SELECT id FROM flow_instance WHERE definition_id IN (SELECT id FROM flow_definition WHERE flow_code=?)", Long.class, code)) {
+            jdbc.update("DELETE FROM flow_user WHERE associated IN (SELECT id FROM flow_task WHERE instance_id=?) OR associated IN (SELECT id FROM flow_his_task WHERE instance_id=?)", instance, instance);
+            jdbc.update("DELETE FROM flow_task WHERE instance_id=?", instance);
+            jdbc.update("DELETE FROM flow_his_task WHERE instance_id=?", instance);
+            jdbc.update("DELETE FROM flow_instance WHERE id=?", instance);
+        }
+        for (Long id : jdbc.queryForList("SELECT id FROM flow_definition WHERE flow_code=?", Long.class, code))
             if (id != null) {
                 jdbc.update("DELETE FROM flow_skip WHERE definition_id=?", id);
                 jdbc.update("DELETE FROM flow_node WHERE definition_id=?", id);
                 jdbc.update("DELETE FROM flow_definition WHERE id=?", id);
             }
+        jdbc.update("DELETE FROM sys_user_role WHERE user_id=910003");
+        jdbc.update("DELETE FROM sys_role_menu WHERE role_id=910003");
+        jdbc.update("DELETE FROM sys_user WHERE id=910003");
+        jdbc.update("DELETE FROM sys_role WHERE id=910003");
         jdbc.update("DELETE FROM sys_user_role WHERE user_id=910001");
         jdbc.update("DELETE FROM sys_user WHERE id=910001");
         jdbc.update("DELETE FROM sys_user_role WHERE user_id=910002");
@@ -378,6 +388,115 @@ class WarmFlowPostgresTest {
                                 .path("tasks")
                                 .size())
                 .isZero();
+    }
+
+    @Test
+    void officialDesignerSavesCoordinatesAndRejectsPublishedOrUnsafeModels() {
+        var api = new ApiTestClient(rest).login("default", "admin", "admin123");
+        var foreign = new ApiTestClient(rest).login("engine-tenant", "engine-foreign", "test-password");
+        definitionId = okWithKey(api, "/api/workflow/designer/definitions", Map.of("flowCode", code, "flowName", "官方设计器"), UUID.randomUUID().toString()).asLong();
+        String path = "/api/workflow/designer/warm-flow/query-def/" + definitionId;
+        assertThat(api.ok(HttpMethod.GET, "/api/workflow/designer/warm-flow/handler-feedback?storageIds[0]=user:1", null).get(0).path("handlerName").asText()).isEqualTo("管理员");
+        var model = (com.fasterxml.jackson.databind.node.ObjectNode) api.ok(HttpMethod.GET, path, null);
+        assertThat(model.path("id").asLong()).isEqualTo(definitionId);
+        assertThat(api.ok(HttpMethod.GET, "/api/workflow/designer/warm-flow/handler-result?handlerType=用户", null).path("handlerAuths").path("total").asInt()).isPositive();
+        assertThat(foreign.exchange(HttpMethod.GET, path, null).path("code").asInt()).isNotEqualTo(200);
+        ((com.fasterxml.jackson.databind.node.ObjectNode) model.path("nodeList").get(1)).put("coordinate", "520,300|520,330");
+        api.ok(HttpMethod.POST, "/api/workflow/designer/warm-flow/save-json", model);
+        assertThat(api.ok(HttpMethod.GET, path, null).path("nodeList").get(1).path("coordinate").asText()).isEqualTo("520,300|520,330");
+        var unsafe = model.deepCopy().put("listenerPath", "spel:@unsafe.run()");
+        assertThat(api.exchange(HttpMethod.POST, "/api/workflow/designer/warm-flow/save-json", unsafe).path("code").asInt()).isNotEqualTo(200);
+        api.ok(HttpMethod.POST, "/api/workflow/engine/definitions/" + definitionId + "/publish", null);
+        assertThat(api.exchange(HttpMethod.POST, "/api/workflow/designer/warm-flow/save-json", model).path("code").asInt()).isNotEqualTo(200);
+        Long next = okWithKey(api, "/api/workflow/designer/definitions", Map.of("flowCode", code, "flowName", "官方设计器", "sourceId", definitionId), UUID.randomUUID().toString()).asLong();
+        assertThat(next).isNotEqualTo(definitionId);
+        assertThat(api.ok(HttpMethod.GET, "/api/workflow/designer/warm-flow/query-def/" + next, null).path("nodeList").get(1).path("coordinate").asText()).isEqualTo("520,300|520,330");
+        api.ok(HttpMethod.POST, "/api/auth/logout", null);
+        assertThat(api.exchange(HttpMethod.GET, "/api/auth/info", null).path("code").asInt()).isEqualTo(401);
+    }
+
+    @Test
+    void leaveRejectResubmitAndCallbackRetryKeepOneInstanceAndOrderedBusinessState() {
+        var api = new ApiTestClient(rest).login("default", "admin", "admin123");
+        var outsider = new ApiTestClient(rest).login("default", "engine-outsider", "test-password");
+        var applicant = new ApiTestClient(rest).login("default", "engine-applicant", "test-password");
+        assertThat(applicant.exchange(HttpMethod.GET, "/api/workflow/designer/definitions", null).path("code").asInt()).isNotEqualTo(200);
+        definitionId = okWithKey(api, "/api/workflow/designer/definitions", Map.of("flowCode", code, "flowName", "请假测试", "businessType", "leave"), UUID.randomUUID().toString()).asLong();
+        api.ok(HttpMethod.POST, "/api/workflow/engine/definitions/" + definitionId + "/publish", null);
+        leaveId = okWithKey(applicant, "/api/demo/leave", Map.of("flowCode", code, "reason", "请假回调测试", "startDate", "2026-10-10", "endDate", "2026-10-12"), UUID.randomUUID().toString()).asText();
+        jdbc.update("UPDATE flow_definition SET business_type=NULL WHERE id=?", definitionId);
+        assertThat(applicant.ok(HttpMethod.GET, "/api/demo/leave/flows", null).toString()).doesNotContain(code);
+        String submitKey = UUID.randomUUID().toString();
+        assertThat(applicant.exchange(HttpMethod.POST, "/api/demo/leave/" + leaveId + "/submit", null, Map.of("Idempotency-Key", submitKey)).path("code").asInt()).isNotEqualTo(200);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM flow_instance WHERE business_id=?", Long.class, leaveId)).isZero();
+        jdbc.update("UPDATE flow_definition SET business_type='leave' WHERE id=?", definitionId);
+        org.mockito.Mockito.doThrow(new IllegalStateException("模拟回调暂时失败")).doCallRealMethod().when(leaves).apply(org.mockito.ArgumentMatchers.any());
+        instanceId = okWithKey(applicant, "/api/demo/leave/" + leaveId + "/submit", null, submitKey).asLong();
+        assertThat(okWithKey(applicant, "/api/demo/leave/" + leaveId + "/submit", null, UUID.randomUUID().toString()).asLong()).isEqualTo(instanceId);
+        org.awaitility.Awaitility.await().atMost(java.time.Duration.ofSeconds(10)).untilAsserted(() ->
+                assertThat(jdbc.queryForObject("SELECT sum(attempts) FROM nz_workflow_event WHERE business_id=?", Long.class, leaveId)).isPositive());
+        assertThat(outsider.exchange(HttpMethod.POST, "/api/demo/leave/" + leaveId + "/submit", null, Map.of("Idempotency-Key", UUID.randomUUID().toString())).path("code").asInt()).isNotEqualTo(200);
+        String task = api.ok(HttpMethod.GET, "/api/workflow/engine/instances/" + instanceId, null).path("tasks").get(0).path("id").asText();
+        assertThat(api.ok(HttpMethod.GET, "/api/workflow/engine/center/pending", null).toString()).contains(instanceId.toString());
+        assertThat(api.ok(HttpMethod.GET, "/api/workflow/engine/instances/" + instanceId, null).path("business").path("申请原因").asText()).isEqualTo("请假回调测试");
+        okWithKey(api, "/api/workflow/engine/tasks/" + task + "/action", Map.of("type", "REJECT"), UUID.randomUUID().toString());
+        awaitLeave("REJECTED");
+        assertThat(applicant.ok(HttpMethod.GET, "/api/demo/leave", null).get(0).path("startDate").asText()).isEqualTo("2026-10-10");
+        applicant.ok(HttpMethod.PUT, "/api/demo/leave/" + leaveId, Map.of("flowCode", code, "reason", "修改后的请假", "startDate", "2026-10-10", "endDate", "2026-10-12"));
+        assertThat(api.ok(HttpMethod.GET, "/api/workflow/engine/instances/" + instanceId, null).path("business").path("申请原因").asText()).isEqualTo("请假回调测试");
+
+        Long resumed = okWithKey(applicant, "/api/demo/leave/" + leaveId + "/submit", null, UUID.randomUUID().toString()).asLong();
+        assertThat(resumed).isNotEqualTo(instanceId);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM nz_workflow_event WHERE instance_id=?", Long.class, instanceId)).isPositive();
+        instanceId = resumed;
+        task = api.ok(HttpMethod.GET, "/api/workflow/engine/instances/" + instanceId, null).path("tasks").get(0).path("id").asText();
+        okWithKey(api, "/api/workflow/engine/tasks/" + task + "/action", Map.of("type", "PASS"), UUID.randomUUID().toString());
+        awaitLeave("APPROVED");
+        assertThat(api.ok(HttpMethod.GET, "/api/workflow/engine/center/pending", null).toString()).doesNotContain(instanceId.toString());
+        assertThat(api.ok(HttpMethod.GET, "/api/workflow/engine/center/completed", null).toString()).contains(instanceId.toString());
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM flow_instance WHERE business_id=?", Long.class, leaveId)).isEqualTo(2);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM nz_workflow_event WHERE business_id=? AND delivered=TRUE", Long.class, leaveId)).isEqualTo(4);
+    }
+
+    @Test
+    void transferDeputeSignatureReturnAndWithdrawRespectActorPermissions() {
+        var api = new ApiTestClient(rest).login("default", "admin", "admin123");
+        var other = new ApiTestClient(rest).login("default", "engine-outsider", "test-password");
+        long admin = jdbc.queryForObject("SELECT id FROM sys_user WHERE tenant_id=1 AND username='admin'", Long.class);
+        var review = node("review", 1, "user:" + admin, "end");
+        review.put("nodeRatio", "100");
+        definitionId = api.ok(HttpMethod.POST, "/api/workflow/engine/definitions", Map.of("flowCode", code, "flowName", "高级操作", "nodeList", List.of(node("start", 0, null, "first"), node("first", 1, "user:" + admin, "review"), review, node("end", 2, null)))).asLong();
+        api.ok(HttpMethod.POST, "/api/workflow/engine/definitions/" + definitionId + "/publish", null);
+        instanceId = okWithKey(api, "/api/workflow/engine/instances", Map.of("flowCode", code, "businessId", code), UUID.randomUUID().toString()).asLong();
+        String task = api.ok(HttpMethod.GET, "/api/workflow/engine/instances/" + instanceId, null).path("tasks").get(0).path("id").asText();
+        okWithKey(api, "/api/workflow/engine/tasks/" + task + "/action", Map.of("type", "PASS"), UUID.randomUUID().toString());
+        task = api.ok(HttpMethod.GET, "/api/workflow/engine/instances/" + instanceId, null).path("tasks").get(0).path("id").asText();
+        assertThat(api.exchange(HttpMethod.POST, "/api/workflow/engine/tasks/" + task + "/manage", Map.of("type", "TRANSFER", "targets", List.of("910002")), Map.of("Idempotency-Key", UUID.randomUUID().toString())).path("code").asInt()).isNotEqualTo(200);
+        manage(api, task, "TRANSFER", List.of("910001"));
+        assertThat(api.ok(HttpMethod.GET, "/api/workflow/engine/instances/" + instanceId, null).path("tasks").get(0).path("actionable").asBoolean()).isFalse();
+        manage(other, task, "TRANSFER", List.of(Long.toString(admin)));
+        manage(api, task, "DEPUTE", List.of("910001"));
+        okWithKey(other, "/api/workflow/engine/tasks/" + task + "/action", Map.of("type", "PASS"), UUID.randomUUID().toString());
+        assertThat(api.ok(HttpMethod.GET, "/api/workflow/engine/instances/" + instanceId, null).path("tasks")).isNotEmpty();
+        manage(api, task, "ADD", List.of("910001"));
+        manage(api, task, "REDUCE", List.of("910001"));
+        okWithKey(api, "/api/workflow/engine/tasks/" + task + "/manage", Map.of("type", "RETURN", "nodeCode", "first"), UUID.randomUUID().toString());
+        assertThat(jdbc.queryForObject("SELECT node_type FROM flow_instance WHERE id=?", Integer.class, instanceId)).isEqualTo(1);
+        okWithKey(api, "/api/workflow/engine/instances/" + instanceId + "/revoke", Map.of("comment", "取消"), UUID.randomUUID().toString());
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM flow_task WHERE del_flag='0' AND instance_id=?", Long.class, instanceId)).isZero();
+        assertThat(jdbc.queryForObject("SELECT flow_status FROM flow_instance WHERE id=?", String.class, instanceId)).isEqualTo("6");
+        instanceId = okWithKey(api, "/api/workflow/engine/instances", Map.of("flowCode", code, "businessId", code + "-terminate"), UUID.randomUUID().toString()).asLong();
+        task = api.ok(HttpMethod.GET, "/api/workflow/engine/instances/" + instanceId, null).path("tasks").get(0).path("id").asText();
+        okWithKey(api, "/api/workflow/engine/tasks/" + task + "/manage", Map.of("type", "TERMINATE"), UUID.randomUUID().toString());
+        assertThat(jdbc.queryForObject("SELECT flow_status FROM flow_instance WHERE id=?", String.class, instanceId)).isEqualTo("4");
+    }
+
+    private void manage(ApiTestClient api, String task, String type, List<String> targets) {
+        okWithKey(api, "/api/workflow/engine/tasks/" + task + "/manage", Map.of("type", type, "targets", targets), UUID.randomUUID().toString());
+    }
+    private void awaitLeave(String status) {
+        org.awaitility.Awaitility.await().atMost(java.time.Duration.ofSeconds(15)).untilAsserted(() ->
+                assertThat(jdbc.queryForObject("SELECT status FROM demo_leave WHERE id=?", String.class, leaveId)).isEqualTo(status));
     }
 
     private Map<String, Object> node(String code, int type, String permission, String... targets) {
