@@ -16,14 +16,14 @@ public class TenantProperties {
     private boolean enabled = false;
     // Warm-Flow 自带租户处理器；其他例外必须显式登记并说明隔离来源。
     private Set<String> externallyManagedTables = new LinkedHashSet<>(Set.of(
-            "flow_definition", "flow_node", "flow_skip", "flow_instance", "flow_task", "flow_his_task", "flow_user"));
+            "flow_definition", "flow_node", "flow_skip", "flow_instance", "flow_task", "flow_his_task", "flow_user", "nz_workflow_business", "nz_workflow_event"));
     private Long defaultTenantId = 1L;
     private String tenantColumn = "tenant_id";
     private Set<String> includedTables = new LinkedHashSet<>(Set.of(
             "sys_user", "sys_role", "sys_dept", "sys_dict_type", "sys_dict_data",
             "sys_user_role", "sys_role_menu", "sys_role_dept", "sys_oper_log", "sys_login_log",
             "sys_post", "sys_user_post", "sys_config", "sys_notice", "sys_job",
-            "sys_job_log", "sys_file", "sys_file_config", "demo_item",
+            "sys_job_log", "sys_file", "sys_file_config", "demo_item", "demo_leave",
             "sys_sms_channel", "sys_sms_template", "sys_sms_send_log", "sys_social", "sys_message",
             "flow_category", "nz_flow_definition_legacy", "nz_flow_instance_legacy", "flow_instance_event",
             "nz_flow_task_legacy", "flow_history_task", "flow_task_copy"

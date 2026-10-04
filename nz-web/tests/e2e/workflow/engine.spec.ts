@@ -48,6 +48,12 @@ test('官方设计器拖拽、保存、重载与发布', async ({
     { steps: 12 },
   )
   await page.mouse.up()
+  const properties = frame.getByRole('dialog', {
+    name: '设置中间属性',
+    exact: true,
+  })
+  if (!(await properties.isVisible())) await shape.click()
+  await expect(properties).toBeVisible()
   await frame.getByText('办理人设置', { exact: true }).click()
   await frame.getByRole('button', { name: '选择', exact: true }).click()
   const picker = frame.getByRole('dialog', { name: '人员选择', exact: true })
