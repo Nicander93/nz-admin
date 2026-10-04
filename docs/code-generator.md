@@ -37,6 +37,7 @@ nz:
 
 - DO、Query、CreateRequest、UpdateRequest、VO 和 Convert。
 - Mapper、Service、ServiceImpl 和 Controller。
+- AccessConfiguration：注册生成业务表的租户与数据范围规则，需要进入模块扫描。
 - 分页查询、详情、新增、修改、删除接口及对应权限注解。
 
 前端生成以下文件：
@@ -88,4 +89,4 @@ pnpm test
 pnpm build
 ```
 
-模板测试会验证 14 个输出文件、主键 getter、权限 SQL、未替换变量和 ZIP 条目。前端测试覆盖模块自动发现、参数推导、表字段读取和代码预览。
+模板测试会验证 15 个输出文件、主键 getter、权限 SQL、未替换变量和 ZIP 条目。前端测试覆盖模块自动发现、参数推导、表字段读取和代码预览。

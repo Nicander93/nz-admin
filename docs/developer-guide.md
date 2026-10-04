@@ -2,6 +2,19 @@
 
 新增业务按“模块骨架 → 数据表 → API → 页面 → 权限 → 验收”推进。每一步都有现有约定和示例可参考。
 
+## 按开发任务阅读
+
+| 专题 | 具体页面 |
+| --- | --- |
+| [后端开发](/guide/backend/) | [接口分页](/guide/backend/api-contract)、[参数校验](/guide/backend/validation)、[事务](/guide/backend/persistence)、[幂等](/guide/backend/protection) |
+| [前端开发](/guide/frontend/) | [动态路由](/guide/frontend/routing)、[CRUD 页面](/guide/frontend/crud-page)、[请求下载](/guide/frontend/request) |
+| [数据库开发](/guide/database/) | [表设计](/guide/database/)、[迁移升级](/guide/database/migrations) |
+| [权限与隔离](/platform/security/) | [可信身份](/platform/security/authentication)、[租户登记](/platform/security/tenant-isolation)、[数据范围](/platform/security/data-scope) |
+| [业务审批](/platform/workflow/) | [设计发布](/platform/workflow/designer)、[业务回调](/platform/workflow/business-integration)、[排错](/platform/workflow/troubleshooting) |
+| [测试与验收](/guide/testing/) | [后端测试](/guide/testing/backend)、[浏览器](/guide/testing/browser) |
+
+下面给出跨专题的实施顺序。可以按任务直接进入页面，也可以从第一步完成一个纵向业务切片。
+
 ## 1. 选择模块边界
 
 业务规则放在 `nz-module`，可复用技术机制放在 `nz-framework/nz-starter-*`。公共模块只定义轻量协议，不引用具体业务实现。先阅读[架构说明](architecture.md)和[扩展模块体系](extension-module-system.md)。

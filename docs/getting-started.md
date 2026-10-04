@@ -2,6 +2,8 @@
 
 目标是在本地登录控制台，并完成一次修改后的验证。
 
+第一次配置环境可依次阅读[环境准备](/start/environment)、[配置生效方式](/start/configuration)和[首次登录验收](/start/first-login)。本页保留快速路径。
+
 ## 准备环境
 
 | 工具 | 要求 |

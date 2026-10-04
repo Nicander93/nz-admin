@@ -106,6 +106,12 @@ pnpm dev
 
 默认访问 `http://localhost:4175`；`pnpm build` 生成静态网站。维护与部署见 [文档站指南](docs/documentation-site.md)。
 
+文档按三级目录阅读，专题入口：
+
+- 开发：[后端](docs/guide/backend/index.md)、[前端](docs/guide/frontend/index.md)、[数据库](docs/guide/database/index.md)、[测试](docs/guide/testing/index.md)。
+- 平台：[系统管理](docs/platform/system/index.md)、[权限与隔离](docs/platform/security/index.md)、[工作流](docs/platform/workflow/index.md)。
+- 交付：[部署运维](docs/operations/index.md)、[RuoYi-Plus 文档对照](docs/overview/ruoyi-comparison.md)。
+
 ## 文档
 
 - [数据权限接入与升级](docs/data-permission.md)

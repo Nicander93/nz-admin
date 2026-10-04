@@ -32,13 +32,18 @@ src/main/resources/db/migration。
 - V24__workflow_instance_urge.sql：流程实例催办权限。
 - V25__warm_flow_foundation.sql：保留并重命名现有流程运行表，创建 Warm-Flow 1.8.9 标准表。
 - V26__data_scope.sql：角色自定义部门、范围默认值和 demo 归属字段。
+- V27__idempotency.sql：数据库事务幂等记录。
+- V28__workflow_engine_entry.sql：新流程中心入口与权限。
+- V29__warm_flow_schema_alignment.sql：对齐 Warm-Flow 1.8.9 实际字段与类型。
+- V30__workflow_business_integration.sql：设计器坐标、用途、业务绑定、可靠事件和请假示例。
+
 旧的 db/init.sql 与 db/upgrade-p*.sql 暂时保留用于人工部署兼容，内容必须与对应
 Flyway 文件同步；新变更只应新增 Flyway 版本，不修改已经发布的版本。
 
 ## 新库与已有库
 
 新库会从 V1 开始依次执行。已有非空数据库启用 baseline-on-migrate，首次启动时以
-版本 1 建立基线记录，再执行后续幂等迁移。生产环境升级前仍应备份数据库，并先在
+版本 1 建立基线记录，再执行后续迁移；这要求已有结构与 V1 基线匹配，不能把任意非空库直接当成可升级库。生产环境升级前仍应备份数据库，并先在
 同结构副本验证。
 
 Flyway 默认开启校验。若已发布迁移的校验和发生变化，应用会拒绝启动，此时应新增

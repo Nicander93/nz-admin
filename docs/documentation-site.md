@@ -24,10 +24,11 @@ pnpm preview
 - 首页：`docs/index.md`，介绍项目并提供阅读入口。
 - 项目介绍与边界：`overview.md`、`capabilities.md`。
 - 入门与开发：`getting-started.md`、`developer-guide.md`，继续引用各功能指南。
-- 导航与搜索：`docs/.vitepress/config.ts`。
+- 导航：`docs/.vitepress/sidebar.ts`；搜索与站点配置：`docs/.vitepress/config.ts`。
+- 入门细节：`start/`；开发专题：`guide/`；平台操作与接入：`platform/`；运维：`operations/`。
 - 主题与图标：`docs/.vitepress/theme/` 和 `docs/public/logo.svg`。
 
-站内文章使用相对 Markdown 链接；页面标题使用一级标题，正文从二级标题开始。侧栏链接使用站内路径。仓库内部 `.docs/` 规范和历史执行计划链接由构建转换到对应 GitHub 文件，保留原文供仓库内阅读；它们不进入本站的公开导航与搜索。
+根目录旧文章保留相对 Markdown 链接；多层专题使用站点绝对路径，例如 `/guide/backend/validation`，避免层级移动破坏引用。页面标题使用一级标题，正文从二级标题开始。侧栏使用同一份层级定义，正文面包屑从中推导，不另维护一套目录。仓库内部 `.docs/` 规范和历史执行计划链接由构建转换到对应 GitHub 文件，保留原文供仓库内阅读；它们不进入本站的公开导航与搜索。
 
 新增能力时同时更新能力总览和对应指南，说明启用条件、可重复命令及当前限制。测试数量和临时验收日志放在执行记录中，避免首页出现随时过期的数字。
 
@@ -65,4 +66,4 @@ pnpm exec playwright install chromium
 pnpm docs:e2e
 ```
 
-浏览器验收检查首页、指南深链、本地搜索、主题切换和手机导航。CI 同时构建文档、检查页面和上传静态产物。VitePress 的[部署说明](https://vitepress.dev/guide/deploy)提供其他静态托管方式。
+浏览器验收检查首页、二级/三级导航、面包屑回到上级、指南深链刷新、本地搜索、主题切换和手机导航。CI 同时构建文档、检查页面和上传静态产物。VitePress 的[部署说明](https://vitepress.dev/guide/deploy)提供其他静态托管方式。

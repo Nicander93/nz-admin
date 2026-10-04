@@ -1,8 +1,10 @@
 # 工作流模块
 
-`nz-workflow` 是独立业务模块，当前已交付流程分类、定义发布、实例执行、运行轨迹以及待办、已办和抄送任务中心。
+`nz-workflow` 是独立业务模块。新业务入口使用官方经典设计器与流程中心；旧运行时保留分类、定义、实例、任务和抄送接口。下文分别说明，避免把旧功能列表当成新引擎的完全对应能力。
 
-## 当前能力
+操作和新业务接入可先从[工作流分层指南](/platform/workflow/)阅读。
+
+## 旧运行时（legacy）能力
 
 - 租户隔离的分类树、条件列表和详情查询。
 - 新增、修改、删除与 Excel 导出。
@@ -91,7 +93,7 @@ V22 创建 `flow_task`、`flow_history_task` 和 `flow_task_copy`，回填 V21 �
 V23 为当前任务增加原办理人与委派状态，历史任务增加 `DELEGATE`、`RESOLVE` 动作，并加入委派权限。原办理人委派后，受托人只能完成委派并归还任务；归还前不能通过、驳回或转办，实例办理接口也执行同一约束。人工升级脚本是 `db/upgrade-p23-workflow-task-delegate.sql`。
 V24 增加实例催办权限，发起人或管理员可向当前用户或角色办理人发送站内消息，并写入 `URGE` 事件。人工升级脚本是 `db/upgrade-p24-workflow-instance-urge.sql`。
 
-V25 将现有运行时的三张同名表改为 `nz_flow_*_legacy`，保留全部存量数据和原有接口行为；同时创建 Warm-Flow 1.8.9 的七张标准表。新运行时默认通过 `warm-flow.enabled=false` 关闭；租户、审计和办理人解析桥接已经完成，新入口的业务 API、实例参与人权限和任务办理人权限已接入；V29 升级完成后可显式启用。人工升级脚本是 `db/upgrade-p25-warm-flow-foundation.sql`。
+V25 将现有运行时的三张同名表改为 `nz_flow_*_legacy`，保留全部存量数据和原有接口行为；同时创建 Warm-Flow 1.8.9 的七张标准表。新运行时默认通过 `warm-flow.enabled=false` 关闭；租户、审计和办理人解析桥接已经完成，新入口的业务 API、实例参与人权限和任务办理人权限已接入；升级至 V30 后可显式启用。人工升级脚本是 `db/upgrade-p25-warm-flow-foundation.sql`。
 
 ## 当前范围
 

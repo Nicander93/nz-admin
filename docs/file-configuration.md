@@ -1,6 +1,6 @@
 # 文件配置管理
 
-文件配置管理位于“系统管理 / 文件配置”。它维护本地存储和 OSS 存储参数，并在启用配置后立即更新文件服务使用的 FileStorageProperties。已上传文件仍按文件记录中的 storageType 下载和删除，切换配置不会改变历史文件的存储归属。
+文件配置管理位于“系统管理 / 文件配置”。它维护本地、OSS 和 S3/MinIO 存储参数，并在启用配置后立即更新文件服务使用的 FileStorageProperties。已上传文件仍按文件记录中的 storageType 下载和删除，切换配置不会改变历史文件的存储归属。
 
 ## 操作规则
 
@@ -20,6 +20,7 @@
 - system:fileconfig:add
 - system:fileconfig:edit
 - system:fileconfig:remove
+- system:fileconfig:test（连接测试）
 
 ## 密钥
 
@@ -41,3 +42,7 @@ Flyway V6 创建 sys_file_config、唯一生效配置索引和菜单权限。旧
     cd ../nz-web
     node node_modules/vitest/vitest.mjs run tests/unit/views/system/file-config/hooks.test.ts
     node node_modules/typescript/bin/tsc --noEmit -p tsconfig.app.json
+
+## S3 与启用前检查
+
+S3/MinIO 配置需要 endpoint、bucket、region 和凭据；部署示例见[生产部署](/deployment)。先使用连接测试验证路径或 bucket 访问，再启用配置。切换配置不迁移历史文件，旧文件仍按记录中的 storageType 访问。多节点不要使用彼此独立的本地上传目录。

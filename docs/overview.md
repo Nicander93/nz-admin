@@ -45,3 +45,9 @@ nz-admin/
 [能力总览](capabilities.md)区分已提供的能力、启用条件与限制。动态数据源、通用表单设计器和 Warm-Flow 仿钉钉模型尚未接入。请假是业务接入示例，实际业务仍需自己的表单、状态规则与处理器。
 
 接下来可以[启动项目](getting-started.md)，或直接阅读[开发指南](developer-guide.md)。
+
+## 深入使用与开发
+
+先从[能力总览](/capabilities)选任务，再进入二级专题和三级操作指南。开发者可沿[后端](/guide/backend/)、[前端](/guide/frontend/)、[数据库](/guide/database/)和[测试](/guide/testing/)阅读；管理员可按[系统管理](/platform/system/)、[权限](/platform/security/)和[审批](/platform/workflow/)操作。
+
+本站参考成熟框架的文档组织，按 nz-admin 的实际实现编写。[RuoYi-Vue-Plus 对照](/overview/ruoyi-comparison)列出参考结构与当前差异。
