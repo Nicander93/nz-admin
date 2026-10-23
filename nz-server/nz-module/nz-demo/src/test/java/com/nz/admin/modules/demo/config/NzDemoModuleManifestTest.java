@@ -21,6 +21,6 @@ class NzDemoModuleManifestTest {
         assertThat(descriptor.frontendModule()).isEqualTo("demo");
         assertThat(descriptor.defaultEnabled()).isTrue();
         assertThat(descriptor.requiredModules()).isEmpty();
-        assertThat(descriptor.requiredStarters()).containsExactly("web", "mybatis", "auth", "log");
+        assertThat(descriptor.requiredStarters()).containsExactly("web", "mybatis", "auth", "log", "excel");
     }
 }

@@ -1,0 +1,2649 @@
+{
+  "schemaVersion": 1,
+  "repository": "https://github.com/Nicander93/nz-admin",
+  "modules": [
+    {
+      "id": "nz-app",
+      "title": "应用装配",
+      "description": "后端启动模块，负责应用入口、运行配置、启动期装配和基础数据初始化。",
+      "path": "nz-server/nz-app",
+      "pom": "nz-server/nz-app/pom.xml",
+      "layer": "application",
+      "guide": "/developer/architecture",
+      "dependencies": [
+        "nz-common-module",
+        "nz-demo",
+        "nz-generator",
+        "nz-job",
+        "nz-starter-auth",
+        "nz-starter-cache",
+        "nz-starter-log",
+        "nz-starter-mybatis",
+        "nz-starter-tenant",
+        "nz-starter-web",
+        "nz-system",
+        "nz-workflow"
+      ],
+      "testDependencies": [
+        "nz-starter-test"
+      ],
+      "providedDependencies": [],
+      "dependents": [],
+      "autoConfigurations": [],
+      "contracts": [],
+      "tests": [
+        "nz-server/nz-app/src/test/java/com/nz/admin/ClusterStateRedisTest.java",
+        "nz-server/nz-app/src/test/java/com/nz/admin/DataScopePostgresTest.java",
+        "nz-server/nz-app/src/test/java/com/nz/admin/DemoItemExcelPostgresTest.java",
+        "nz-server/nz-app/src/test/java/com/nz/admin/IdempotencyPostgresTest.java",
+        "nz-server/nz-app/src/test/java/com/nz/admin/NzAdminApplicationTest.java",
+        "nz-server/nz-app/src/test/java/com/nz/admin/NzAdminE2eProfileTest.java",
+        "nz-server/nz-app/src/test/java/com/nz/admin/WarmFlowPostgresTest.java",
+        "nz-server/nz-app/src/test/java/com/nz/admin/config/ModulePropertiesBindingTest.java",
+        "nz-server/nz-app/src/test/java/com/nz/admin/migration/FlywayMigrationResourcesTest.java",
+        "nz-server/nz-app/src/test/java/com/nz/admin/migration/WarmFlowFoundationMigrationTest.java"
+      ],
+      "manifest": null,
+      "frontend": null
+    },
+    {
+      "id": "nz-common",
+      "title": "公共协议聚合",
+      "description": "公共能力聚合模块，收拢基础对象、轻量协议和跨模块任务契约。",
+      "path": "nz-server/nz-common",
+      "pom": "nz-server/nz-common/pom.xml",
+      "layer": "aggregation",
+      "guide": "/developer/architecture",
+      "dependencies": [],
+      "testDependencies": [],
+      "providedDependencies": [],
+      "dependents": [],
+      "autoConfigurations": [],
+      "contracts": [],
+      "tests": [],
+      "manifest": null,
+      "frontend": null
+    },
+    {
+      "id": "nz-common-core",
+      "title": "统一响应与基础对象",
+      "description": "公共核心模块，提供基础实体、分页查询、统一响应等轻量对象。",
+      "path": "nz-server/nz-common/nz-common-core",
+      "pom": "nz-server/nz-common/nz-common-core/pom.xml",
+      "layer": "common",
+      "guide": "/guide/backend/api-contract",
+      "dependencies": [],
+      "testDependencies": [],
+      "providedDependencies": [],
+      "dependents": [
+        "nz-demo",
+        "nz-generator",
+        "nz-job",
+        "nz-starter-auth",
+        "nz-starter-cache",
+        "nz-starter-log",
+        "nz-starter-mybatis",
+        "nz-starter-protection",
+        "nz-starter-web",
+        "nz-system",
+        "nz-workflow"
+      ],
+      "autoConfigurations": [],
+      "contracts": [
+        {
+          "name": "ErrorCode",
+          "source": "nz-server/nz-common/nz-common-core/src/main/java/com/nz/admin/common/core/ErrorCode.java"
+        }
+      ],
+      "tests": [
+        "nz-server/nz-common/nz-common-core/src/test/java/com/nz/admin/common/core/PageQueryTest.java",
+        "nz-server/nz-common/nz-common-core/src/test/java/com/nz/admin/common/core/PageResultTest.java",
+        "nz-server/nz-common/nz-common-core/src/test/java/com/nz/admin/common/core/RTest.java"
+      ],
+      "manifest": null,
+      "frontend": null
+    },
+    {
+      "id": "nz-common-job",
+      "title": "任务执行协议",
+      "description": "公共任务契约模块，定义定时任务执行和任务日志下沉的跨模块协议。",
+      "path": "nz-server/nz-common/nz-common-job",
+      "pom": "nz-server/nz-common/nz-common-job/pom.xml",
+      "layer": "common",
+      "guide": "/platform/system/jobs-logs",
+      "dependencies": [],
+      "testDependencies": [],
+      "providedDependencies": [],
+      "dependents": [
+        "nz-job",
+        "nz-starter-quartz"
+      ],
+      "autoConfigurations": [],
+      "contracts": [
+        {
+          "name": "JobInvokeLogSink",
+          "source": "nz-server/nz-common/nz-common-job/src/main/java/com/nz/admin/common/job/JobInvokeLogSink.java"
+        }
+      ],
+      "tests": [
+        "nz-server/nz-common/nz-common-job/src/test/java/com/nz/admin/common/job/JobExecuteServiceTest.java"
+      ],
+      "manifest": null,
+      "frontend": null
+    },
+    {
+      "id": "nz-common-module",
+      "title": "模块与业务协作协议",
+      "description": "模块描述、注册和依赖校验协议，不依赖 Spring 或持久化框架。",
+      "path": "nz-server/nz-common/nz-common-module",
+      "pom": "nz-server/nz-common/nz-common-module/pom.xml",
+      "layer": "common",
+      "guide": "/developer/extensions",
+      "dependencies": [],
+      "testDependencies": [],
+      "providedDependencies": [],
+      "dependents": [
+        "nz-app",
+        "nz-demo",
+        "nz-system",
+        "nz-workflow"
+      ],
+      "autoConfigurations": [],
+      "contracts": [
+        {
+          "name": "NzUserNotificationPublisher",
+          "source": "nz-server/nz-common/nz-common-module/src/main/java/com/nz/admin/common/module/NzUserNotificationPublisher.java"
+        },
+        {
+          "name": "NzWorkflowAssigneeResolver",
+          "source": "nz-server/nz-common/nz-common-module/src/main/java/com/nz/admin/common/module/NzWorkflowAssigneeResolver.java"
+        },
+        {
+          "name": "NzWorkflowBusinessHandler",
+          "source": "nz-server/nz-common/nz-common-module/src/main/java/com/nz/admin/common/module/NzWorkflowBusinessHandler.java"
+        },
+        {
+          "name": "NzWorkflowBusinessLauncher",
+          "source": "nz-server/nz-common/nz-common-module/src/main/java/com/nz/admin/common/module/NzWorkflowBusinessLauncher.java"
+        },
+        {
+          "name": "NzWorkflowParticipantProvider",
+          "source": "nz-server/nz-common/nz-common-module/src/main/java/com/nz/admin/common/module/NzWorkflowParticipantProvider.java"
+        }
+      ],
+      "tests": [
+        "nz-server/nz-common/nz-common-module/src/test/java/com/nz/admin/common/module/NzModuleDependencyValidatorTest.java"
+      ],
+      "manifest": null,
+      "frontend": null
+    },
+    {
+      "id": "nz-demo",
+      "title": "纵向业务示例",
+      "description": "可独立装配的示例模块，提供条目管理与通过公共 SPI 接入的请假审批。",
+      "path": "nz-server/nz-module/nz-demo",
+      "pom": "nz-server/nz-module/nz-demo/pom.xml",
+      "layer": "business",
+      "guide": "/demo-module",
+      "dependencies": [
+        "nz-common-core",
+        "nz-common-module",
+        "nz-starter-auth",
+        "nz-starter-datascope",
+        "nz-starter-excel",
+        "nz-starter-log",
+        "nz-starter-mybatis",
+        "nz-starter-protection",
+        "nz-starter-tenant",
+        "nz-starter-web"
+      ],
+      "testDependencies": [
+        "nz-starter-test"
+      ],
+      "providedDependencies": [],
+      "dependents": [
+        "nz-app"
+      ],
+      "autoConfigurations": [
+        {
+          "name": "com.nz.admin.modules.demo.config.NzDemoModuleAutoConfiguration",
+          "source": "nz-server/nz-module/nz-demo/src/main/java/com/nz/admin/modules/demo/config/NzDemoModuleAutoConfiguration.java"
+        }
+      ],
+      "contracts": [
+        {
+          "name": "DemoItemMapper",
+          "source": "nz-server/nz-module/nz-demo/src/main/java/com/nz/admin/modules/demo/mapper/DemoItemMapper.java"
+        },
+        {
+          "name": "DemoItemService",
+          "source": "nz-server/nz-module/nz-demo/src/main/java/com/nz/admin/modules/demo/service/DemoItemService.java"
+        }
+      ],
+      "tests": [
+        "nz-server/nz-module/nz-demo/src/test/java/com/nz/admin/modules/demo/config/NzDemoModuleManifestTest.java",
+        "nz-server/nz-module/nz-demo/src/test/java/com/nz/admin/modules/demo/service/DemoItemExcelImportTest.java",
+        "nz-server/nz-module/nz-demo/src/test/java/com/nz/admin/modules/demo/service/DemoItemServiceImplTest.java"
+      ],
+      "manifest": {
+        "source": "nz-server/nz-module/nz-demo/src/main/resources/META-INF/nz/module.yaml",
+        "code": "demo",
+        "name": "Demo Module",
+        "requiredModules": [],
+        "requiredStarters": [
+          "auth",
+          "excel",
+          "log",
+          "mybatis",
+          "web"
+        ],
+        "defaultEnabled": true,
+        "frontendModule": "demo"
+      },
+      "frontend": {
+        "source": "nz-web/src/modules/demo/manifest.ts",
+        "code": "demo",
+        "componentPrefix": "demo",
+        "title": "示例模块"
+      }
+    },
+    {
+      "id": "nz-framework",
+      "title": "框架聚合",
+      "description": "框架能力聚合模块，组织可复用 starter、自动配置、注解和扩展点。",
+      "path": "nz-server/nz-framework",
+      "pom": "nz-server/nz-framework/pom.xml",
+      "layer": "aggregation",
+      "guide": "/developer/architecture",
+      "dependencies": [],
+      "testDependencies": [],
+      "providedDependencies": [],
+      "dependents": [],
+      "autoConfigurations": [],
+      "contracts": [],
+      "tests": [],
+      "manifest": null,
+      "frontend": null
+    },
+    {
+      "id": "nz-generator",
+      "title": "CRUD 代码生成",
+      "description": "数据库元数据驱动的 CRUD 代码生成模块。",
+      "path": "nz-server/nz-module/nz-generator",
+      "pom": "nz-server/nz-module/nz-generator/pom.xml",
+      "layer": "business",
+      "guide": "/code-generator",
+      "dependencies": [
+        "nz-common-core",
+        "nz-starter-auth",
+        "nz-starter-datascope",
+        "nz-starter-protection",
+        "nz-starter-tenant",
+        "nz-starter-web"
+      ],
+      "testDependencies": [
+        "nz-common-module",
+        "nz-starter-log",
+        "nz-starter-test"
+      ],
+      "providedDependencies": [],
+      "dependents": [
+        "nz-app"
+      ],
+      "autoConfigurations": [
+        {
+          "name": "com.nz.admin.modules.generator.config.NzGeneratorModuleAutoConfiguration",
+          "source": "nz-server/nz-module/nz-generator/src/main/java/com/nz/admin/modules/generator/config/NzGeneratorModuleAutoConfiguration.java"
+        }
+      ],
+      "contracts": [
+        {
+          "name": "GeneratorMetadataRepository",
+          "source": "nz-server/nz-module/nz-generator/src/main/java/com/nz/admin/modules/generator/repository/GeneratorMetadataRepository.java"
+        },
+        {
+          "name": "GeneratorService",
+          "source": "nz-server/nz-module/nz-generator/src/main/java/com/nz/admin/modules/generator/service/GeneratorService.java"
+        }
+      ],
+      "tests": [
+        "nz-server/nz-module/nz-generator/src/test/java/com/nz/admin/modules/generator/config/NzGeneratorModuleManifestTest.java",
+        "nz-server/nz-module/nz-generator/src/test/java/com/nz/admin/modules/generator/service/GeneratorServiceImplTest.java",
+        "nz-server/nz-module/nz-generator/src/test/java/com/nz/admin/modules/generator/template/GeneratedCompilationTest.java",
+        "nz-server/nz-module/nz-generator/src/test/java/com/nz/admin/modules/generator/template/GeneratorTemplateRendererTest.java"
+      ],
+      "manifest": {
+        "source": "nz-server/nz-module/nz-generator/src/main/resources/META-INF/nz/module.yaml",
+        "code": "generator",
+        "name": "Code Generator",
+        "requiredModules": [],
+        "requiredStarters": [
+          "auth",
+          "web"
+        ],
+        "defaultEnabled": true,
+        "frontendModule": "generator"
+      },
+      "frontend": {
+        "source": "nz-web/src/modules/generator/manifest.ts",
+        "code": "generator",
+        "componentPrefix": "generator",
+        "title": "代码生成"
+      }
+    },
+    {
+      "id": "nz-job",
+      "title": "任务管理",
+      "description": "Independent scheduled-job module: job definitions, Quartz scheduling and execution logs.",
+      "path": "nz-server/nz-module/nz-job",
+      "pom": "nz-server/nz-module/nz-job/pom.xml",
+      "layer": "business",
+      "guide": "/platform/system/jobs-logs",
+      "dependencies": [
+        "nz-common-core",
+        "nz-common-job",
+        "nz-starter-auth",
+        "nz-starter-log",
+        "nz-starter-mybatis",
+        "nz-starter-quartz",
+        "nz-starter-tenant",
+        "nz-starter-web"
+      ],
+      "testDependencies": [
+        "nz-starter-test"
+      ],
+      "providedDependencies": [],
+      "dependents": [
+        "nz-app",
+        "nz-system"
+      ],
+      "autoConfigurations": [
+        {
+          "name": "com.nz.admin.modules.job.config.NzJobModuleAutoConfiguration",
+          "source": "nz-server/nz-module/nz-job/src/main/java/com/nz/admin/modules/job/config/NzJobModuleAutoConfiguration.java"
+        }
+      ],
+      "contracts": [
+        {
+          "name": "JobLogMapper",
+          "source": "nz-server/nz-module/nz-job/src/main/java/com/nz/admin/modules/job/mapper/job/JobLogMapper.java"
+        },
+        {
+          "name": "JobMapper",
+          "source": "nz-server/nz-module/nz-job/src/main/java/com/nz/admin/modules/job/mapper/job/JobMapper.java"
+        },
+        {
+          "name": "JobLogService",
+          "source": "nz-server/nz-module/nz-job/src/main/java/com/nz/admin/modules/job/service/job/JobLogService.java"
+        },
+        {
+          "name": "JobService",
+          "source": "nz-server/nz-module/nz-job/src/main/java/com/nz/admin/modules/job/service/job/JobService.java"
+        }
+      ],
+      "tests": [],
+      "manifest": {
+        "source": "nz-server/nz-module/nz-job/src/main/resources/META-INF/nz/module.yaml",
+        "code": "job",
+        "name": "Job Scheduler",
+        "requiredModules": [],
+        "requiredStarters": [],
+        "defaultEnabled": true,
+        "frontendModule": "job"
+      },
+      "frontend": {
+        "source": "nz-web/src/modules/job/manifest.ts",
+        "code": "job",
+        "componentPrefix": "job",
+        "title": "Job Scheduler"
+      }
+    },
+    {
+      "id": "nz-module",
+      "title": "业务聚合",
+      "description": "业务模块聚合模块，收拢按业务域沉淀的后端业务实现。",
+      "path": "nz-server/nz-module",
+      "pom": "nz-server/nz-module/pom.xml",
+      "layer": "aggregation",
+      "guide": "/developer/module-lifecycle",
+      "dependencies": [],
+      "testDependencies": [],
+      "providedDependencies": [],
+      "dependents": [],
+      "autoConfigurations": [],
+      "contracts": [],
+      "tests": [],
+      "manifest": null,
+      "frontend": null
+    },
+    {
+      "id": "nz-server",
+      "title": "后端父工程",
+      "description": "后端父工程，统一版本、依赖管理、插件配置和模块聚合。",
+      "path": "nz-server",
+      "pom": "nz-server/pom.xml",
+      "layer": "aggregation",
+      "guide": "/developer/architecture",
+      "dependencies": [],
+      "testDependencies": [],
+      "providedDependencies": [],
+      "dependents": [],
+      "autoConfigurations": [],
+      "contracts": [],
+      "tests": [],
+      "manifest": null,
+      "frontend": null
+    },
+    {
+      "id": "nz-starter-auth",
+      "title": "认证授权",
+      "description": "认证鉴权 starter，提供 Sa-Token 接入、权限注解、鉴权切面和异常处理。",
+      "path": "nz-server/nz-framework/nz-starter-auth",
+      "pom": "nz-server/nz-framework/nz-starter-auth/pom.xml",
+      "layer": "framework",
+      "guide": "/platform/security/authentication",
+      "dependencies": [
+        "nz-common-core",
+        "nz-starter-cache"
+      ],
+      "testDependencies": [],
+      "providedDependencies": [],
+      "dependents": [
+        "nz-app",
+        "nz-demo",
+        "nz-generator",
+        "nz-job",
+        "nz-starter-log",
+        "nz-starter-protection",
+        "nz-starter-tenant",
+        "nz-starter-test",
+        "nz-system",
+        "nz-workflow"
+      ],
+      "autoConfigurations": [
+        {
+          "name": "com.nz.admin.framework.auth.config.AuthContextAutoConfiguration",
+          "source": "nz-server/nz-framework/nz-starter-auth/src/main/java/com/nz/admin/framework/auth/config/AuthContextAutoConfiguration.java"
+        },
+        {
+          "name": "com.nz.admin.framework.auth.config.SaTokenAutoConfiguration",
+          "source": "nz-server/nz-framework/nz-starter-auth/src/main/java/com/nz/admin/framework/auth/config/SaTokenAutoConfiguration.java"
+        },
+        {
+          "name": "com.nz.admin.framework.auth.config.ClusterAuthAutoConfiguration",
+          "source": "nz-server/nz-framework/nz-starter-auth/src/main/java/com/nz/admin/framework/auth/config/ClusterAuthAutoConfiguration.java"
+        }
+      ],
+      "contracts": [
+        {
+          "name": "AuthUserResolver",
+          "source": "nz-server/nz-framework/nz-starter-auth/src/main/java/com/nz/admin/framework/auth/core/AuthUserResolver.java"
+        },
+        {
+          "name": "PermissionResolver",
+          "source": "nz-server/nz-framework/nz-starter-auth/src/main/java/com/nz/admin/framework/auth/core/PermissionResolver.java"
+        }
+      ],
+      "tests": [
+        "nz-server/nz-framework/nz-starter-auth/src/test/java/com/nz/admin/framework/auth/config/SaTokenAutoConfigurationTest.java"
+      ],
+      "manifest": null,
+      "frontend": null
+    },
+    {
+      "id": "nz-starter-cache",
+      "title": "缓存与原子共享状态",
+      "description": "缓存 starter，提供 RedisTemplate、Spring Cache 默认配置和缓存 key 工具。",
+      "path": "nz-server/nz-framework/nz-starter-cache",
+      "pom": "nz-server/nz-framework/nz-starter-cache/pom.xml",
+      "layer": "framework",
+      "guide": "/operations/cluster",
+      "dependencies": [
+        "nz-common-core"
+      ],
+      "testDependencies": [],
+      "providedDependencies": [],
+      "dependents": [
+        "nz-app",
+        "nz-starter-auth",
+        "nz-starter-protection",
+        "nz-starter-realtime",
+        "nz-starter-social"
+      ],
+      "autoConfigurations": [
+        {
+          "name": "com.nz.admin.framework.cache.config.NzCacheAutoConfiguration",
+          "source": "nz-server/nz-framework/nz-starter-cache/src/main/java/com/nz/admin/framework/cache/config/NzCacheAutoConfiguration.java"
+        },
+        {
+          "name": "com.nz.admin.framework.cache.config.AtomicStateAutoConfiguration",
+          "source": "nz-server/nz-framework/nz-starter-cache/src/main/java/com/nz/admin/framework/cache/config/AtomicStateAutoConfiguration.java"
+        }
+      ],
+      "contracts": [
+        {
+          "name": "AtomicStateStore",
+          "source": "nz-server/nz-framework/nz-starter-cache/src/main/java/com/nz/admin/framework/cache/core/AtomicStateStore.java"
+        }
+      ],
+      "tests": [
+        "nz-server/nz-framework/nz-starter-cache/src/test/java/com/nz/admin/framework/cache/config/NzCacheAutoConfigurationTest.java",
+        "nz-server/nz-framework/nz-starter-cache/src/test/java/com/nz/admin/framework/cache/core/RedisAtomicStateStoreTest.java"
+      ],
+      "manifest": null,
+      "frontend": null
+    },
+    {
+      "id": "nz-starter-datascope",
+      "title": "功能数据范围",
+      "description": "数据权限 starter，提供受保护表规则、SQL 行过滤和当前数据范围解析扩展点。",
+      "path": "nz-server/nz-framework/nz-starter-datascope",
+      "pom": "nz-server/nz-framework/nz-starter-datascope/pom.xml",
+      "layer": "framework",
+      "guide": "/platform/security/data-scope",
+      "dependencies": [
+        "nz-starter-mybatis"
+      ],
+      "testDependencies": [
+        "nz-starter-tenant",
+        "nz-starter-test"
+      ],
+      "providedDependencies": [],
+      "dependents": [
+        "nz-demo",
+        "nz-generator",
+        "nz-system"
+      ],
+      "autoConfigurations": [
+        {
+          "name": "com.nz.admin.framework.datascope.config.NzDatascopeAutoConfiguration",
+          "source": "nz-server/nz-framework/nz-starter-datascope/src/main/java/com/nz/admin/framework/datascope/config/NzDatascopeAutoConfiguration.java"
+        }
+      ],
+      "contracts": [
+        {
+          "name": "DataScopeResolver",
+          "source": "nz-server/nz-framework/nz-starter-datascope/src/main/java/com/nz/admin/framework/datascope/core/DataScopeResolver.java"
+        },
+        {
+          "name": "DataScopeRuleCustomizer",
+          "source": "nz-server/nz-framework/nz-starter-datascope/src/main/java/com/nz/admin/framework/datascope/core/DataScopeRuleCustomizer.java"
+        }
+      ],
+      "tests": [
+        "nz-server/nz-framework/nz-starter-datascope/src/test/java/com/nz/admin/framework/datascope/DataScopeIntegrationTest.java"
+      ],
+      "manifest": null,
+      "frontend": null
+    },
+    {
+      "id": "nz-starter-encryption",
+      "title": "字段加密与脱敏",
+      "description": "字段加密与敏感信息脱敏组件",
+      "path": "nz-server/nz-framework/nz-starter-encryption",
+      "pom": "nz-server/nz-framework/nz-starter-encryption/pom.xml",
+      "layer": "framework",
+      "guide": "/field-encryption",
+      "dependencies": [
+        "nz-starter-mybatis"
+      ],
+      "testDependencies": [],
+      "providedDependencies": [],
+      "dependents": [
+        "nz-system"
+      ],
+      "autoConfigurations": [
+        {
+          "name": "com.nz.admin.framework.encryption.config.FieldEncryptionAutoConfiguration",
+          "source": "nz-server/nz-framework/nz-starter-encryption/src/main/java/com/nz/admin/framework/encryption/config/FieldEncryptionAutoConfiguration.java"
+        }
+      ],
+      "contracts": [
+        {
+          "name": "FieldCipher",
+          "source": "nz-server/nz-framework/nz-starter-encryption/src/main/java/com/nz/admin/framework/encryption/core/FieldCipher.java"
+        }
+      ],
+      "tests": [
+        "nz-server/nz-framework/nz-starter-encryption/src/test/java/com/nz/admin/framework/encryption/config/FieldEncryptionAutoConfigurationTest.java",
+        "nz-server/nz-framework/nz-starter-encryption/src/test/java/com/nz/admin/framework/encryption/core/AesGcmFieldCipherTest.java",
+        "nz-server/nz-framework/nz-starter-encryption/src/test/java/com/nz/admin/framework/encryption/mask/SensitiveDataUtilsTest.java",
+        "nz-server/nz-framework/nz-starter-encryption/src/test/java/com/nz/admin/framework/encryption/mybatis/EncryptedStringTypeHandlerTest.java"
+      ],
+      "manifest": null,
+      "frontend": null
+    },
+    {
+      "id": "nz-starter-excel",
+      "title": "Excel 数据交换",
+      "description": "Excel starter，提供导出响应、模板下载、导入错误结构和字典转换扩展点。",
+      "path": "nz-server/nz-framework/nz-starter-excel",
+      "pom": "nz-server/nz-framework/nz-starter-excel/pom.xml",
+      "layer": "framework",
+      "guide": "/guide/backend/excel",
+      "dependencies": [],
+      "testDependencies": [],
+      "providedDependencies": [],
+      "dependents": [
+        "nz-demo",
+        "nz-system",
+        "nz-workflow"
+      ],
+      "autoConfigurations": [
+        {
+          "name": "com.nz.admin.framework.excel.config.NzExcelAutoConfiguration",
+          "source": "nz-server/nz-framework/nz-starter-excel/src/main/java/com/nz/admin/framework/excel/config/NzExcelAutoConfiguration.java"
+        }
+      ],
+      "contracts": [
+        {
+          "name": "DictValueResolver",
+          "source": "nz-server/nz-framework/nz-starter-excel/src/main/java/com/nz/admin/framework/excel/core/DictValueResolver.java"
+        }
+      ],
+      "tests": [
+        "nz-server/nz-framework/nz-starter-excel/src/test/java/com/nz/admin/framework/excel/support/ExcelResponseUtilsTest.java"
+      ],
+      "manifest": null,
+      "frontend": null
+    },
+    {
+      "id": "nz-starter-file",
+      "title": "文件存储",
+      "description": "文件存储 starter，提供文件存储抽象、本地存储、OSS 存储和配置绑定。",
+      "path": "nz-server/nz-framework/nz-starter-file",
+      "pom": "nz-server/nz-framework/nz-starter-file/pom.xml",
+      "layer": "framework",
+      "guide": "/file-configuration",
+      "dependencies": [
+        "nz-starter-web"
+      ],
+      "testDependencies": [],
+      "providedDependencies": [],
+      "dependents": [
+        "nz-system"
+      ],
+      "autoConfigurations": [
+        {
+          "name": "com.nz.admin.framework.file.config.NzFileAutoConfiguration",
+          "source": "nz-server/nz-framework/nz-starter-file/src/main/java/com/nz/admin/framework/file/config/NzFileAutoConfiguration.java"
+        }
+      ],
+      "contracts": [
+        {
+          "name": "FileStorageService",
+          "source": "nz-server/nz-framework/nz-starter-file/src/main/java/com/nz/admin/framework/file/FileStorageService.java"
+        }
+      ],
+      "tests": [
+        "nz-server/nz-framework/nz-starter-file/src/test/java/com/nz/admin/framework/file/FileConfigSecretCodecTest.java",
+        "nz-server/nz-framework/nz-starter-file/src/test/java/com/nz/admin/framework/file/FileSecurityValidatorTest.java",
+        "nz-server/nz-framework/nz-starter-file/src/test/java/com/nz/admin/framework/file/LocalFileStorageServiceImplTest.java",
+        "nz-server/nz-framework/nz-starter-file/src/test/java/com/nz/admin/framework/file/MinioFileStorageServiceImplTest.java",
+        "nz-server/nz-framework/nz-starter-file/src/test/java/com/nz/admin/framework/file/config/NzFileAutoConfigurationTest.java"
+      ],
+      "manifest": null,
+      "frontend": null
+    },
+    {
+      "id": "nz-starter-log",
+      "title": "操作日志",
+      "description": "操作日志 starter，提供日志注解、采集入口、自动配置和日志记录扩展点。",
+      "path": "nz-server/nz-framework/nz-starter-log",
+      "pom": "nz-server/nz-framework/nz-starter-log/pom.xml",
+      "layer": "framework",
+      "guide": "/platform/system/jobs-logs",
+      "dependencies": [
+        "nz-common-core",
+        "nz-starter-auth"
+      ],
+      "testDependencies": [],
+      "providedDependencies": [],
+      "dependents": [
+        "nz-app",
+        "nz-demo",
+        "nz-job",
+        "nz-system",
+        "nz-workflow"
+      ],
+      "autoConfigurations": [
+        {
+          "name": "com.nz.admin.framework.log.config.NzLogAutoConfiguration",
+          "source": "nz-server/nz-framework/nz-starter-log/src/main/java/com/nz/admin/framework/log/config/NzLogAutoConfiguration.java"
+        }
+      ],
+      "contracts": [
+        {
+          "name": "OperationLogRecorder",
+          "source": "nz-server/nz-framework/nz-starter-log/src/main/java/com/nz/admin/framework/log/core/OperationLogRecorder.java"
+        }
+      ],
+      "tests": [
+        "nz-server/nz-framework/nz-starter-log/src/test/java/com/nz/admin/framework/log/aspect/OperationLogAspectTest.java"
+      ],
+      "manifest": null,
+      "frontend": null
+    },
+    {
+      "id": "nz-starter-mail",
+      "title": "邮件发送",
+      "description": "邮件 starter，提供发送协议、SMTP 实现、配置属性与自动装配。",
+      "path": "nz-server/nz-framework/nz-starter-mail",
+      "pom": "nz-server/nz-framework/nz-starter-mail/pom.xml",
+      "layer": "framework",
+      "guide": "/mail",
+      "dependencies": [],
+      "testDependencies": [],
+      "providedDependencies": [],
+      "dependents": [
+        "nz-system"
+      ],
+      "autoConfigurations": [
+        {
+          "name": "com.nz.admin.framework.mail.config.MailAutoConfiguration",
+          "source": "nz-server/nz-framework/nz-starter-mail/src/main/java/com/nz/admin/framework/mail/config/MailAutoConfiguration.java"
+        }
+      ],
+      "contracts": [
+        {
+          "name": "MailService",
+          "source": "nz-server/nz-framework/nz-starter-mail/src/main/java/com/nz/admin/framework/mail/core/MailService.java"
+        }
+      ],
+      "tests": [
+        "nz-server/nz-framework/nz-starter-mail/src/test/java/com/nz/admin/framework/mail/config/MailAutoConfigurationTest.java"
+      ],
+      "manifest": null,
+      "frontend": null
+    },
+    {
+      "id": "nz-starter-monitor",
+      "title": "运行状态",
+      "description": "监控 starter，提供 Actuator 健康检查接入和轻量运行状态读取能力。",
+      "path": "nz-server/nz-framework/nz-starter-monitor",
+      "pom": "nz-server/nz-framework/nz-starter-monitor/pom.xml",
+      "layer": "framework",
+      "guide": "/operations/troubleshooting",
+      "dependencies": [],
+      "testDependencies": [],
+      "providedDependencies": [],
+      "dependents": [
+        "nz-system"
+      ],
+      "autoConfigurations": [
+        {
+          "name": "com.nz.admin.framework.monitor.config.NzMonitorAutoConfiguration",
+          "source": "nz-server/nz-framework/nz-starter-monitor/src/main/java/com/nz/admin/framework/monitor/config/NzMonitorAutoConfiguration.java"
+        }
+      ],
+      "contracts": [
+        {
+          "name": "RedisMonitorStatusProvider",
+          "source": "nz-server/nz-framework/nz-starter-monitor/src/main/java/com/nz/admin/framework/monitor/core/RedisMonitorStatusProvider.java"
+        }
+      ],
+      "tests": [
+        "nz-server/nz-framework/nz-starter-monitor/src/test/java/com/nz/admin/framework/monitor/config/NzMonitorAutoConfigurationTest.java",
+        "nz-server/nz-framework/nz-starter-monitor/src/test/java/com/nz/admin/framework/monitor/redis/SpringDataRedisMonitorStatusProviderTest.java"
+      ],
+      "manifest": null,
+      "frontend": null
+    },
+    {
+      "id": "nz-starter-mybatis",
+      "title": "MyBatis 与分页",
+      "description": "MyBatis-Plus starter，提供持久层基础依赖和自动配置。",
+      "path": "nz-server/nz-framework/nz-starter-mybatis",
+      "pom": "nz-server/nz-framework/nz-starter-mybatis/pom.xml",
+      "layer": "framework",
+      "guide": "/guide/backend/persistence",
+      "dependencies": [
+        "nz-common-core"
+      ],
+      "testDependencies": [],
+      "providedDependencies": [],
+      "dependents": [
+        "nz-app",
+        "nz-demo",
+        "nz-job",
+        "nz-starter-datascope",
+        "nz-starter-encryption",
+        "nz-starter-tenant",
+        "nz-starter-test",
+        "nz-system",
+        "nz-workflow"
+      ],
+      "autoConfigurations": [
+        {
+          "name": "com.nz.admin.framework.mybatis.config.MybatisPlusAutoConfiguration",
+          "source": "nz-server/nz-framework/nz-starter-mybatis/src/main/java/com/nz/admin/framework/mybatis/config/MybatisPlusAutoConfiguration.java"
+        }
+      ],
+      "contracts": [
+        {
+          "name": "BaseMapperX",
+          "source": "nz-server/nz-framework/nz-starter-mybatis/src/main/java/com/nz/admin/framework/mybatis/core/mapper/BaseMapperX.java"
+        },
+        {
+          "name": "MybatisPlusInterceptorCustomizer",
+          "source": "nz-server/nz-framework/nz-starter-mybatis/src/main/java/com/nz/admin/framework/mybatis/plugin/MybatisPlusInterceptorCustomizer.java"
+        }
+      ],
+      "tests": [
+        "nz-server/nz-framework/nz-starter-mybatis/src/test/java/com/nz/admin/framework/mybatis/config/MybatisPlusAutoConfigurationTest.java",
+        "nz-server/nz-framework/nz-starter-mybatis/src/test/java/com/nz/admin/framework/mybatis/core/query/LambdaQueryWrapperXTest.java"
+      ],
+      "manifest": null,
+      "frontend": null
+    },
+    {
+      "id": "nz-starter-protection",
+      "title": "限流、防重与幂等",
+      "description": "保护 starter，提供防重复提交、接口限流和输入清理基础能力。",
+      "path": "nz-server/nz-framework/nz-starter-protection",
+      "pom": "nz-server/nz-framework/nz-starter-protection/pom.xml",
+      "layer": "framework",
+      "guide": "/guide/backend/protection",
+      "dependencies": [
+        "nz-common-core",
+        "nz-starter-auth",
+        "nz-starter-cache"
+      ],
+      "testDependencies": [],
+      "providedDependencies": [],
+      "dependents": [
+        "nz-demo",
+        "nz-generator",
+        "nz-system",
+        "nz-workflow"
+      ],
+      "autoConfigurations": [
+        {
+          "name": "com.nz.admin.framework.protection.config.NzProtectionAutoConfiguration",
+          "source": "nz-server/nz-framework/nz-starter-protection/src/main/java/com/nz/admin/framework/protection/config/NzProtectionAutoConfiguration.java"
+        },
+        {
+          "name": "com.nz.admin.framework.protection.config.IdempotencyAutoConfiguration",
+          "source": "nz-server/nz-framework/nz-starter-protection/src/main/java/com/nz/admin/framework/protection/config/IdempotencyAutoConfiguration.java"
+        }
+      ],
+      "contracts": [
+        {
+          "name": "ProtectionStore",
+          "source": "nz-server/nz-framework/nz-starter-protection/src/main/java/com/nz/admin/framework/protection/core/ProtectionStore.java"
+        }
+      ],
+      "tests": [
+        "nz-server/nz-framework/nz-starter-protection/src/test/java/com/nz/admin/framework/protection/aspect/ProtectionAspectTest.java",
+        "nz-server/nz-framework/nz-starter-protection/src/test/java/com/nz/admin/framework/protection/config/NzProtectionAutoConfigurationTest.java",
+        "nz-server/nz-framework/nz-starter-protection/src/test/java/com/nz/admin/framework/protection/core/InMemoryProtectionStoreTest.java",
+        "nz-server/nz-framework/nz-starter-protection/src/test/java/com/nz/admin/framework/protection/core/RequestFingerprintTest.java"
+      ],
+      "manifest": null,
+      "frontend": null
+    },
+    {
+      "id": "nz-starter-quartz",
+      "title": "Quartz 调度",
+      "description": "Quartz 调度 starter，提供调度装配、任务执行封装和调度扩展能力。",
+      "path": "nz-server/nz-framework/nz-starter-quartz",
+      "pom": "nz-server/nz-framework/nz-starter-quartz/pom.xml",
+      "layer": "framework",
+      "guide": "/platform/system/jobs-logs",
+      "dependencies": [
+        "nz-common-job",
+        "nz-starter-tenant"
+      ],
+      "testDependencies": [],
+      "providedDependencies": [],
+      "dependents": [
+        "nz-job"
+      ],
+      "autoConfigurations": [
+        {
+          "name": "com.nz.admin.framework.quartz.config.QuartzAutoConfiguration",
+          "source": "nz-server/nz-framework/nz-starter-quartz/src/main/java/com/nz/admin/framework/quartz/config/QuartzAutoConfiguration.java"
+        }
+      ],
+      "contracts": [],
+      "tests": [
+        "nz-server/nz-framework/nz-starter-quartz/src/test/java/com/nz/admin/framework/quartz/config/QuartzAutoConfigurationTest.java",
+        "nz-server/nz-framework/nz-starter-quartz/src/test/java/com/nz/admin/framework/quartz/core/QuartzSchedulerManagerTest.java",
+        "nz-server/nz-framework/nz-starter-quartz/src/test/java/com/nz/admin/framework/quartz/job/QuartzJobTest.java"
+      ],
+      "manifest": null,
+      "frontend": null
+    },
+    {
+      "id": "nz-starter-realtime",
+      "title": "SSE 与 WebSocket",
+      "description": "实时通信 starter，提供一次性连接票据、SSE、WebSocket 和用户定向推送。",
+      "path": "nz-server/nz-framework/nz-starter-realtime",
+      "pom": "nz-server/nz-framework/nz-starter-realtime/pom.xml",
+      "layer": "framework",
+      "guide": "/realtime-communication",
+      "dependencies": [
+        "nz-starter-cache"
+      ],
+      "testDependencies": [],
+      "providedDependencies": [],
+      "dependents": [
+        "nz-system"
+      ],
+      "autoConfigurations": [
+        {
+          "name": "com.nz.admin.framework.realtime.config.RealtimeAutoConfiguration",
+          "source": "nz-server/nz-framework/nz-starter-realtime/src/main/java/com/nz/admin/framework/realtime/config/RealtimeAutoConfiguration.java"
+        }
+      ],
+      "contracts": [
+        {
+          "name": "RealtimeConnectionManager",
+          "source": "nz-server/nz-framework/nz-starter-realtime/src/main/java/com/nz/admin/framework/realtime/core/RealtimeConnectionManager.java"
+        },
+        {
+          "name": "RealtimePublisher",
+          "source": "nz-server/nz-framework/nz-starter-realtime/src/main/java/com/nz/admin/framework/realtime/core/RealtimePublisher.java"
+        },
+        {
+          "name": "RealtimeTicketService",
+          "source": "nz-server/nz-framework/nz-starter-realtime/src/main/java/com/nz/admin/framework/realtime/core/RealtimeTicketService.java"
+        }
+      ],
+      "tests": [
+        "nz-server/nz-framework/nz-starter-realtime/src/test/java/com/nz/admin/framework/realtime/config/RealtimeAutoConfigurationTest.java",
+        "nz-server/nz-framework/nz-starter-realtime/src/test/java/com/nz/admin/framework/realtime/core/InMemoryRealtimeTicketServiceTest.java",
+        "nz-server/nz-framework/nz-starter-realtime/src/test/java/com/nz/admin/framework/realtime/core/RealtimeConnectionRegistryTest.java"
+      ],
+      "manifest": null,
+      "frontend": null
+    },
+    {
+      "id": "nz-starter-sms",
+      "title": "短信发送",
+      "description": "短信发送框架，提供渠道扩展协议、日志渠道、Webhook 渠道与自动装配。",
+      "path": "nz-server/nz-framework/nz-starter-sms",
+      "pom": "nz-server/nz-framework/nz-starter-sms/pom.xml",
+      "layer": "framework",
+      "guide": "/sms-management",
+      "dependencies": [],
+      "testDependencies": [],
+      "providedDependencies": [],
+      "dependents": [
+        "nz-system"
+      ],
+      "autoConfigurations": [
+        {
+          "name": "com.nz.admin.framework.sms.config.SmsAutoConfiguration",
+          "source": "nz-server/nz-framework/nz-starter-sms/src/main/java/com/nz/admin/framework/sms/config/SmsAutoConfiguration.java"
+        }
+      ],
+      "contracts": [
+        {
+          "name": "SmsGateway",
+          "source": "nz-server/nz-framework/nz-starter-sms/src/main/java/com/nz/admin/framework/sms/core/SmsGateway.java"
+        },
+        {
+          "name": "SmsProvider",
+          "source": "nz-server/nz-framework/nz-starter-sms/src/main/java/com/nz/admin/framework/sms/core/SmsProvider.java"
+        }
+      ],
+      "tests": [
+        "nz-server/nz-framework/nz-starter-sms/src/test/java/com/nz/admin/framework/sms/config/SmsAutoConfigurationTest.java",
+        "nz-server/nz-framework/nz-starter-sms/src/test/java/com/nz/admin/framework/sms/core/DefaultSmsGatewayTest.java"
+      ],
+      "manifest": null,
+      "frontend": null
+    },
+    {
+      "id": "nz-starter-social",
+      "title": "OAuth2 / OIDC",
+      "description": "OAuth2/OIDC 社交认证框架，提供 PKCE、一次性状态与身份解析。",
+      "path": "nz-server/nz-framework/nz-starter-social",
+      "pom": "nz-server/nz-framework/nz-starter-social/pom.xml",
+      "layer": "framework",
+      "guide": "/social-login",
+      "dependencies": [
+        "nz-starter-cache"
+      ],
+      "testDependencies": [],
+      "providedDependencies": [],
+      "dependents": [
+        "nz-system"
+      ],
+      "autoConfigurations": [
+        {
+          "name": "com.nz.admin.framework.social.config.SocialAutoConfiguration",
+          "source": "nz-server/nz-framework/nz-starter-social/src/main/java/com/nz/admin/framework/social/config/SocialAutoConfiguration.java"
+        }
+      ],
+      "contracts": [
+        {
+          "name": "SocialAuthorizationStateStore",
+          "source": "nz-server/nz-framework/nz-starter-social/src/main/java/com/nz/admin/framework/social/core/SocialAuthorizationStateStore.java"
+        },
+        {
+          "name": "SocialOAuthService",
+          "source": "nz-server/nz-framework/nz-starter-social/src/main/java/com/nz/admin/framework/social/core/SocialOAuthService.java"
+        }
+      ],
+      "tests": [
+        "nz-server/nz-framework/nz-starter-social/src/test/java/com/nz/admin/framework/social/config/SocialAutoConfigurationTest.java",
+        "nz-server/nz-framework/nz-starter-social/src/test/java/com/nz/admin/framework/social/core/DefaultSocialOAuthServiceTest.java",
+        "nz-server/nz-framework/nz-starter-social/src/test/java/com/nz/admin/framework/social/core/InMemorySocialAuthorizationStateStoreTest.java"
+      ],
+      "manifest": null,
+      "frontend": null
+    },
+    {
+      "id": "nz-starter-tenant",
+      "title": "可信租户隔离",
+      "description": "多租户 starter，提供可信租户上下文、异步传递和 MyBatis 行级隔离。",
+      "path": "nz-server/nz-framework/nz-starter-tenant",
+      "pom": "nz-server/nz-framework/nz-starter-tenant/pom.xml",
+      "layer": "framework",
+      "guide": "/platform/security/tenant-isolation",
+      "dependencies": [
+        "nz-starter-auth",
+        "nz-starter-mybatis"
+      ],
+      "testDependencies": [],
+      "providedDependencies": [],
+      "dependents": [
+        "nz-app",
+        "nz-demo",
+        "nz-generator",
+        "nz-job",
+        "nz-starter-quartz",
+        "nz-system",
+        "nz-workflow"
+      ],
+      "autoConfigurations": [
+        {
+          "name": "com.nz.admin.framework.tenant.config.TenantPropertiesAutoConfiguration",
+          "source": "nz-server/nz-framework/nz-starter-tenant/src/main/java/com/nz/admin/framework/tenant/config/TenantPropertiesAutoConfiguration.java"
+        },
+        {
+          "name": "com.nz.admin.framework.tenant.config.TenantAutoConfiguration",
+          "source": "nz-server/nz-framework/nz-starter-tenant/src/main/java/com/nz/admin/framework/tenant/config/TenantAutoConfiguration.java"
+        }
+      ],
+      "contracts": [
+        {
+          "name": "TenantTableRuleCustomizer",
+          "source": "nz-server/nz-framework/nz-starter-tenant/src/main/java/com/nz/admin/framework/tenant/core/TenantTableRuleCustomizer.java"
+        }
+      ],
+      "tests": [
+        "nz-server/nz-framework/nz-starter-tenant/src/test/java/com/nz/admin/framework/tenant/config/TenantAutoConfigurationTest.java",
+        "nz-server/nz-framework/nz-starter-tenant/src/test/java/com/nz/admin/framework/tenant/core/TenantContextHolderTest.java"
+      ],
+      "manifest": null,
+      "frontend": null
+    },
+    {
+      "id": "nz-starter-test",
+      "title": "后端测试支持",
+      "description": "测试支撑 starter，提供单元测试、数据库测试、HTTP 测试客户端和随机对象生成工具。",
+      "path": "nz-server/nz-framework/nz-starter-test",
+      "pom": "nz-server/nz-framework/nz-starter-test/pom.xml",
+      "layer": "framework",
+      "guide": "/guide/testing/backend",
+      "dependencies": [
+        "nz-starter-auth",
+        "nz-starter-mybatis"
+      ],
+      "testDependencies": [],
+      "providedDependencies": [],
+      "dependents": [],
+      "autoConfigurations": [],
+      "contracts": [],
+      "tests": [
+        "nz-server/nz-framework/nz-starter-test/src/test/java/com/nz/admin/framework/test/core/util/TestContextCleanerTest.java"
+      ],
+      "manifest": null,
+      "frontend": null
+    },
+    {
+      "id": "nz-starter-web",
+      "title": "Web 入口",
+      "description": "Web 框架 starter，提供 Web 依赖、接口文档、参数校验和全局异常处理。",
+      "path": "nz-server/nz-framework/nz-starter-web",
+      "pom": "nz-server/nz-framework/nz-starter-web/pom.xml",
+      "layer": "framework",
+      "guide": "/guide/backend/validation",
+      "dependencies": [
+        "nz-common-core"
+      ],
+      "testDependencies": [],
+      "providedDependencies": [],
+      "dependents": [
+        "nz-app",
+        "nz-demo",
+        "nz-generator",
+        "nz-job",
+        "nz-starter-file",
+        "nz-system",
+        "nz-workflow"
+      ],
+      "autoConfigurations": [
+        {
+          "name": "com.nz.admin.framework.web.config.NzWebAutoConfiguration",
+          "source": "nz-server/nz-framework/nz-starter-web/src/main/java/com/nz/admin/framework/web/config/NzWebAutoConfiguration.java"
+        },
+        {
+          "name": "com.nz.admin.framework.web.config.SwaggerAutoConfiguration",
+          "source": "nz-server/nz-framework/nz-starter-web/src/main/java/com/nz/admin/framework/web/config/SwaggerAutoConfiguration.java"
+        }
+      ],
+      "contracts": [
+        {
+          "name": "ApiExceptionLogRecorder",
+          "source": "nz-server/nz-framework/nz-starter-web/src/main/java/com/nz/admin/framework/web/exception/ApiExceptionLogRecorder.java"
+        }
+      ],
+      "tests": [
+        "nz-server/nz-framework/nz-starter-web/src/test/java/com/nz/admin/framework/web/config/NzWebAutoConfigurationTest.java",
+        "nz-server/nz-framework/nz-starter-web/src/test/java/com/nz/admin/framework/web/exception/GlobalExceptionHandlerTest.java"
+      ],
+      "manifest": null,
+      "frontend": null
+    },
+    {
+      "id": "nz-system",
+      "title": "系统管理",
+      "description": "系统管理业务模块，承载用户、角色、菜单、部门、字典、文件、日志、任务等领域。",
+      "path": "nz-server/nz-module/nz-system",
+      "pom": "nz-server/nz-module/nz-system/pom.xml",
+      "layer": "business",
+      "guide": "/platform/system/",
+      "dependencies": [
+        "nz-common-core",
+        "nz-common-module",
+        "nz-job",
+        "nz-starter-auth",
+        "nz-starter-datascope",
+        "nz-starter-encryption",
+        "nz-starter-excel",
+        "nz-starter-file",
+        "nz-starter-log",
+        "nz-starter-mail",
+        "nz-starter-monitor",
+        "nz-starter-mybatis",
+        "nz-starter-protection",
+        "nz-starter-realtime",
+        "nz-starter-sms",
+        "nz-starter-social",
+        "nz-starter-tenant",
+        "nz-starter-web"
+      ],
+      "testDependencies": [
+        "nz-starter-test"
+      ],
+      "providedDependencies": [],
+      "dependents": [
+        "nz-app"
+      ],
+      "autoConfigurations": [
+        {
+          "name": "com.nz.admin.modules.system.config.NzSystemModuleAutoConfiguration",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/config/NzSystemModuleAutoConfiguration.java"
+        }
+      ],
+      "contracts": [
+        {
+          "name": "UserConvert",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/convert/user/UserConvert.java"
+        },
+        {
+          "name": "ClientMapper",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/client/ClientMapper.java"
+        },
+        {
+          "name": "ConfigMapper",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/config/ConfigMapper.java"
+        },
+        {
+          "name": "DeptMapper",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/dept/DeptMapper.java"
+        },
+        {
+          "name": "PostMapper",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/dept/PostMapper.java"
+        },
+        {
+          "name": "DictDataMapper",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/dict/DictDataMapper.java"
+        },
+        {
+          "name": "DictTypeMapper",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/dict/DictTypeMapper.java"
+        },
+        {
+          "name": "FileConfigMapper",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/file/FileConfigMapper.java"
+        },
+        {
+          "name": "FileMapper",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/file/FileMapper.java"
+        },
+        {
+          "name": "LoginLogMapper",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/log/LoginLogMapper.java"
+        },
+        {
+          "name": "OperLogMapper",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/log/OperLogMapper.java"
+        },
+        {
+          "name": "MenuMapper",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/menu/MenuMapper.java"
+        },
+        {
+          "name": "MessageMapper",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/message/MessageMapper.java"
+        },
+        {
+          "name": "NoticeMapper",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/notice/NoticeMapper.java"
+        },
+        {
+          "name": "RoleDeptMapper",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/role/RoleDeptMapper.java"
+        },
+        {
+          "name": "RoleMapper",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/role/RoleMapper.java"
+        },
+        {
+          "name": "RoleMenuMapper",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/role/RoleMenuMapper.java"
+        },
+        {
+          "name": "SmsChannelMapper",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/sms/SmsChannelMapper.java"
+        },
+        {
+          "name": "SmsSendLogMapper",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/sms/SmsSendLogMapper.java"
+        },
+        {
+          "name": "SmsTemplateMapper",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/sms/SmsTemplateMapper.java"
+        },
+        {
+          "name": "SocialBindingMapper",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/social/SocialBindingMapper.java"
+        },
+        {
+          "name": "TenantMapper",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/tenant/TenantMapper.java"
+        },
+        {
+          "name": "TenantPackageMapper",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/tenant/TenantPackageMapper.java"
+        },
+        {
+          "name": "TenantPackageMenuMapper",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/tenant/TenantPackageMenuMapper.java"
+        },
+        {
+          "name": "UserMapper",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/user/UserMapper.java"
+        },
+        {
+          "name": "UserPostMapper",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/user/UserPostMapper.java"
+        },
+        {
+          "name": "UserRoleMapper",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/user/UserRoleMapper.java"
+        },
+        {
+          "name": "AuthenticationService",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/auth/AuthenticationService.java"
+        },
+        {
+          "name": "SmsVerificationCodeStore",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/auth/SmsVerificationCodeStore.java"
+        },
+        {
+          "name": "SmsVerificationService",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/auth/SmsVerificationService.java"
+        },
+        {
+          "name": "ClientService",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/client/ClientService.java"
+        },
+        {
+          "name": "ConfigService",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/config/ConfigService.java"
+        },
+        {
+          "name": "DeptService",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/dept/DeptService.java"
+        },
+        {
+          "name": "PostService",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/dept/PostService.java"
+        },
+        {
+          "name": "DictDataService",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/dict/DictDataService.java"
+        },
+        {
+          "name": "DictTypeService",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/dict/DictTypeService.java"
+        },
+        {
+          "name": "FileConfigService",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/file/FileConfigService.java"
+        },
+        {
+          "name": "FileService",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/file/FileService.java"
+        },
+        {
+          "name": "LoginLogService",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/log/LoginLogService.java"
+        },
+        {
+          "name": "OperLogService",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/log/OperLogService.java"
+        },
+        {
+          "name": "MenuService",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/menu/MenuService.java"
+        },
+        {
+          "name": "MessageService",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/message/MessageService.java"
+        },
+        {
+          "name": "MonitorService",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/monitor/MonitorService.java"
+        },
+        {
+          "name": "NoticeService",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/notice/NoticeService.java"
+        },
+        {
+          "name": "OnlineSessionAccessor",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/online/OnlineSessionAccessor.java"
+        },
+        {
+          "name": "OnlineUserService",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/online/OnlineUserService.java"
+        },
+        {
+          "name": "PermissionService",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/permission/PermissionService.java"
+        },
+        {
+          "name": "ProfileService",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/profile/ProfileService.java"
+        },
+        {
+          "name": "RealtimeService",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/realtime/RealtimeService.java"
+        },
+        {
+          "name": "RoleService",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/role/RoleService.java"
+        },
+        {
+          "name": "SmsService",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/sms/SmsService.java"
+        },
+        {
+          "name": "SocialAccountService",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/social/SocialAccountService.java"
+        },
+        {
+          "name": "TenantPackageService",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/tenant/TenantPackageService.java"
+        },
+        {
+          "name": "TenantService",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/tenant/TenantService.java"
+        },
+        {
+          "name": "UserService",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/user/UserService.java"
+        },
+        {
+          "name": "WorkbenchService",
+          "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/workbench/WorkbenchService.java"
+        }
+      ],
+      "tests": [
+        "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/config/DataInitializerTest.java",
+        "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/config/SystemDataScopeResolverTest.java",
+        "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/controller/auth/LoginControllerTest.java",
+        "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/service/DeptServiceImplTest.java",
+        "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/service/DictTypeServiceImplTest.java",
+        "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/service/LoginLogServiceImplTest.java",
+        "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/service/MenuServiceImplTest.java",
+        "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/service/OperLogServiceImplTest.java",
+        "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/service/PermissionServiceImplTest.java",
+        "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/service/RoleServiceImplTest.java",
+        "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/service/UserServiceImplTest.java",
+        "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/service/WorkbenchServiceImplTest.java",
+        "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/service/auth/AuthenticationServiceImplTest.java",
+        "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/service/auth/InMemorySmsVerificationCodeStoreTest.java",
+        "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/service/auth/SmsVerificationServiceImplTest.java",
+        "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/service/client/ClientServiceImplTest.java",
+        "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/service/file/FileConfigServiceImplTest.java",
+        "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/service/message/MessageServiceImplTest.java",
+        "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/service/online/OnlineUserServiceImplTest.java",
+        "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/service/online/SaTokenOnlineSessionAccessorTest.java",
+        "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/service/permission/PermissionTenantIsolationTest.java",
+        "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/service/profile/ProfileServiceImplTest.java",
+        "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/service/realtime/RealtimeServiceImplTest.java",
+        "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/service/sms/SmsServiceImplTest.java",
+        "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/service/social/SocialAccountServiceImplTest.java",
+        "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/service/tenant/TenantAdminGuardTest.java",
+        "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/service/tenant/TenantServiceImplTest.java",
+        "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/service/workflow/SystemWorkflowAssigneeResolverTest.java"
+      ],
+      "manifest": {
+        "source": "nz-server/nz-module/nz-system/src/main/resources/META-INF/nz/module.yaml",
+        "code": "system",
+        "name": "系统管理",
+        "requiredModules": [
+          "job"
+        ],
+        "requiredStarters": [],
+        "defaultEnabled": true,
+        "frontendModule": "system"
+      },
+      "frontend": {
+        "source": "nz-web/src/modules/system/manifest.ts",
+        "code": "system",
+        "componentPrefix": "system",
+        "title": "系统管理"
+      }
+    },
+    {
+      "id": "nz-workflow",
+      "title": "流程中心与业务审批",
+      "description": "工作流业务模块，提供官方设计器、流程中心和业务接入，不依赖系统模块。",
+      "path": "nz-server/nz-module/nz-workflow",
+      "pom": "nz-server/nz-module/nz-workflow/pom.xml",
+      "layer": "business",
+      "guide": "/platform/workflow/",
+      "dependencies": [
+        "nz-common-core",
+        "nz-common-module",
+        "nz-starter-auth",
+        "nz-starter-excel",
+        "nz-starter-log",
+        "nz-starter-mybatis",
+        "nz-starter-protection",
+        "nz-starter-tenant",
+        "nz-starter-web"
+      ],
+      "testDependencies": [
+        "nz-starter-test"
+      ],
+      "providedDependencies": [],
+      "dependents": [
+        "nz-app"
+      ],
+      "autoConfigurations": [
+        {
+          "name": "com.nz.admin.modules.workflow.config.NzWorkflowModuleAutoConfiguration",
+          "source": "nz-server/nz-module/nz-workflow/src/main/java/com/nz/admin/modules/workflow/config/NzWorkflowModuleAutoConfiguration.java"
+        }
+      ],
+      "contracts": [
+        {
+          "name": "WorkflowCategoryMapper",
+          "source": "nz-server/nz-module/nz-workflow/src/main/java/com/nz/admin/modules/workflow/mapper/WorkflowCategoryMapper.java"
+        },
+        {
+          "name": "WorkflowDefinitionMapper",
+          "source": "nz-server/nz-module/nz-workflow/src/main/java/com/nz/admin/modules/workflow/mapper/WorkflowDefinitionMapper.java"
+        },
+        {
+          "name": "WorkflowHistoryTaskMapper",
+          "source": "nz-server/nz-module/nz-workflow/src/main/java/com/nz/admin/modules/workflow/mapper/WorkflowHistoryTaskMapper.java"
+        },
+        {
+          "name": "WorkflowInstanceEventMapper",
+          "source": "nz-server/nz-module/nz-workflow/src/main/java/com/nz/admin/modules/workflow/mapper/WorkflowInstanceEventMapper.java"
+        },
+        {
+          "name": "WorkflowInstanceMapper",
+          "source": "nz-server/nz-module/nz-workflow/src/main/java/com/nz/admin/modules/workflow/mapper/WorkflowInstanceMapper.java"
+        },
+        {
+          "name": "WorkflowTaskCopyMapper",
+          "source": "nz-server/nz-module/nz-workflow/src/main/java/com/nz/admin/modules/workflow/mapper/WorkflowTaskCopyMapper.java"
+        },
+        {
+          "name": "WorkflowTaskMapper",
+          "source": "nz-server/nz-module/nz-workflow/src/main/java/com/nz/admin/modules/workflow/mapper/WorkflowTaskMapper.java"
+        },
+        {
+          "name": "WorkflowCategoryService",
+          "source": "nz-server/nz-module/nz-workflow/src/main/java/com/nz/admin/modules/workflow/service/WorkflowCategoryService.java"
+        },
+        {
+          "name": "WorkflowDefinitionReferenceChecker",
+          "source": "nz-server/nz-module/nz-workflow/src/main/java/com/nz/admin/modules/workflow/service/WorkflowDefinitionReferenceChecker.java"
+        },
+        {
+          "name": "WorkflowDefinitionService",
+          "source": "nz-server/nz-module/nz-workflow/src/main/java/com/nz/admin/modules/workflow/service/WorkflowDefinitionService.java"
+        },
+        {
+          "name": "WorkflowDefinitionUsageChecker",
+          "source": "nz-server/nz-module/nz-workflow/src/main/java/com/nz/admin/modules/workflow/service/WorkflowDefinitionUsageChecker.java"
+        },
+        {
+          "name": "WorkflowInstanceService",
+          "source": "nz-server/nz-module/nz-workflow/src/main/java/com/nz/admin/modules/workflow/service/WorkflowInstanceService.java"
+        },
+        {
+          "name": "WorkflowTaskService",
+          "source": "nz-server/nz-module/nz-workflow/src/main/java/com/nz/admin/modules/workflow/service/WorkflowTaskService.java"
+        }
+      ],
+      "tests": [
+        "nz-server/nz-module/nz-workflow/src/test/java/com/nz/admin/modules/workflow/config/NzWorkflowModuleManifestTest.java",
+        "nz-server/nz-module/nz-workflow/src/test/java/com/nz/admin/modules/workflow/handler/NzWarmFlowDataFillHandlerTest.java",
+        "nz-server/nz-module/nz-workflow/src/test/java/com/nz/admin/modules/workflow/handler/NzWarmFlowPermissionHandlerTest.java",
+        "nz-server/nz-module/nz-workflow/src/test/java/com/nz/admin/modules/workflow/handler/NzWarmFlowTenantHandlerTest.java",
+        "nz-server/nz-module/nz-workflow/src/test/java/com/nz/admin/modules/workflow/service/WorkflowCategoryServiceImplTest.java",
+        "nz-server/nz-module/nz-workflow/src/test/java/com/nz/admin/modules/workflow/service/WorkflowDefinitionServiceImplTest.java",
+        "nz-server/nz-module/nz-workflow/src/test/java/com/nz/admin/modules/workflow/service/WorkflowInstanceServiceImplTest.java",
+        "nz-server/nz-module/nz-workflow/src/test/java/com/nz/admin/modules/workflow/service/WorkflowModelValidatorTest.java",
+        "nz-server/nz-module/nz-workflow/src/test/java/com/nz/admin/modules/workflow/service/WorkflowRuntimeResolverTest.java",
+        "nz-server/nz-module/nz-workflow/src/test/java/com/nz/admin/modules/workflow/service/WorkflowTaskLifecycleServiceTest.java",
+        "nz-server/nz-module/nz-workflow/src/test/java/com/nz/admin/modules/workflow/service/WorkflowTaskServiceImplTest.java"
+      ],
+      "manifest": {
+        "source": "nz-server/nz-module/nz-workflow/src/main/resources/META-INF/nz/module.yaml",
+        "code": "workflow",
+        "name": "Workflow Module",
+        "requiredModules": [],
+        "requiredStarters": [
+          "auth",
+          "excel",
+          "log",
+          "mybatis",
+          "protection",
+          "tenant",
+          "web"
+        ],
+        "defaultEnabled": true,
+        "frontendModule": "workflow"
+      },
+      "frontend": {
+        "source": "nz-web/src/modules/workflow/manifest.ts",
+        "code": "workflow",
+        "componentPrefix": "workflow",
+        "title": "工作流程"
+      }
+    }
+  ],
+  "extensions": [
+    {
+      "name": "AtomicStateStore",
+      "source": "nz-server/nz-framework/nz-starter-cache/src/main/java/com/nz/admin/framework/cache/core/AtomicStateStore.java",
+      "module": "nz-starter-cache",
+      "purpose": "复用 TTL、一次消费与原子状态",
+      "guide": "/operations/cluster"
+    },
+    {
+      "name": "AuthUserResolver",
+      "source": "nz-server/nz-framework/nz-starter-auth/src/main/java/com/nz/admin/framework/auth/core/AuthUserResolver.java",
+      "module": "nz-starter-auth",
+      "purpose": "解析可信登录身份",
+      "guide": "/platform/security/authentication"
+    },
+    {
+      "name": "DataScopeRuleCustomizer",
+      "source": "nz-server/nz-framework/nz-starter-datascope/src/main/java/com/nz/admin/framework/datascope/core/DataScopeRuleCustomizer.java",
+      "module": "nz-starter-datascope",
+      "purpose": "注册部门与归属过滤规则",
+      "guide": "/platform/security/data-scope"
+    },
+    {
+      "name": "FileStorageService",
+      "source": "nz-server/nz-framework/nz-starter-file/src/main/java/com/nz/admin/framework/file/FileStorageService.java",
+      "module": "nz-starter-file",
+      "purpose": "替换文件存储实现",
+      "guide": "/file-configuration"
+    },
+    {
+      "name": "MybatisPlusInterceptorCustomizer",
+      "source": "nz-server/nz-framework/nz-starter-mybatis/src/main/java/com/nz/admin/framework/mybatis/plugin/MybatisPlusInterceptorCustomizer.java",
+      "module": "nz-starter-mybatis",
+      "purpose": "按顺序定制 MyBatis 插件",
+      "guide": "/developer/extensions"
+    },
+    {
+      "name": "NzUserNotificationPublisher",
+      "source": "nz-server/nz-common/nz-common-module/src/main/java/com/nz/admin/common/module/NzUserNotificationPublisher.java",
+      "module": "nz-common-module",
+      "purpose": "跨模块发送逐用户通知",
+      "guide": "/message-center"
+    },
+    {
+      "name": "NzWorkflowBusinessHandler",
+      "source": "nz-server/nz-common/nz-common-module/src/main/java/com/nz/admin/common/module/NzWorkflowBusinessHandler.java",
+      "module": "nz-common-module",
+      "purpose": "按实例和序号回调业务",
+      "guide": "/platform/workflow/business-integration"
+    },
+    {
+      "name": "NzWorkflowBusinessLauncher",
+      "source": "nz-server/nz-common/nz-common-module/src/main/java/com/nz/admin/common/module/NzWorkflowBusinessLauncher.java",
+      "module": "nz-common-module",
+      "purpose": "业务单据发起审批",
+      "guide": "/platform/workflow/business-integration"
+    },
+    {
+      "name": "NzWorkflowParticipantProvider",
+      "source": "nz-server/nz-common/nz-common-module/src/main/java/com/nz/admin/common/module/NzWorkflowParticipantProvider.java",
+      "module": "nz-common-module",
+      "purpose": "提供当前租户的有效办理人",
+      "guide": "/platform/workflow/designer"
+    },
+    {
+      "name": "OnlineSessionAccessor",
+      "source": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/online/OnlineSessionAccessor.java",
+      "module": "nz-system",
+      "purpose": "适配可分页的在线会话访问",
+      "guide": "/online-user-management"
+    },
+    {
+      "name": "OperationLogRecorder",
+      "source": "nz-server/nz-framework/nz-starter-log/src/main/java/com/nz/admin/framework/log/core/OperationLogRecorder.java",
+      "module": "nz-starter-log",
+      "purpose": "将框架日志落入业务存储",
+      "guide": "/developer/extensions"
+    },
+    {
+      "name": "RealtimePublisher",
+      "source": "nz-server/nz-framework/nz-starter-realtime/src/main/java/com/nz/admin/framework/realtime/core/RealtimePublisher.java",
+      "module": "nz-starter-realtime",
+      "purpose": "向用户或租户发布在线消息",
+      "guide": "/realtime-communication"
+    },
+    {
+      "name": "SmsProvider",
+      "source": "nz-server/nz-framework/nz-starter-sms/src/main/java/com/nz/admin/framework/sms/core/SmsProvider.java",
+      "module": "nz-starter-sms",
+      "purpose": "增加短信供应商",
+      "guide": "/sms-management"
+    },
+    {
+      "name": "TenantTableRuleCustomizer",
+      "source": "nz-server/nz-framework/nz-starter-tenant/src/main/java/com/nz/admin/framework/tenant/core/TenantTableRuleCustomizer.java",
+      "module": "nz-starter-tenant",
+      "purpose": "在业务模块登记隔离表",
+      "guide": "/platform/security/tenant-isolation"
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "modules",
+      "title": "可装配的业务模块",
+      "status": "available",
+      "summary": "后端清单与自动配置、前端 manifest 与动态菜单协同；模块开关重启生效。",
+      "modules": [
+        "nz-common-module",
+        "nz-app"
+      ],
+      "guide": "/developer/module-lifecycle",
+      "sources": [
+        "nz-server/nz-common/nz-common-module/src/main/java/com/nz/admin/common/module/NzModuleRegistry.java",
+        "nz-web/src/core/modules/registry.ts"
+      ]
+    },
+    {
+      "id": "isolation",
+      "title": "功能权限、租户与数据范围",
+      "status": "available",
+      "summary": "按功能筛选角色范围，多角色并集，查询和更新删除都过滤；归属由服务端生成。",
+      "modules": [
+        "nz-starter-auth",
+        "nz-starter-tenant",
+        "nz-starter-datascope"
+      ],
+      "guide": "/platform/security/",
+      "sources": [
+        "nz-server/nz-framework/nz-starter-datascope/src/main/java/com/nz/admin/framework/datascope/support/DataScopeHandler.java"
+      ]
+    },
+    {
+      "id": "excel",
+      "title": "Excel 预检导入与权限导出",
+      "status": "available",
+      "summary": "模板、错误行预检、确认后重新校验与原子新增；导出限定当前功能和租户的数据。",
+      "modules": [
+        "nz-starter-excel",
+        "nz-demo"
+      ],
+      "guide": "/guide/backend/excel",
+      "sources": [
+        "nz-server/nz-module/nz-demo/src/main/java/com/nz/admin/modules/demo/controller/DemoItemController.java"
+      ]
+    },
+    {
+      "id": "workflow",
+      "title": "官方设计器与业务审批",
+      "status": "conditional",
+      "summary": "V30 后启用新引擎，复用经典设计器；业务 SPI、事务事件、失败重试与历史快照。",
+      "modules": [
+        "nz-workflow",
+        "nz-common-module",
+        "nz-demo"
+      ],
+      "guide": "/platform/workflow/",
+      "sources": [
+        "nz-server/nz-common/nz-common-module/src/main/java/com/nz/admin/common/module/NzWorkflowBusinessHandler.java"
+      ]
+    },
+    {
+      "id": "cluster",
+      "title": "共享状态与跨节点验证",
+      "status": "conditional",
+      "summary": "共享 PostgreSQL / Redis；幂等、会话、票据与退出有真实两节点验收入口。",
+      "modules": [
+        "nz-starter-cache",
+        "nz-starter-realtime",
+        "nz-starter-protection"
+      ],
+      "guide": "/operations/cluster",
+      "sources": [
+        "tools/tests/workflow-cluster.mjs"
+      ]
+    },
+    {
+      "id": "generator",
+      "title": "CLI 与安全 CRUD 起点",
+      "status": "available",
+      "summary": "创建模块、迁移检查、代码预览和下载；生成访问规则，业务状态仍需领域校验。",
+      "modules": [
+        "nz-generator"
+      ],
+      "guide": "/code-generator",
+      "sources": [
+        "tools/nz-cli/src/module-add.mjs"
+      ]
+    },
+    {
+      "id": "source-docs",
+      "title": "源码驱动的开发者目录",
+      "status": "available",
+      "summary": "依赖、清单、接口与指南可追溯；构建检查依赖越界、无效声明和文档快照漂移。",
+      "modules": [
+        "nz-server"
+      ],
+      "guide": "/developer/catalog",
+      "sources": [
+        "docs/scripts/source-catalog.mjs"
+      ]
+    },
+    {
+      "id": "notifications",
+      "title": "可扩展通知与登录",
+      "status": "conditional",
+      "summary": "站内消息、短信、邮件与 OAuth2/OIDC；供应商真实账号需要分别验收。",
+      "modules": [
+        "nz-starter-sms",
+        "nz-starter-mail",
+        "nz-starter-social",
+        "nz-system"
+      ],
+      "guide": "/developer/extensions",
+      "sources": [
+        "nz-server/nz-common/nz-common-module/src/main/java/com/nz/admin/common/module/NzUserNotificationPublisher.java"
+      ]
+    },
+    {
+      "id": "dynamic-datasource",
+      "title": "动态数据源与更多数据库",
+      "status": "planned",
+      "summary": "当前以 PostgreSQL 为主，尚未交付动态切换与异构数据库验收。",
+      "modules": [],
+      "guide": "/developer/roadmap",
+      "sources": []
+    },
+    {
+      "id": "distributed-jobs",
+      "title": "分布式调度与全局任务运营",
+      "status": "planned",
+      "summary": "现有 Quartz 管理不等于全局只执行一次；需独立验证调度竞争和业务幂等。",
+      "modules": [],
+      "guide": "/developer/roadmap",
+      "sources": []
+    }
+  ],
+  "sources": [
+    {
+      "path": "docs/scripts/source-catalog.mjs",
+      "sha256": "45fba4a63f84fd745b003c5bd4407db389cee39c4f47b0f24c93d3a89f20e2f5"
+    },
+    {
+      "path": "nz-server/nz-app/pom.xml",
+      "sha256": "8f1b7f8e270aba87d0c6a40b5ba6c804c77ba9f1f530358f5f04dba942611175"
+    },
+    {
+      "path": "nz-server/nz-common/nz-common-core/pom.xml",
+      "sha256": "024d520a89b989abd9a77a21e4e0fa174faa45ac6c72d4c5c36a88d5e39f29e7"
+    },
+    {
+      "path": "nz-server/nz-common/nz-common-core/src/main/java/com/nz/admin/common/core/ErrorCode.java",
+      "sha256": "993df6ac80c0923c4cd0c19098f7d3507aa8cdf21ea6045ac02701449f814ca1"
+    },
+    {
+      "path": "nz-server/nz-common/nz-common-job/pom.xml",
+      "sha256": "73add2cc86869c3155b2fdb2b41fe889ae14f99fd53505cdb93668e6777d130e"
+    },
+    {
+      "path": "nz-server/nz-common/nz-common-job/src/main/java/com/nz/admin/common/job/JobInvokeLogSink.java",
+      "sha256": "40a16e0f015899788e35b53254130298ff81d0e1cdabfabaed21f0a102d9345c"
+    },
+    {
+      "path": "nz-server/nz-common/nz-common-module/pom.xml",
+      "sha256": "1d30e6f0448c30594e2a70592e3e8699f737d0a45131f476c408e7ae6c14ef24"
+    },
+    {
+      "path": "nz-server/nz-common/nz-common-module/src/main/java/com/nz/admin/common/module/NzModuleRegistry.java",
+      "sha256": "db0b43ed052e50bfb40add8f9c972e666977deb2fee73109bc4a375260a90db2"
+    },
+    {
+      "path": "nz-server/nz-common/nz-common-module/src/main/java/com/nz/admin/common/module/NzUserNotificationPublisher.java",
+      "sha256": "a9c045ff9f81498aa277f488fdd1b58d9acf03a98aeaf34d21f62feb955e0371"
+    },
+    {
+      "path": "nz-server/nz-common/nz-common-module/src/main/java/com/nz/admin/common/module/NzWorkflowAssigneeResolver.java",
+      "sha256": "5ffb50b61203b01bf5eafdd0946a48a786e8611aae13c3d3d2b8999a9356d427"
+    },
+    {
+      "path": "nz-server/nz-common/nz-common-module/src/main/java/com/nz/admin/common/module/NzWorkflowBusinessHandler.java",
+      "sha256": "81634f7bc159ef178f69aa14a01c8f23885a0fb3a66447e543a16456a739bda4"
+    },
+    {
+      "path": "nz-server/nz-common/nz-common-module/src/main/java/com/nz/admin/common/module/NzWorkflowBusinessLauncher.java",
+      "sha256": "4a65bb6a23a9001c669018bd2cf7efcf03e5aaf85f6cd67fd32cb88f3eb77abb"
+    },
+    {
+      "path": "nz-server/nz-common/nz-common-module/src/main/java/com/nz/admin/common/module/NzWorkflowParticipantProvider.java",
+      "sha256": "80bc398fd6e7160ace6a4d655a8bc4b6552a73756056a8870d5ac7c016eb39ec"
+    },
+    {
+      "path": "nz-server/nz-common/pom.xml",
+      "sha256": "dbe301c8cdf9f32298b34f22c502c5c81cd4414636633da416ea90622b0146a3"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-auth/pom.xml",
+      "sha256": "de6b41a4575f68faa24481c945612381de1eb504fce841b0c9c3f6eed94aed62"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-auth/src/main/java/com/nz/admin/framework/auth/config/AuthContextAutoConfiguration.java",
+      "sha256": "bd3228ac233bf0977bddc2ca8f0bcf7f2ecf0828e6fa2630438f11ffe9a4d2d3"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-auth/src/main/java/com/nz/admin/framework/auth/config/ClusterAuthAutoConfiguration.java",
+      "sha256": "d836d8a86650dcea04934b464e87f78b63901db142f5fcad2bdfe94ec10048d9"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-auth/src/main/java/com/nz/admin/framework/auth/config/SaTokenAutoConfiguration.java",
+      "sha256": "86672f4aa5dee959c60c3fe4921b960fcdf2950e97f6fc6ee3a9c5a8c162c798"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-auth/src/main/java/com/nz/admin/framework/auth/core/AuthUserResolver.java",
+      "sha256": "b215fc23f773ded8bbe8256137fa73036fa58dc87a4372a7558202abf523ce26"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-auth/src/main/java/com/nz/admin/framework/auth/core/PermissionResolver.java",
+      "sha256": "b587051ca715d5d43c68bed378da4521bcd4fb0d77fc884dbf4a9089ae5ba799"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-auth/src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports",
+      "sha256": "a5dc5bf6cfac3f24f672ad7470501152d28abd8834f8ef287452583041ec5e17"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-cache/pom.xml",
+      "sha256": "02dda1a348b816c8eb199884c80132068588283b522474ccf901deaa73c5c839"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-cache/src/main/java/com/nz/admin/framework/cache/config/AtomicStateAutoConfiguration.java",
+      "sha256": "c09af43ac0c9a7b4ce3a1bfef8e0b9dc48dd2db3191f001f515d1f2baa224695"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-cache/src/main/java/com/nz/admin/framework/cache/config/NzCacheAutoConfiguration.java",
+      "sha256": "36b751029c31962d1763d878ab3dbc79875cb5bf0a6cadbdcf236ba0bba2af22"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-cache/src/main/java/com/nz/admin/framework/cache/core/AtomicStateStore.java",
+      "sha256": "1c6c4a82b033ee07196814aa6f2cecafa8b98e0f8fee72565934e567bf8d9068"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-cache/src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports",
+      "sha256": "80c42021fb203fe8dc4035f6b2ae0810a56b25f1f15e826666de838aaf133ef0"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-datascope/pom.xml",
+      "sha256": "5ac91e81b558fa47804a7ae71369cc971c78c414e6391d34895a9d73b9cbe554"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-datascope/src/main/java/com/nz/admin/framework/datascope/config/NzDatascopeAutoConfiguration.java",
+      "sha256": "3c93d58f9435439f0d53336e90efbda2b80fd1f80ddfa142b4d4e08ee5f5d702"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-datascope/src/main/java/com/nz/admin/framework/datascope/core/DataScopeResolver.java",
+      "sha256": "6a73d9c3ed6d79f531a0b3722d0ae24843448c2667be826bbda4e179b631d694"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-datascope/src/main/java/com/nz/admin/framework/datascope/core/DataScopeRuleCustomizer.java",
+      "sha256": "995a1f575fe591ef0a101a810b83fb4e1990d22a87a06c7f464672b077affcf8"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-datascope/src/main/java/com/nz/admin/framework/datascope/support/DataScopeHandler.java",
+      "sha256": "a8b107a7aeb3c3344d776a227ceacd36ee5dfbfaf70b47ee99eb3a8efbfcf46a"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-datascope/src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports",
+      "sha256": "5379f4b1a2a7a463a00857f96e750898b2a86fb717aeda314720344c26b1842c"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-encryption/pom.xml",
+      "sha256": "0fa3cfd0bf1fbf31d6c566ee88fc792751803413520bf8563c3f2ea078a4d268"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-encryption/src/main/java/com/nz/admin/framework/encryption/config/FieldEncryptionAutoConfiguration.java",
+      "sha256": "9c931fb87d5822b9c1edf02aa0aa039cb89133334f918633b8726fcaae716c04"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-encryption/src/main/java/com/nz/admin/framework/encryption/core/FieldCipher.java",
+      "sha256": "d020f8883ce934a80862ee36e743a1229c4c9a4d676ec447e08efd8d453a8a7c"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-encryption/src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports",
+      "sha256": "e1f0921fdcc8f1c293c603b2b63ee17b38b14bab2f0f223811e9f249f1114ef2"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-excel/pom.xml",
+      "sha256": "5e6782ca569d42c6a7385534a288df987351684a17b78c73d20c07d151d6d1cc"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-excel/src/main/java/com/nz/admin/framework/excel/config/NzExcelAutoConfiguration.java",
+      "sha256": "77f7aeaa828f2d437d837b4674d712b84b13abf80c15cdb97349418911e51a39"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-excel/src/main/java/com/nz/admin/framework/excel/core/DictValueResolver.java",
+      "sha256": "a707aab56017e2012a6c4e86efc869665431f240ffbddf4907ecfb5286d01b75"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-excel/src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports",
+      "sha256": "6ca1c289eabbe5ea1c17d054fe52c9b2090218c4db3872b952e570485f3e3093"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-file/pom.xml",
+      "sha256": "1e41a2a442bf838a817b25c2c633f50384f3ccc1dc2edb0ea1feed5880d6916a"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-file/src/main/java/com/nz/admin/framework/file/config/NzFileAutoConfiguration.java",
+      "sha256": "2f5ea893da62f90572b5e078aa2b5e9b417869f866fd15a83a6cf348f16b2648"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-file/src/main/java/com/nz/admin/framework/file/FileStorageService.java",
+      "sha256": "a48df503429812483459ba9253849faf83bc0297d4bb09bebc3cec084422b25d"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-file/src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports",
+      "sha256": "1abe135595b44cded2a3d7a2a67462b2e81a729c85cfc26d5e70c4982adc01eb"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-log/pom.xml",
+      "sha256": "d8ed486b99094093387b86c5ee8cedc174fa753e43470afa6233c0ff3953a290"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-log/src/main/java/com/nz/admin/framework/log/config/NzLogAutoConfiguration.java",
+      "sha256": "de229c7c7f006cffc77ae3a24f730c9c294b9803af9fbcca05b573e6d288c66c"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-log/src/main/java/com/nz/admin/framework/log/core/OperationLogRecorder.java",
+      "sha256": "125110cc81718dc44a7ffa8fe21fa53fae15c0d8685dc208f1bb1b0d0fdad988"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-log/src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports",
+      "sha256": "d54a95c94bb2f3223746a19bfcf36059dfdcc4d20c009fd903e42cb6559fa37a"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-mail/pom.xml",
+      "sha256": "72b93e27885ee47763cef571e2f3a64a922fe6848059e96bb7b92f98e77be383"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-mail/src/main/java/com/nz/admin/framework/mail/config/MailAutoConfiguration.java",
+      "sha256": "a01b6f5a9a5fe1ed20a4730c41bfc3233b7232ab49e90b7c0b914c39ae07eade"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-mail/src/main/java/com/nz/admin/framework/mail/core/MailService.java",
+      "sha256": "a875d51e0c9df616936ca709d01086cd057d22329a2f9c54df2a2d4a56c9a7b5"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-mail/src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports",
+      "sha256": "02a35ea87119f46d2ae7912b6991c69272e0faf97b44f286ea721c194b392083"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-monitor/pom.xml",
+      "sha256": "b06bf3e836c3a4a0e4f7f7b5d6b2b85938eed04a2aeb316e208c20b338e2b8d7"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-monitor/src/main/java/com/nz/admin/framework/monitor/config/NzMonitorAutoConfiguration.java",
+      "sha256": "69bce6b4dcddcb9de13e9dfff42d61fc01297c7ae9a601a8a502c0b4cf0380ab"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-monitor/src/main/java/com/nz/admin/framework/monitor/core/RedisMonitorStatusProvider.java",
+      "sha256": "955e4e5685a86af86010726e095f3d33e0649e405d63c559a9fd273bd5c6d09a"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-monitor/src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports",
+      "sha256": "5dd94e3ab8a38a0675f9c58986f6ea03f371bc8f47267ce268d45525513c560e"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-mybatis/pom.xml",
+      "sha256": "ffcd057f3ee65cff3751d816e3ed0f97e675d8bf614a7ece1e033589e4508006"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-mybatis/src/main/java/com/nz/admin/framework/mybatis/config/MybatisPlusAutoConfiguration.java",
+      "sha256": "e44e4854a2b2380c19b8e1e7944db4135e871934255d0532c9d9c291000c303d"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-mybatis/src/main/java/com/nz/admin/framework/mybatis/core/mapper/BaseMapperX.java",
+      "sha256": "dc192bef80d2daa7479e2a432a365afddffe6c14c292e131cd1ba406661b22ea"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-mybatis/src/main/java/com/nz/admin/framework/mybatis/plugin/MybatisPlusInterceptorCustomizer.java",
+      "sha256": "e2568ce782a92e9439abc17b0a888dd10d1574cbf6aab40294119a6a20b57778"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-mybatis/src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports",
+      "sha256": "d5e95fe9dabab7da103a66c11c1c746a7f378333961c6ebc63ff15fe48ca1c5b"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-protection/pom.xml",
+      "sha256": "5805f0d1f1cc1a7e6d93b1b0ea71282c64ebe2845af177d05259713fcce4f529"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-protection/src/main/java/com/nz/admin/framework/protection/config/IdempotencyAutoConfiguration.java",
+      "sha256": "c05ec2e7f2b7d56b7e9917e9a9c6a0e5f39588bad97bcd9d31b5afa5dddb8aae"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-protection/src/main/java/com/nz/admin/framework/protection/config/NzProtectionAutoConfiguration.java",
+      "sha256": "b750899ec712fa307797b3012feb710b1b2b55d654b8dfe27b24be08b42ef0a6"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-protection/src/main/java/com/nz/admin/framework/protection/core/ProtectionStore.java",
+      "sha256": "32a914ad7838c93bb6d21cfbafda2f419811aff9fe91a59ee3d899ba1c1b7869"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-protection/src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports",
+      "sha256": "8a003b3077b02378ffd66165eb263e3f374ea6d3c092e6c5f07c4b323813eea4"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-quartz/pom.xml",
+      "sha256": "7b96ea54eb198365328a27859fd6403b46fe1147987580f35bb3cdb8770d2ffb"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-quartz/src/main/java/com/nz/admin/framework/quartz/config/QuartzAutoConfiguration.java",
+      "sha256": "408969ebe5e14c03163de130c60d30e6b2416eb6c1b329660f4d62907757dac3"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-quartz/src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports",
+      "sha256": "099c46e52417d830192a7c6fe9b935347ef13fbcfaecdbdc9c38990890a58b47"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-realtime/pom.xml",
+      "sha256": "5d8d67d79a5db3d953ea4c47153514d2fd1e2b0ab2e0a09fd68546927d91ac6f"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-realtime/src/main/java/com/nz/admin/framework/realtime/config/RealtimeAutoConfiguration.java",
+      "sha256": "33323572c157d130be552224ec67817f7e644eab65b9cc4c23011706cb8b7281"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-realtime/src/main/java/com/nz/admin/framework/realtime/core/RealtimeConnectionManager.java",
+      "sha256": "7826fc4df31bdd1028be89b4b32d4182c7d7dfe64bb10b3f3df48d64a33775a6"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-realtime/src/main/java/com/nz/admin/framework/realtime/core/RealtimePublisher.java",
+      "sha256": "5b61a7c735b5f899af5636ebe1f5f0f7be19906ea11476151c830d65fbadd570"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-realtime/src/main/java/com/nz/admin/framework/realtime/core/RealtimeTicketService.java",
+      "sha256": "45a70ef8d1ddd8605b7825a7f495544b6ec62f5a161e4eeff22d738d25f29e1c"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-realtime/src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports",
+      "sha256": "0a302dadad19eb1850618baf113666cdd98bb160a74bf7632f04b247ab265b59"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-sms/pom.xml",
+      "sha256": "f8066a59df3779677e1272ecb1c32fd883e694d15c2398f6bfa2ec55f3baec0c"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-sms/src/main/java/com/nz/admin/framework/sms/config/SmsAutoConfiguration.java",
+      "sha256": "b2d29d1ba3dbb104220b4825af62426328fc45ba47d2af26b1a77e6514acdc10"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-sms/src/main/java/com/nz/admin/framework/sms/core/SmsGateway.java",
+      "sha256": "6ffab432cb8ed976aab3250d3dc3b201f951f09020976579398b6407a3d908d5"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-sms/src/main/java/com/nz/admin/framework/sms/core/SmsProvider.java",
+      "sha256": "73c680a4f849799415179e07d9c510942afc449119678a413907e7f16b01d79c"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-sms/src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports",
+      "sha256": "65d40133425a9c02e2fdf9c6294c2bf32a710d7244c3e10c767576b2d9c10471"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-social/pom.xml",
+      "sha256": "a6dc74e9347f4c2ae21206828b9b3773c820a76da7e40122a4943e831ca35f0f"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-social/src/main/java/com/nz/admin/framework/social/config/SocialAutoConfiguration.java",
+      "sha256": "493628ce227658a3a0e22b33e479e815745d79ccd730186a74a7202dea3e4dc0"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-social/src/main/java/com/nz/admin/framework/social/core/SocialAuthorizationStateStore.java",
+      "sha256": "b5688e34755554589adc102d2900c9bb411f37f1bce0a0e6eadeb81e3fb1892d"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-social/src/main/java/com/nz/admin/framework/social/core/SocialOAuthService.java",
+      "sha256": "7516b15ab1e6bcc7fba1c1eaa53ed79d730e679613ea9b05a26a0148c25bf6bd"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-social/src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports",
+      "sha256": "e2531a77c7c5198b57c20d00829717da27053ed4ef2eaa47e0f5a69afc129f8f"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-tenant/pom.xml",
+      "sha256": "fe39f3e706004798f0cefcafc35c13351429a4374f5ea512f4f534090f03050a"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-tenant/src/main/java/com/nz/admin/framework/tenant/config/TenantAutoConfiguration.java",
+      "sha256": "b66a509360226fce50a3c7f5e549f8e333fbb4b5eeee61a4f8ad8309066d3e31"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-tenant/src/main/java/com/nz/admin/framework/tenant/config/TenantPropertiesAutoConfiguration.java",
+      "sha256": "83e5cd507d7c60802cbb6e612a833b05e170fc896e30b9bfe4a0739e09f8e7de"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-tenant/src/main/java/com/nz/admin/framework/tenant/core/TenantTableRuleCustomizer.java",
+      "sha256": "aed1e588cba853f414f17a5f81463d7af9a50ed0baa5730aadc9c3b78eb4be16"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-tenant/src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports",
+      "sha256": "8f29fbd2f0c0ca7353e4397cbdbf62527de3c7403bb5d54544f5113efea5272d"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-test/pom.xml",
+      "sha256": "72dfb25a2642b996fe9d207ac692cbda7231e03ec146308a15f3b23452786e80"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-web/pom.xml",
+      "sha256": "e313992fb0c8abb948ab9812696a1a9d32c677dfce5c322cf9bb0b1d6c6b9759"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-web/src/main/java/com/nz/admin/framework/web/config/NzWebAutoConfiguration.java",
+      "sha256": "43e5dea77041ddfa4611d9c5c7e32f5091ba40f56d258238cf8183d287adc02e"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-web/src/main/java/com/nz/admin/framework/web/config/SwaggerAutoConfiguration.java",
+      "sha256": "15730f24b2bc18c9abd8efbe5bf79c16f93452e4ac557e6a5e1ce7b81cb215fb"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-web/src/main/java/com/nz/admin/framework/web/exception/ApiExceptionLogRecorder.java",
+      "sha256": "d592da328b7fc646a7a3dcc20b69851c1487dfba9c8f859cc9273a1c404c4a42"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-web/src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports",
+      "sha256": "e0e1dbef8065ce78faf1c8f8188bf3775fd83e954280f63afd8307e70ba0ab22"
+    },
+    {
+      "path": "nz-server/nz-framework/pom.xml",
+      "sha256": "07ece314f937dd68e5bbfba5c91090df28ea940e87cb7ac5a900c9cc9f3785ed"
+    },
+    {
+      "path": "nz-server/nz-module/nz-demo/pom.xml",
+      "sha256": "250822dfb2a3d9a1a4f417d343aebd5cfa7232f164db4d8616a2db2976b2f638"
+    },
+    {
+      "path": "nz-server/nz-module/nz-demo/src/main/java/com/nz/admin/modules/demo/config/NzDemoModuleAutoConfiguration.java",
+      "sha256": "1f84018703dc91419742f515b3f8e718ad1ca854770ee13df086d6d21f21110b"
+    },
+    {
+      "path": "nz-server/nz-module/nz-demo/src/main/java/com/nz/admin/modules/demo/controller/DemoItemController.java",
+      "sha256": "3c02576619e9a40f18f08e86cf17fa18f183710449ac72d093436394460f843d"
+    },
+    {
+      "path": "nz-server/nz-module/nz-demo/src/main/java/com/nz/admin/modules/demo/mapper/DemoItemMapper.java",
+      "sha256": "ed7b745ee7ee133adcec4c92a4fbd622e364b8f516ac3ab70ff5acdf5f1f83d3"
+    },
+    {
+      "path": "nz-server/nz-module/nz-demo/src/main/java/com/nz/admin/modules/demo/service/DemoItemService.java",
+      "sha256": "4eee67ced6d163de8c3a528aad9f664c908a8fabbb135f04bc9f986808987a44"
+    },
+    {
+      "path": "nz-server/nz-module/nz-demo/src/main/resources/META-INF/nz/module.yaml",
+      "sha256": "35b4de5bf775f546b461fb214a3fc367cd36d23ed9ed34ecd287e365ac0bc555"
+    },
+    {
+      "path": "nz-server/nz-module/nz-demo/src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports",
+      "sha256": "156c7bc5faa1b1d34ab8383d194f05ab901e81a07c1cdf63519733e6765267e0"
+    },
+    {
+      "path": "nz-server/nz-module/nz-generator/pom.xml",
+      "sha256": "b1ff14a059a2868a763c928bcb3423ba7ea50b25992be73fe371c893786e6d87"
+    },
+    {
+      "path": "nz-server/nz-module/nz-generator/src/main/java/com/nz/admin/modules/generator/config/NzGeneratorModuleAutoConfiguration.java",
+      "sha256": "909d640430664d4e7e284c3641cf73f393275714e36bca29d4e66a0c3936c9d7"
+    },
+    {
+      "path": "nz-server/nz-module/nz-generator/src/main/java/com/nz/admin/modules/generator/repository/GeneratorMetadataRepository.java",
+      "sha256": "65abdc09bd335318e7e72f0c2449fcf4764990afd5eb633ef0c0af4a598a2081"
+    },
+    {
+      "path": "nz-server/nz-module/nz-generator/src/main/java/com/nz/admin/modules/generator/service/GeneratorService.java",
+      "sha256": "f702f99387cd845ac01ef6cbb4162727f625dd41fd0e70469a57c3179910dcaf"
+    },
+    {
+      "path": "nz-server/nz-module/nz-generator/src/main/resources/META-INF/nz/module.yaml",
+      "sha256": "8d340146716b1a66b3f232149cb9abb1a09fd394c80f668dbe2b46c1e6ad3b5a"
+    },
+    {
+      "path": "nz-server/nz-module/nz-generator/src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports",
+      "sha256": "07f531e990977f2c0f90235c590aa7cb9955ade91cddbaad3c71c81150f3d66c"
+    },
+    {
+      "path": "nz-server/nz-module/nz-job/pom.xml",
+      "sha256": "35cc3b6a180963fcf6870f368df7bb52127bced9120a90ad8e65a69152331bb1"
+    },
+    {
+      "path": "nz-server/nz-module/nz-job/src/main/java/com/nz/admin/modules/job/config/NzJobModuleAutoConfiguration.java",
+      "sha256": "ac0bafa766a34cc43ff0a76a1afc5308bdef6ea0249091b09104a13981dc2db5"
+    },
+    {
+      "path": "nz-server/nz-module/nz-job/src/main/java/com/nz/admin/modules/job/mapper/job/JobLogMapper.java",
+      "sha256": "7150f14ecbac169dec0bcd0ca6a27a13299b18c9f93710041fb78fa06c9e2b48"
+    },
+    {
+      "path": "nz-server/nz-module/nz-job/src/main/java/com/nz/admin/modules/job/mapper/job/JobMapper.java",
+      "sha256": "76829234d884f278b328a02f6e8b474bb4bf3fee55381cdef936dc04475b18c1"
+    },
+    {
+      "path": "nz-server/nz-module/nz-job/src/main/java/com/nz/admin/modules/job/service/job/JobLogService.java",
+      "sha256": "e1017f485addfa013c54403b123f06de310d91f89b89379278749271b1a30c99"
+    },
+    {
+      "path": "nz-server/nz-module/nz-job/src/main/java/com/nz/admin/modules/job/service/job/JobService.java",
+      "sha256": "281c1f4e2ff558333d17d4b0e08e732ad2f16dbc66ba17f7fde94d0ea03a365a"
+    },
+    {
+      "path": "nz-server/nz-module/nz-job/src/main/resources/META-INF/nz/module.yaml",
+      "sha256": "73db61b6954a0562a94afeccd3c45005eec9c9754b99e4a84fed708e8da34342"
+    },
+    {
+      "path": "nz-server/nz-module/nz-job/src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports",
+      "sha256": "6e2f08a45e94b021373aa993ea71d77f5675341b87ee13e35c323d814d54f810"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/pom.xml",
+      "sha256": "b99eb76324a172d4350c0aacc00554a2b2fe8b07402ee2b7ed10a2a776cf47de"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/config/NzSystemModuleAutoConfiguration.java",
+      "sha256": "b42f12dcd7404df34e6513a20926bd78ddf2f5d85dc159735f36c22135e7c457"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/convert/user/UserConvert.java",
+      "sha256": "da0405f39947bf66403d96a915d23c3957d754e0f95420be718706262b0446d6"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/client/ClientMapper.java",
+      "sha256": "dd17da71c5cb92bd93e66d50a9a786c3359900203a35c37543e27f29594addc0"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/config/ConfigMapper.java",
+      "sha256": "85743406c3468d3c903547d48e222bdc76c6e3a9ac8244636f79a89a915ab555"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/dept/DeptMapper.java",
+      "sha256": "57ef8481ee471ead7eb70ce3566edc41865d7186b9002446341b65eee4be36c6"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/dept/PostMapper.java",
+      "sha256": "2fbe6d5a31f6f66f20fad5c225b178a939e820ef04c8be9bbc2d56bb2d03e1ca"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/dict/DictDataMapper.java",
+      "sha256": "9b766711b4bbd86792ff0d18dc0f26c2e2d77602b6e64c8148c9a3d712050228"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/dict/DictTypeMapper.java",
+      "sha256": "9f0d4982413b4415684f74d34d562bee9a5244ad440178818ae8b828b0a8549b"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/file/FileConfigMapper.java",
+      "sha256": "37392342f8ad5a49bb34e4d9d1558b2f39ea080bd76740d8db7e5f196d84ce62"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/file/FileMapper.java",
+      "sha256": "34ec5157f583a16d5c3226109aae04cdbf8b79301737f56da01dc02522b8031d"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/log/LoginLogMapper.java",
+      "sha256": "f3d7c363bd6930929fd1a0af121e936dff62b65f5ea84fea74afabc8de8592c6"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/log/OperLogMapper.java",
+      "sha256": "b837817b478a570d72d9e7676f2f5d14e019d2ff2f43ff72c4be52e743e99509"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/menu/MenuMapper.java",
+      "sha256": "e372a169ca29e39da4ccd9e4e2d2dbb28d8eb76ef2b1819050562aaa2d2c3cb0"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/message/MessageMapper.java",
+      "sha256": "8937f1aa9c468a19d74e38c98909d75125c08ed508f1ad44e9d9958108aff194"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/notice/NoticeMapper.java",
+      "sha256": "9d64d170b4d915bc8c14a840a57b07076bf6fa05029e808debc56a31b76a999a"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/role/RoleDeptMapper.java",
+      "sha256": "916bcbdcb0d3a4b2091a7a1fc7f725afb26b897241597cc7ab505e1ffd7b04a5"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/role/RoleMapper.java",
+      "sha256": "35156f0e7fef5297bd9280093cb0be1c20650b950a2b899b2a02b3e0508d7876"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/role/RoleMenuMapper.java",
+      "sha256": "eefac4decfe431fe3ff368bbfe3f2482e08357c8c391ec0d9ecc46289a21f9b4"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/sms/SmsChannelMapper.java",
+      "sha256": "c9099a888bd4e8af7423e3402e4512cd2682bdf2dd64cc7da347e4f84e5d9a44"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/sms/SmsSendLogMapper.java",
+      "sha256": "99125402efb27af342f87aca77e8040c649326113a7ac51436805fec327f5540"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/sms/SmsTemplateMapper.java",
+      "sha256": "0a1b5ff0614cbe7c107e1131433ab2215d6727e0823a6fc4d141a90937215881"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/social/SocialBindingMapper.java",
+      "sha256": "5bb4ff39e64236a1bcb9a83ca9240639794dd0daefb5f0829cbd245ec5e557fa"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/tenant/TenantMapper.java",
+      "sha256": "7d962c21ac094a4bb71a7fe64c8991544cc9889d7f1c713a8efcce3db8e5a675"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/tenant/TenantPackageMapper.java",
+      "sha256": "d38a78694d7dcc6cb0211b328e3d64b647f33d088869779d6fa93f33b39a32b0"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/tenant/TenantPackageMenuMapper.java",
+      "sha256": "8667820f0086fb7b752659b504deecba292fc8e2d1dc0a17802b46071ffae895"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/user/UserMapper.java",
+      "sha256": "d5b0863f6faa0c37445abeee4ea19c017bf6658e65842ccbdd32acbd9bf6f32f"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/user/UserPostMapper.java",
+      "sha256": "3a6af4a0680700d24f9ba5ee99d17242e45f92ef0199e40a6c41943e127fd8ce"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/user/UserRoleMapper.java",
+      "sha256": "b610d6bc26655348f952b7357f4a06d3a9c915a745ef73ad5970afe89f21bce3"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/auth/AuthenticationService.java",
+      "sha256": "977da07fd278fe97c70cff09748849200cfc21d54bd025cf880552e489c3e3dd"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/auth/SmsVerificationCodeStore.java",
+      "sha256": "02d1a923c0e459a42a7962b2d6833313a5c468f678a8ca76fe6152aaa924692a"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/auth/SmsVerificationService.java",
+      "sha256": "c4833dbd872670afbd12e6e79546782fb9f8425e7b3d4d6fbde540d03f304a0c"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/client/ClientService.java",
+      "sha256": "26b4d0aef6e8b018237bceef26796dbaec6546f7f881f26aa641159379de154c"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/config/ConfigService.java",
+      "sha256": "a330d70eaa0a9cc1d84c353f420dc60a5bef055181e21332f22200451d8fe0a2"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/dept/DeptService.java",
+      "sha256": "ed2cc54643cace9e3d8b2b4c8627a1dd49e2471e097f790546594f2d088bb5ce"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/dept/PostService.java",
+      "sha256": "8068612bba0a669ad5605c2d8a2ca33cff05e4a50505747557ca7ee30453a24f"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/dict/DictDataService.java",
+      "sha256": "3e0daab24020f647ed98936a534bf3e4916845feb79bf00b09f1cca4dd362a66"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/dict/DictTypeService.java",
+      "sha256": "ccd02a7075583a23f4bc582e9209b5347624b25c882c02ea6cb52a21c4d946d3"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/file/FileConfigService.java",
+      "sha256": "b7202f3d668483753a87aa384697e1f17ad398e18eec91e9cfc3fc152a5be864"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/file/FileService.java",
+      "sha256": "9368f10e550155febe81057c44645c7a729237d46d2552a5bb141bc84959b395"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/log/LoginLogService.java",
+      "sha256": "e1516ab46711605d1de9104dafc0c5de14fb4af531c020dc90961dd3b8b06fb6"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/log/OperLogService.java",
+      "sha256": "1586cdbbe6865683fd6d991f3303ee49db0d6d22b911e148a42727247f2013d0"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/menu/MenuService.java",
+      "sha256": "765f23bfc9645168485cd824b6f543ebbcaf94598cb67c7aed2d0e1d5b5fd185"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/message/MessageService.java",
+      "sha256": "b221ee2895550de5a0b7632cc9d442fbe49592e3ead9fb2d693f61b1b05ef97e"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/monitor/MonitorService.java",
+      "sha256": "b695557a119527cdcd8fa1e1303a4a8716b67fcfa954ddc6d542e633ff97e939"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/notice/NoticeService.java",
+      "sha256": "81f2e8323c1bbe3d95f53651441af648e5a78576e21942883ec85dc811262543"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/online/OnlineSessionAccessor.java",
+      "sha256": "30f3ab7a206695162870264d9350d62a0adfd9b20a448f0db0789a4820cc4e9b"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/online/OnlineUserService.java",
+      "sha256": "3c00cdfe2ce6d9c5e0c74a0f596c8d8116b0576ae8a96aeee2ffe49c0cb73d7d"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/permission/PermissionService.java",
+      "sha256": "2fe656f749a513cd85a5777accb4a6f8e5c43adf4c4c50ed67eef0bdb24afdc6"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/profile/ProfileService.java",
+      "sha256": "1c55ada0db697c30d04b0db27cef146d024d9d33ad7dd20924a8814b82aa0977"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/realtime/RealtimeService.java",
+      "sha256": "c975e1f0bcde3645b8c7958fda1be8446e371a4514a14bad2861429ceb53fa91"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/role/RoleService.java",
+      "sha256": "6b9b3fc7048272397c959ac184e09dd0f8cbf32f097c8e06b5a4709369068101"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/sms/SmsService.java",
+      "sha256": "a2cb68a3ff5188368239d0331f426e5b63131cdaee7bd2c35c5d5c88627323ef"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/social/SocialAccountService.java",
+      "sha256": "b7671471b428728002798a13224e37d25581ee1efcfd5f5d1db35650dafa8cbb"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/tenant/TenantPackageService.java",
+      "sha256": "12a8737101d06d4ca3a08e6e5c1d902edfa83912915ce68f068d8f6cd4aa2d5d"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/tenant/TenantService.java",
+      "sha256": "9be43cd85054d1bad83414f0eb6ed1d23b1339bd6f576cb424a0a43c3b2e9e7f"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/user/UserService.java",
+      "sha256": "0fe4bdcc779d5f37a2cb723b7d1684842e10841b2fbfa472be0400f2c38ed942"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/workbench/WorkbenchService.java",
+      "sha256": "d0824612917077c5b07fd17ce1dc2738d121e554a124242e31a1a3cc19a4b09d"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/resources/META-INF/nz/module.yaml",
+      "sha256": "7057d36606b23263c6c468ce3e8c37b20231e7bb6fa640705d99babf094cc36f"
+    },
+    {
+      "path": "nz-server/nz-module/nz-system/src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports",
+      "sha256": "7b613375d8a08b3483618030e69e5ab82846744e9aeac66fe5295742f1935c27"
+    },
+    {
+      "path": "nz-server/nz-module/nz-workflow/pom.xml",
+      "sha256": "188d0d5781d3c6dd10aba3c9f839a7a3347545ce1d69fc640d172fcd79413810"
+    },
+    {
+      "path": "nz-server/nz-module/nz-workflow/src/main/java/com/nz/admin/modules/workflow/config/NzWorkflowModuleAutoConfiguration.java",
+      "sha256": "45617c85502fc8f10edd6fae46a1ac0fda5d3110c93eaf3b4cbe1e7dd797ad06"
+    },
+    {
+      "path": "nz-server/nz-module/nz-workflow/src/main/java/com/nz/admin/modules/workflow/mapper/WorkflowCategoryMapper.java",
+      "sha256": "04592bacb61802f4b158153f549dbbdad60fbec0761c990cbc3194926e4917f0"
+    },
+    {
+      "path": "nz-server/nz-module/nz-workflow/src/main/java/com/nz/admin/modules/workflow/mapper/WorkflowDefinitionMapper.java",
+      "sha256": "8ac6ab44aa6ff3b925ed1c46ed5dd6ab0243fc86bc60f80f0658c79ca9488f35"
+    },
+    {
+      "path": "nz-server/nz-module/nz-workflow/src/main/java/com/nz/admin/modules/workflow/mapper/WorkflowHistoryTaskMapper.java",
+      "sha256": "6c1e0394e2dd6b624ca7ebdf3256277672b0d2a3df7683a1ccf1683d7bd06c7a"
+    },
+    {
+      "path": "nz-server/nz-module/nz-workflow/src/main/java/com/nz/admin/modules/workflow/mapper/WorkflowInstanceEventMapper.java",
+      "sha256": "fff7f5b80a36c82359c290ec536fe0e9c16d1b4abb354ad6dd8d5627640e3504"
+    },
+    {
+      "path": "nz-server/nz-module/nz-workflow/src/main/java/com/nz/admin/modules/workflow/mapper/WorkflowInstanceMapper.java",
+      "sha256": "47a84747d3fa96da2c0ce118a4f1c226002f123e1402b621524862aeb8a4ba3c"
+    },
+    {
+      "path": "nz-server/nz-module/nz-workflow/src/main/java/com/nz/admin/modules/workflow/mapper/WorkflowTaskCopyMapper.java",
+      "sha256": "5334beb2015822dbcca8f5a55568e9809530ee5f77da00faa3107d9e709d1464"
+    },
+    {
+      "path": "nz-server/nz-module/nz-workflow/src/main/java/com/nz/admin/modules/workflow/mapper/WorkflowTaskMapper.java",
+      "sha256": "180a3d1809471831d0e9d04eb56f88bb9d0bf07d3c1539ae182230e1e6f1f9d4"
+    },
+    {
+      "path": "nz-server/nz-module/nz-workflow/src/main/java/com/nz/admin/modules/workflow/service/WorkflowCategoryService.java",
+      "sha256": "cc7135f0239f25f4a16ed56843ab9f62a2155fa723875c1367326749f7d51f82"
+    },
+    {
+      "path": "nz-server/nz-module/nz-workflow/src/main/java/com/nz/admin/modules/workflow/service/WorkflowDefinitionReferenceChecker.java",
+      "sha256": "20200cd087a19f3461d7eb93d078e8d80cf7674c2f97d52c7090138b936a02ca"
+    },
+    {
+      "path": "nz-server/nz-module/nz-workflow/src/main/java/com/nz/admin/modules/workflow/service/WorkflowDefinitionService.java",
+      "sha256": "a38e2d873782c0a8543cfa59c4cbb7082caa5b9df59189d9d766108ce13ba733"
+    },
+    {
+      "path": "nz-server/nz-module/nz-workflow/src/main/java/com/nz/admin/modules/workflow/service/WorkflowDefinitionUsageChecker.java",
+      "sha256": "6290001c8fb1359733f7a6a61e910db070e49013568ef332e824dd0f876dd6f3"
+    },
+    {
+      "path": "nz-server/nz-module/nz-workflow/src/main/java/com/nz/admin/modules/workflow/service/WorkflowInstanceService.java",
+      "sha256": "551a075f241d0170ec0aeb3e1d4a12aab0e140b1aaf805e354dacffa7edea00e"
+    },
+    {
+      "path": "nz-server/nz-module/nz-workflow/src/main/java/com/nz/admin/modules/workflow/service/WorkflowTaskService.java",
+      "sha256": "903757b81ebf591fbcbcaede194ea0723e3e95940e6c38a32d24a207c856fe91"
+    },
+    {
+      "path": "nz-server/nz-module/nz-workflow/src/main/resources/META-INF/nz/module.yaml",
+      "sha256": "e54eb19e173ccbc9f723ad3b988ab44b860323be28878715c61be4eb8059212a"
+    },
+    {
+      "path": "nz-server/nz-module/nz-workflow/src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports",
+      "sha256": "4d79e164ccb2b53ff7aa5ce8f4f2ad2241daac0cb8cac4b78a320c90f9b2e779"
+    },
+    {
+      "path": "nz-server/nz-module/pom.xml",
+      "sha256": "36b9b08649ef323e6be4e72f24a5510e966a532acccf4fac4e325b7735d423df"
+    },
+    {
+      "path": "nz-server/pom.xml",
+      "sha256": "8113c5023bb7adcc019f05f2c0b107547e7ec39f895b53f21422c766850cf5c9"
+    },
+    {
+      "path": "nz-web/src/core/modules/registry.ts",
+      "sha256": "6310f329fe1f72111bfb2cf71e1b7022b374c436d53709f2c6931fa3705887cc"
+    },
+    {
+      "path": "nz-web/src/modules/demo/manifest.ts",
+      "sha256": "8fca1586538d55e514af10e965287fc410b84a674116ce8d0d4db68bbca2d41d"
+    },
+    {
+      "path": "nz-web/src/modules/generator/manifest.ts",
+      "sha256": "11b4eddd34c7e516ca01d13035adca3e6e861f10c11bfba225922d7d4553cabe"
+    },
+    {
+      "path": "nz-web/src/modules/job/manifest.ts",
+      "sha256": "ffa76e724d7012bd088187c7550521cd821a546c7b4fbbca267c8f21e98cf606"
+    },
+    {
+      "path": "nz-web/src/modules/system/manifest.ts",
+      "sha256": "1e8a1c4a62fc827d267ed7657d9d4a420b99001c6006b028e7f0e44bd31dc9ea"
+    },
+    {
+      "path": "nz-web/src/modules/workflow/manifest.ts",
+      "sha256": "7683fa9f612342aabc78e173debdb63bda5f14f81dde2f20998992bbe7ad4ba5"
+    },
+    {
+      "path": "tools/nz-cli/src/module-add.mjs",
+      "sha256": "60e351ac166692c98f44581981c6371fdcbdd13e46451b7ecfb1d3276e9b1300"
+    },
+    {
+      "path": "tools/tests/workflow-cluster.mjs",
+      "sha256": "fd9f4f8d1acf945ce7eff32fadcef02a5841085971d1577498e796e6a0879aa0"
+    }
+  ]
+}

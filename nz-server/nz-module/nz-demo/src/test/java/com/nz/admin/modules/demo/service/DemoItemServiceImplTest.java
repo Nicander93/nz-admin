@@ -5,6 +5,7 @@ import com.nz.admin.framework.test.core.ut.BaseMockitoUnitTest;
 import com.nz.admin.modules.demo.entity.dataobject.DemoItemDO;
 import com.nz.admin.modules.demo.entity.dto.DemoItemCreateRequest;
 import com.nz.admin.modules.demo.mapper.DemoItemMapper;
+import jakarta.validation.Validator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -32,6 +33,9 @@ class DemoItemServiceImplTest extends BaseMockitoUnitTest {
 
     @Mock
     private DemoItemMapper demoItemMapper;
+
+    @Mock
+    private Validator validator;
 
     @BeforeEach
     void setUp() {

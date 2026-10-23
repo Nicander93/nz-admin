@@ -40,7 +40,8 @@ class FlywayMigrationResourcesTest {
             "db/migration/V27__idempotency.sql",
             "db/migration/V28__workflow_engine_entry.sql",
             "db/migration/V29__warm_flow_schema_alignment.sql",
-            "db/migration/V30__workflow_business_integration.sql"
+            "db/migration/V30__workflow_business_integration.sql",
+            "db/migration/V31__demo_item_excel_exchange.sql"
     );
 
     @Test
@@ -172,6 +173,7 @@ class FlywayMigrationResourcesTest {
                 "INSERT INTO sys_role_menu",
                 "INSERT INTO sys_tenant_package_menu"
         );
+        assertThat(read(MIGRATIONS.get(30))).contains("demo:item:import", "demo:item:export", "sys_role_menu", "sys_tenant_package_menu");
         assertThat(read(MIGRATIONS.get(24))).contains(
                 "ALTER TABLE flow_definition RENAME TO nz_flow_definition_legacy",
                 "ALTER TABLE flow_instance RENAME TO nz_flow_instance_legacy",

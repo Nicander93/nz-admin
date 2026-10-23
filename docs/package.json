@@ -9,11 +9,16 @@
   },
   "scripts": {
     "dev": "vitepress dev . --port 4175",
-    "build": "vitepress build .",
-    "preview": "vitepress preview . --port 4175"
+    "build": "pnpm catalog:check && vitepress build .",
+    "preview": "vitepress preview . --port 4175",
+    "catalog:update": "node scripts/source-catalog.mjs",
+    "catalog:check": "node scripts/source-catalog.mjs --check",
+    "test:catalog": "node --test scripts/test/*.test.mjs"
   },
   "devDependencies": {
+    "fast-xml-parser": "5.11.2",
     "vitepress": "1.6.4",
-    "vue": "3.5.41"
+    "vue": "3.5.41",
+    "yaml": "2.9.1"
   }
 }

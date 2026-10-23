@@ -4,7 +4,7 @@ title: 项目文档
 hero:
   name: NZ Admin
   text: 从后台基础能力走到自己的业务
-  tagline: Java / Vue 后台脚手架。把认证、租户、数据权限、流程与交付接好，让开发工作落在业务本身。
+  tagline: 可装配的 Java / Vue 业务脚手架。让权限、数据、审批与交付有明确边界，让开发者从能力找到源码、接入方法与验证入口。
   image:
     src: /logo.svg
     alt: NZ Admin
@@ -19,10 +19,10 @@ hero:
       text: 阅读开发指南
       link: /developer-guide
 features:
-  - title: 业务开发有路径
-    details: CLI 创建模块，生成器提供 CRUD 起点；分层、接口和前端约定帮助新模块融入现有项目。
-    link: /developer-guide
-    linkText: 创建第一个业务模块
+  - title: 开发有源码入口
+    details: 模块、依赖、扩展协议与指南从源码关联；CLI 与生成器提供业务起点，CI 检查文档目录漂移。
+    link: /developer/catalog
+    linkText: 打开开发者能力目录
   - title: 权限落到数据
     details: 角色菜单和按钮权限、多租户隔离，以及五种数据范围。新增业务表需要明确接入隔离规则。
     link: /data-permission
@@ -36,6 +36,10 @@ features:
     link: /testing
     linkText: 运行测试与验收
 ---
+
+## 开发者入口
+
+进入[开发者中心](/developer/)按任务阅读，使用[能力目录](/developer/catalog)筛选模块与扩展点；[架构全景](/developer/architecture)和[模块生命周期](/developer/module-lifecycle)说明源码如何组合为可用应用。
 
 ## 从哪里开始
 

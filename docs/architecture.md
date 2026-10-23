@@ -9,11 +9,15 @@
 - `nz-framework`：框架级 starter，提供可复用能力、自动配置、注解和扩展点。
 - `nz-module`：业务模块，业务代码按模块沉淀在这里。
 
-依赖方向保持单向：
+应用直接装配所需业务模块、Starter 与 common；业务按需依赖 Starter/common，Starter 可以组合其他 Starter，但不能反向依赖业务。不能把 Maven 实际依赖画成所有调用都经过的单一链条：
 
 ```text
-nz-app -> nz-module -> nz-framework -> nz-common
+nz-app -> 业务模块 + Starter + common
+业务模块 -> 所需 Starter + common
+Starter -> 其他所需 Starter + common
 ```
+
+编译关系、运行装配和前端路由分别见[架构全景](/developer/architecture)。完整当前模块、自动配置与接口由[源码目录](/developer/catalog)生成，替代手工维护的不完整清单。
 
 `nz-framework` 不能依赖 `nz-module`，业务模块可以按需依赖框架 starter。
 

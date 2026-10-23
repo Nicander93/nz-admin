@@ -28,7 +28,7 @@ Windows 可使用 `.\nz.cmd doctor`。检查失败时先按输出修复对应工
 
 创建空的 `nz-server` 数据库。开发配置位于 `nz-server/nz-app/src/main/resources/application-dev.yml`，默认连接 `localhost:5432`、用户 `postgres`；将连接信息改为自己的开发库。
 
-后端首次启动会执行 Flyway V1–V30。已有库先备份，再按[数据库迁移](database-migrations.md)升级；不要重新导入 `init.sql` 覆盖现有数据。
+后端首次启动会执行 Flyway V1–V31。已有库先备份，再按[数据库迁移](database-migrations.md)升级；不要重新导入 `init.sql` 覆盖现有数据。
 
 ## 启动后端与前端
 

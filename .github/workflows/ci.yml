@@ -97,12 +97,14 @@ jobs:
         working-directory: docs
         run: |
           pnpm install --frozen-lockfile
+          pnpm test:catalog
           pnpm build
       - name: Verify documentation in Chromium
         working-directory: nz-web
         run: |
           pnpm install --frozen-lockfile
           pnpm exec playwright install --with-deps chromium
+          pnpm docs:typecheck
           pnpm docs:e2e
       - uses: actions/upload-artifact@v4
         with:
@@ -168,7 +170,7 @@ jobs:
           cache-dependency-path: nz-web/pnpm-lock.yaml
       - name: Verify real PostgreSQL migrations and HTTP permissions
         working-directory: nz-server
-        run: ./mvnw -q -pl nz-app -am install -Dtest=DataScopePostgresTest,IdempotencyPostgresTest,ClusterStateRedisTest,RedisAtomicStateStoreTest,WarmFlowPostgresTest -Dsurefire.failIfNoSpecifiedTests=false
+        run: ./mvnw -q -pl nz-app -am install -Dtest=DataScopePostgresTest,IdempotencyPostgresTest,ClusterStateRedisTest,RedisAtomicStateStoreTest,WarmFlowPostgresTest,DemoItemExcelPostgresTest -Dsurefire.failIfNoSpecifiedTests=false
       - name: Install browser dependencies
         working-directory: nz-web
         run: |

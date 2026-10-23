@@ -6,7 +6,27 @@ export const sidebar: DefaultTheme.SidebarItem[] = [
     items: [
       { text: '项目介绍', link: '/overview' },
       { text: '能力总览与边界', link: '/capabilities' },
-      { text: '与 RuoYi-Plus 文档对照', link: '/overview/ruoyi-comparison' },
+      { text: 'RuoYi-Plus 功能对标', link: '/overview/ruoyi-comparison' },
+    ],
+  },
+  {
+    text: '开发者中心',
+    link: '/developer/',
+    items: [
+      { text: '阅读入口与项目特色', link: '/developer/' },
+      { text: '能力与模块目录', link: '/developer/catalog' },
+      {
+        text: '架构与源码',
+        link: '/developer/architecture',
+        collapsed: true,
+        items: [
+          { text: '模块生命周期', link: '/developer/module-lifecycle' },
+          { text: '扩展协议与实现', link: '/developer/extensions' },
+          { text: '完整源码索引', link: '/reference/source-index' },
+          { text: '源码与文档同步', link: '/developer/documentation-contract' },
+        ],
+      },
+      { text: '功能对标与推进路线', link: '/developer/roadmap' },
     ],
   },
   {
@@ -46,6 +66,7 @@ export const sidebar: DefaultTheme.SidebarItem[] = [
           { text: '参数校验与异常', link: '/guide/backend/validation' },
           { text: '持久化与事务', link: '/guide/backend/persistence' },
           { text: '限流、防重与幂等', link: '/guide/backend/protection' },
+          { text: 'Excel 预检导入与导出', link: '/guide/backend/excel' },
           { text: '完整 CRUD 范式', link: '/crud-paradigm' },
         ],
       },

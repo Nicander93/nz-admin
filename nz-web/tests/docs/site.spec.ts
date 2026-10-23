@@ -123,3 +123,117 @@ test('手机展开三级目录并进入业务回调', async ({ page }) => {
     ),
   ).toBe(true)
 })
+
+test('源码目录按架构层检索模块并追踪依赖', async ({ page }) => {
+  await page.goto(`${base}developer/catalog`)
+  const catalog = page.getByRole('region', { name: '源码能力浏览器' })
+  const search = catalog.getByRole('searchbox', {
+    name: '搜索模块、能力或接口',
+  })
+  await search.fill('tenant')
+  await catalog.getByLabel('架构层').selectOption('framework')
+  const results = catalog.getByRole('navigation', { name: '模块结果' })
+  await expect(results.getByRole('button', { name: /datascope/ })).toBeVisible()
+  await expect(results.getByRole('button', { name: /excel/ })).toHaveCount(0)
+  await search.fill('')
+  await catalog.getByLabel('架构层').selectOption('all')
+  await results.getByRole('button', { name: /nz-demo/ }).click()
+  const details = catalog.getByRole('article', { name: '模块详情' })
+  await expect(
+    details.getByRole('heading', { name: /纵向业务示例/ }),
+  ).toBeVisible()
+  await details
+    .getByRole('button', { name: 'nz-starter-excel', exact: true })
+    .click()
+  await expect(details.getByRole('heading', { name: /Excel/ })).toBeVisible()
+  await expect(details.getByRole('link', { name: '查看 POM ↗' })).toBeVisible()
+  await expect(
+    details.getByRole('heading', { name: '自动配置入口' }),
+  ).toBeVisible()
+  const guide = details.getByRole('link', { name: '阅读接入指南' })
+  await expect(guide).toHaveAttribute('href', /guide\/backend\/excel/)
+  await page.reload()
+  await expect(details.getByRole('heading', { name: /Excel/ })).toBeVisible()
+  await details.getByRole('link', { name: '阅读接入指南' }).click()
+  await expect(page.locator('.vp-doc h1')).toHaveText('Excel 数据交换')
+})
+
+test('扩展协议可检索并从手机视口进入所属模块', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto(`${base}developer/catalog`)
+  const catalog = page.getByRole('region', { name: '源码能力浏览器' })
+  await catalog.getByRole('button', { name: '扩展协议' }).click()
+  await catalog
+    .getByRole('searchbox', { name: '搜索模块、能力或接口' })
+    .fill('TenantTableRuleCustomizer')
+  const entry = catalog
+    .locator('.catalog__entry')
+    .filter({ hasText: 'TenantTableRuleCustomizer' })
+  await expect(entry).toBeVisible()
+  await entry.getByRole('button', { name: /查看所在模块及依赖/ }).click()
+  await expect(
+    catalog
+      .getByRole('article', { name: '模块详情' })
+      .getByText('nz-starter-tenant', { exact: true }),
+  ).toBeVisible()
+  const trail = page.getByRole('navigation', { name: '阅读路径' })
+  await expect(trail).toContainText('开发者中心能力与模块目录')
+  await expect(trail.locator('[aria-current="page"]')).toHaveText(
+    '能力与模块目录',
+  )
+  await expect
+    .poll(
+      async () =>
+        page.evaluate(() => {
+          const offenders = Array.from(document.querySelectorAll('body *'))
+            .filter((el) => {
+              const rect = el.getBoundingClientRect()
+              const style = getComputedStyle(el)
+              return (
+                rect.width > 0 &&
+                rect.height > 0 &&
+                rect.right > innerWidth &&
+                style.display !== 'none' &&
+                style.visibility !== 'hidden' &&
+                !el.closest('.VPSidebar')
+              )
+            })
+            .map((el) => {
+              const rect = el.getBoundingClientRect()
+              return {
+                tag: el.tagName,
+                className: typeof el.className === 'string' ? el.className : '',
+                text: (el.textContent || '').trim().slice(0, 100),
+                right: rect.right,
+                width: rect.width,
+              }
+            })
+            .slice(0, 12)
+          return {
+            fits: document.documentElement.scrollWidth <= innerWidth,
+            scrollWidth: document.documentElement.scrollWidth,
+            innerWidth,
+            offenders,
+          }
+        }),
+      { timeout: 5000 },
+    )
+    .toMatchObject({ fits: true })
+})
+
+test('全站搜索可命中生成的源码协议索引', async ({ page }) => {
+  await page.goto(base)
+  await page.getByRole('button', { name: /搜索文档/ }).click()
+  await page.locator('#localsearch-input').fill('TenantTableRuleCustomizer')
+  const result = page
+    .locator('.VPLocalSearchBox')
+    .getByRole('link')
+    .filter({ hasText: 'TenantTableRuleCustomizer' })
+    .first()
+  await expect(result).toBeVisible()
+  await result.click()
+  await expect(page).toHaveURL(/reference\/source-index/)
+  await expect(page.locator('.vp-doc')).toContainText(
+    'TenantTableRuleCustomizer',
+  )
+})

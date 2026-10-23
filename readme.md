@@ -25,7 +25,7 @@ Windows 使用 `.\nz.cmd`。模块创建、迁移检查、代码生成、容器�
 
 ### 1. 初始化数据库
 
-创建空的 PostgreSQL 数据库。后端首次启动时会通过 Flyway 自动执行 V1-V30，不需要手工导入基线脚本。
+创建空的 PostgreSQL 数据库。后端首次启动时会通过 Flyway 自动执行 V1-V31，不需要手工导入基线脚本。
 
 已有数据库升级前先备份；不能由应用执行 Flyway 时，按版本顺序使用 `nz-app/src/main/resources/db/upgrade-p*.sql`。
 
@@ -94,9 +94,9 @@ cp deploy/.env.example deploy/.env
 
 使用 OSS 时需配置 `nz.file.oss.endpoint`、`access-key-id`、`access-key-secret`、`bucket-name`，可选 `domain` 作为访问域名。
 
-## 文档网站
+## 开发者文档站
 
-项目介绍、能力总览、开发者指南和运维手册位于同一份 `docs/` 内容源：
+项目介绍、能力总览、源码目录、架构与开发指南位于同一份 `docs/` 内容源。开发者中心把模块、依赖、扩展协议与指南连在一起，CI 检查目录是否与源码同步：
 
 ```bash
 cd docs
@@ -108,12 +108,14 @@ pnpm dev
 
 文档按三级目录阅读，专题入口：
 
+- 入口：[开发者中心](docs/developer/index.md)、[源码能力目录](docs/developer/catalog.md)、[架构全景](docs/developer/architecture.md)。
 - 开发：[后端](docs/guide/backend/index.md)、[前端](docs/guide/frontend/index.md)、[数据库](docs/guide/database/index.md)、[测试](docs/guide/testing/index.md)。
 - 平台：[系统管理](docs/platform/system/index.md)、[权限与隔离](docs/platform/security/index.md)、[工作流](docs/platform/workflow/index.md)。
 - 交付：[部署运维](docs/operations/index.md)、[RuoYi-Plus 文档对照](docs/overview/ruoyi-comparison.md)。
 
 ## 文档
 
+- [Excel 预检导入、原子新增与权限导出](docs/guide/backend/excel.md)
 - [数据权限接入与升级](docs/data-permission.md)
 - [通用测试包与 E2E](docs/testing.md)
 

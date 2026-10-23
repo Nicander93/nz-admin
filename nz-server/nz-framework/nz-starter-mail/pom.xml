@@ -9,6 +9,7 @@
         <version>0.0.1-SNAPSHOT</version>
     </parent>
     <artifactId>nz-starter-mail</artifactId>
+    <description>邮件 starter，提供发送协议、SMTP 实现、配置属性与自动装配。</description>
     <name>${project.artifactId}</name>
 
     <dependencies>

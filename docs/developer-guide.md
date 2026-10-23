@@ -1,12 +1,14 @@
 # 开发指南
 
+开发者中心的[源码目录](/developer/catalog)可查询模块、依赖、接口和接入指南，[架构全景](/developer/architecture)解释编译与运行边界。
+
 新增业务按“模块骨架 → 数据表 → API → 页面 → 权限 → 验收”推进。每一步都有现有约定和示例可参考。
 
 ## 按开发任务阅读
 
 | 专题 | 具体页面 |
 | --- | --- |
-| [后端开发](/guide/backend/) | [接口分页](/guide/backend/api-contract)、[参数校验](/guide/backend/validation)、[事务](/guide/backend/persistence)、[幂等](/guide/backend/protection) |
+| [后端开发](/guide/backend/) | [接口分页](/guide/backend/api-contract)、[参数校验](/guide/backend/validation)、[事务](/guide/backend/persistence)、[幂等](/guide/backend/protection)、[Excel](/guide/backend/excel) |
 | [前端开发](/guide/frontend/) | [动态路由](/guide/frontend/routing)、[CRUD 页面](/guide/frontend/crud-page)、[请求下载](/guide/frontend/request) |
 | [数据库开发](/guide/database/) | [表设计](/guide/database/)、[迁移升级](/guide/database/migrations) |
 | [权限与隔离](/platform/security/) | [可信身份](/platform/security/authentication)、[租户登记](/platform/security/tenant-isolation)、[数据范围](/platform/security/data-scope) |

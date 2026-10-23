@@ -36,6 +36,7 @@ src/main/resources/db/migration。
 - V28__workflow_engine_entry.sql：新流程中心入口与权限。
 - V29__warm_flow_schema_alignment.sql：对齐 Warm-Flow 1.8.9 实际字段与类型。
 - V30__workflow_business_integration.sql：设计器坐标、用途、业务绑定、可靠事件和请假示例。
+- V31__demo_item_excel_exchange.sql：示例条目导入导出权限与角色/套餐映射。
 
 旧的 db/init.sql 与 db/upgrade-p*.sql 暂时保留用于人工部署兼容，内容必须与对应
 Flyway 文件同步；新变更只应新增 Flyway 版本，不修改已经发布的版本。

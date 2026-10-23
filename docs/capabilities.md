@@ -1,5 +1,7 @@
 # 能力总览与边界
 
+[开发者中心](/developer/)和[源码能力目录](/developer/catalog)提供模块、依赖、扩展协议与源码入口；[推进路线](/developer/roadmap)区分已交付与后续事项。
+
 下面列出当前仓库提供的能力。菜单可见性由模块、租户套餐和角色共同决定；可选服务需要按对应指南启用。
 
 ## 按任务进入专题
@@ -35,6 +37,7 @@
 | 多租户 | 服务端可信租户身份、表级隔离、租户套餐与菜单边界 | [多租户](multi-tenancy.md) |
 | 数据权限 | 全部、自定义部门、本部门、本部门及下级、仅本人；多角色并集；查询/更新/删除过滤 | [数据权限](data-permission.md) |
 | 接口保护 | 防重复、限流、事务幂等；集群状态共享 | [测试与验收](testing.md)、[架构](architecture.md) |
+| Excel 数据交换 | 模板、逐行预检、JSON 重新校验、全批事务新增、幂等重放与受控导出 | [导入导出](/guide/backend/excel) |
 | 文件 | 本地、OSS、S3/MinIO、管理配置、连接测试 | [文件配置](file-configuration.md) |
 | 加密 | 字段加密、脱敏与配置密钥管理 | [字段加密](field-encryption.md) |
 | 通知 | 站内消息、邮件、短信 provider、SSE / WebSocket | [消息中心](message-center.md)、[实时通信](realtime-communication.md) |

@@ -20,7 +20,8 @@
     "lint": "eslint . --fix",
     "lint:check": "eslint . --max-warnings=0",
     "format": "prettier --write src/",
-    "docs:e2e": "playwright test -c playwright.docs.config.ts"
+    "docs:e2e": "playwright test -c playwright.docs.config.ts",
+    "docs:typecheck": "vue-tsc --noEmit -p ../docs/tsconfig.json"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.2",

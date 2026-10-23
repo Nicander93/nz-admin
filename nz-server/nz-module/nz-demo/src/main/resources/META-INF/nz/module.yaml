@@ -8,5 +8,6 @@ requiredStarters:
   - mybatis
   - auth
   - log
+  - excel
 defaultEnabled: true
 frontendModule: demo

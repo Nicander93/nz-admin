@@ -11,7 +11,7 @@ export default defineConfig({
   lang: 'zh-CN',
   title: 'NZ Admin',
   description:
-    '面向业务开发的 Java / Vue 后台脚手架：项目能力、开发指南与部署手册。',
+    '面向业务开发的 Java / Vue 后台脚手架：项目能力、源码目录、架构与开发交付手册。',
   base,
   cleanUrls: true,
   lastUpdated: true,
@@ -28,7 +28,7 @@ export default defineConfig({
     siteTitle: 'NZ Admin',
     nav: [
       { text: '开始使用', link: '/getting-started' },
-      { text: '开发指南', link: '/developer-guide' },
+      { text: '开发者中心', link: '/developer/' },
       { text: '项目能力', link: '/capabilities' },
       { text: '部署运维', link: '/operations/' },
     ],
