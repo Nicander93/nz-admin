@@ -12,6 +12,10 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpMethod;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -21,10 +25,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ActiveProfiles("pg-test")
 @org.junit.jupiter.api.TestInstance(org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS)
 class PermissionRevocationPostgresTest {
+    private static final String CACHE_KEY_PREFIX = "permission-revocation-test-" + UUID.randomUUID();
+
     @Autowired TestRestTemplate rest;
     @Autowired JdbcTemplate jdbc;
 
     private ApiTestClient session;
+
+    @DynamicPropertySource
+    static void isolateRedisKeys(DynamicPropertyRegistry registry) {
+        registry.add("nz.cache.key-prefix", () -> CACHE_KEY_PREFIX);
+    }
 
     @org.junit.jupiter.api.BeforeAll
     void seed() {

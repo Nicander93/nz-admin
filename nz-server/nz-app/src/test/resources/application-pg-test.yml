@@ -1,4 +1,7 @@
 spring:
+  data:
+    redis:
+      port: ${NZ_TEST_REDIS_PORT:6379}
   datasource:
     url: ${NZ_TEST_PG_URL}
     username: ${NZ_TEST_PG_USERNAME:postgres}

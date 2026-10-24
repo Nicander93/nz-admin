@@ -42,7 +42,7 @@ var data = api.ok(HttpMethod.GET, "/api/system/user/page", null);
 
 WarmFlowPostgresTest 验证设计器白名单、用途绑定、回调失败重试及高级办理动作。故障注入使用独立数据库，避免另一实际节点抢先消费事件。Warm-Flow 的静态 Spring 上下文不能在同一 JVM 任意切换 H2 / PostgreSQL，应用集成测试按类使用独立进程。
 
-Redis 测试使用专属前缀，不关闭生产频控来迁就测试。更多类名和命令见[通用测试手册](/testing)。
+Redis 测试使用专属前缀，不关闭生产频控来迁就测试。未刻意验证跨上下文共享的测试使用“类名 + 每次运行 UUID”覆盖 `nz.cache.key-prefix`，避免 CI 开启 Redis 后，不同测试从同一 IP 登录时累计同一个限流计数。更多类名和命令见[通用测试手册](/testing)。
 
 ## 撤权与任务生命周期回归
 

@@ -26,9 +26,12 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpMethod;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -41,6 +44,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Import(JobReadinessPostgresTest.ReadinessTaskConfiguration.class)
 class JobReadinessPostgresTest {
     private static final String PREFIX = "job-readiness-";
+    private static final String CACHE_KEY_PREFIX = "job-readiness-test-" + UUID.randomUUID();
     private static final long OWNER_TENANT_ID = 990001L;
     private static final long OTHER_TENANT_ID = 990002L;
     private static final long STALE_TENANT_ID = 990003L;
@@ -63,6 +67,11 @@ class JobReadinessPostgresTest {
     private ApiTestClient ownerApi;
     private ApiTestClient otherApi;
     private ApiTestClient staleApi;
+
+    @DynamicPropertySource
+    static void isolateRedisKeys(DynamicPropertyRegistry registry) {
+        registry.add("nz.cache.key-prefix", () -> CACHE_KEY_PREFIX);
+    }
 
     @BeforeAll
     void createIsolatedPrincipalsAndLogin() {
