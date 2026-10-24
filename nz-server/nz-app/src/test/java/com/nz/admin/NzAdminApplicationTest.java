@@ -26,6 +26,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 )
 @ActiveProfiles("monolith-test")
 class NzAdminApplicationTest {
+    // H2 壳层测试不包含任务运营表；真实恢复由 PostgreSQL 生命周期测试负责。
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
+    com.nz.admin.common.job.JobTenantProvider jobTenantProvider;
+
 
     @Autowired
     private ApplicationContext applicationContext;
@@ -34,7 +38,7 @@ class NzAdminApplicationTest {
     private TestRestTemplate restTemplate;
 
     @Test
-    void startsProductionApplicationWithH2AndReportsReady() {
+    void startsApplicationShellWithH2AndReportsReady() {
         assertThat(applicationContext.getBean(JobExecuteService.class)).isNotNull();
         assertThat(applicationContext.getBean(NzWorkflowAssigneeResolver.class)).isNotNull();
         assertThat(applicationContext.getBean("initFlow", WarmFlow.class)).isNotNull();

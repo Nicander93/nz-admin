@@ -18,6 +18,8 @@ public class QuartzSchedulerManager {
 
     public void schedule(QuartzJobDescriptor descriptor) throws SchedulerException {
         JobDataMap jobDataMap = new JobDataMap();
+        jobDataMap.put(QuartzConstants.JOB_NAME, descriptor.getJobName());
+        jobDataMap.put(QuartzConstants.JOB_GROUP, descriptor.getJobGroup());
         jobDataMap.put(QuartzConstants.JOB_ID, descriptor.getJobId());
         jobDataMap.put(QuartzConstants.INVOKE_TARGET, descriptor.getInvokeTarget());
         if (descriptor.getTenantId() != null) {
@@ -80,9 +82,9 @@ public class QuartzSchedulerManager {
             return builder;
         }
         return switch (descriptor.getMisfirePolicy()) {
-            case 1 -> CronScheduleBuilder.cronSchedule(descriptor.getCronExpression())
+            case 1, 2 -> CronScheduleBuilder.cronSchedule(descriptor.getCronExpression())
                     .withMisfireHandlingInstructionFireAndProceed();
-            case 2, 3 -> CronScheduleBuilder.cronSchedule(descriptor.getCronExpression())
+            case 3 -> CronScheduleBuilder.cronSchedule(descriptor.getCronExpression())
                     .withMisfireHandlingInstructionDoNothing();
             default -> builder;
         };

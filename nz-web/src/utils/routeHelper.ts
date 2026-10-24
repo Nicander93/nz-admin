@@ -1,5 +1,6 @@
-import type { RouteRecordRaw } from 'vue-router'
 import { getModuleCodeForComponent } from '@/core/modules/registry'
+
+import type { RouteRecordRaw } from 'vue-router'
 
 export interface MenuMeta {
   title?: string
@@ -67,16 +68,25 @@ export function flattenRouteMenus(
   return menus.flatMap((menu) => {
     const fullPath = buildPath(menu.path, parentPath)
     const current = menu.component ? [{ menu, fullPath }] : []
-    const children = menu.children?.length ? flattenRouteMenus(menu.children, fullPath) : []
+    const children = menu.children?.length
+      ? flattenRouteMenus(menu.children, fullPath)
+      : []
     return current.concat(children)
   })
 }
 
-export function buildDynamicChildrenRoutes(menuList: MenuRouteItem[], enabledModuleCodes?: Set<string>): RouteRecordRaw[] {
+export function buildDynamicChildrenRoutes(
+  menuList: MenuRouteItem[],
+  enabledModuleCodes?: Set<string>,
+): RouteRecordRaw[] {
   return flattenRouteMenus(menuList)
     .map(({ menu, fullPath }) => {
       const moduleCode = getModuleCodeForComponent(menu.component)
-      if (moduleCode && enabledModuleCodes && !enabledModuleCodes.has(moduleCode)) {
+      if (
+        moduleCode &&
+        enabledModuleCodes &&
+        !enabledModuleCodes.has(moduleCode)
+      ) {
         return null
       }
       const componentPath = normalizeComponentPath(menu.component)
@@ -98,8 +108,12 @@ export function buildDynamicChildrenRoutes(menuList: MenuRouteItem[], enabledMod
     .filter((item): item is RouteRecordRaw => Boolean(item))
 }
 
-export function resolveFirstRoutePath(menuList: MenuRouteItem[]): string {
-  const first = flattenRouteMenus(menuList).find((item) => Boolean(item.menu.component))
-  if (!first) return '/'
-  return first.fullPath.startsWith('/') ? first.fullPath : `/${first.fullPath}`
+export function resolveFirstRoutePath(
+  menuList: MenuRouteItem[],
+  enabledModuleCodes?: Set<string>,
+): string {
+  const first = buildDynamicChildrenRoutes(menuList, enabledModuleCodes)[0]
+  // 无可用菜单时仍允许进入个人中心，避免 / 不断重定向到自身。
+  if (!first?.path) return '/profile'
+  return first.path.startsWith('/') ? first.path : `/${first.path}`
 }

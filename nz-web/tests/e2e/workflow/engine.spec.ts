@@ -59,12 +59,20 @@ test('官方设计器拖拽、保存、重载与发布', async ({
   const picker = frame.getByRole('dialog', { name: '人员选择', exact: true })
   const administrator = picker.getByRole('row').filter({ hasText: '管理员' })
   await expect(administrator).toBeVisible()
-  await administrator.click()
+  const selected = administrator.getByRole('checkbox')
+  if (!(await selected.isChecked())) await administrator.click()
+  await expect(selected).toBeChecked()
   await picker.getByRole('button', { name: '确 定', exact: true }).click()
   await frame
     .getByRole('button', { name: 'el.drawer.close', exact: true })
     .click()
+  const saveResponse = page.waitForResponse((response) =>
+    response.url().endsWith('/api/workflow/designer/warm-flow/save-json'),
+  )
   await frame.locator('button.toolbar-save-btn').click()
+  const save = await saveResponse
+  const saveResult = await save.json()
+  expect(saveResult.code, saveResult.msg).toBe(200)
   await expect(iframe).toHaveCount(0)
   const headers = await authHeaders(page)
   const saved = await (
@@ -73,6 +81,11 @@ test('官方设计器拖拽、保存、重载与发布', async ({
     })
   ).json()
   expect(saved.code).toBe(200)
+  expect(
+    saved.data.nodeList.find(
+      (item: { nodeCode: string }) => item.nodeCode === 'review',
+    ).permissionFlag,
+  ).toMatch(/^user:[1-9][0-9]*$/)
   const coordinate = saved.data.nodeList.find(
     (item: { nodeCode: string }) => item.nodeCode === 'review',
   ).coordinate

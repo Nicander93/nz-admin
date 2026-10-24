@@ -19,6 +19,9 @@ public class JobInvokeLogSinkImpl implements JobInvokeLogSink {
     @Override
     public void save(JobInvokeLogEvent event) {
         JobLogDO jobLog = new JobLogDO();
+        jobLog.setJobId(event.getJobId());
+        jobLog.setJobName(event.getJobName());
+        jobLog.setJobGroup(event.getJobGroup());
         jobLog.setInvokeTarget(event.getInvokeTarget());
         jobLog.setStatus(event.getStatus());
         jobLog.setJobMessage(event.getJobMessage());

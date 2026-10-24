@@ -1,11 +1,21 @@
 import { reactive } from 'vue'
-import { useCrud } from '@/utils/CRUD'
-import { pageDictTypes, addDictType, updateDictType, deleteDictType } from '@/api/system/dict'
+
+import {
+  pageDictTypes,
+  addDictType,
+  updateDictType,
+  deleteDictType,
+} from '@/api/system/dict'
 import type { SysDictType, DictTypeQuery } from '@/api/system/dict'
+import { useCrud } from '@/utils/CRUD'
 
 /** 字典类型页面的 CRUD 逻辑。 */
 export function useDictCrud() {
-  const { table, form, actions } = useCrud<SysDictType, SysDictType, DictTypeQuery & Record<string, unknown>>({
+  const { table, form, actions } = useCrud<
+    SysDictType,
+    SysDictType,
+    DictTypeQuery & Record<string, unknown>
+  >({
     name: '字典类型',
     api: {
       page: (params) => pageDictTypes(params),
@@ -15,7 +25,10 @@ export function useDictCrud() {
     },
     defaultForm: () => ({
       id: undefined as unknown as number,
-      name: '', type: '', status: 0, remark: '',
+      name: '',
+      type: '',
+      status: 0,
+      remark: '',
       createTime: undefined as unknown as string,
     }),
     immediate: false,
@@ -47,7 +60,7 @@ export function useDictCrud() {
 
   const actionsView = reactive({
     remove: actions.remove,
-    submit: form.submit,
+    submit: actions.submit,
   })
 
   return {

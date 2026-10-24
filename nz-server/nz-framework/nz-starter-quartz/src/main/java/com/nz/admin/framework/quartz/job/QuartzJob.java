@@ -1,6 +1,8 @@
 package com.nz.admin.framework.quartz.job;
 
 import com.nz.admin.common.job.JobExecuteService;
+import com.nz.admin.common.job.JobInvocation;
+import com.nz.admin.common.job.JobTenantProvider;
 import com.nz.admin.framework.quartz.core.QuartzConstants;
 import com.nz.admin.framework.tenant.core.TenantContextHolder;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +20,7 @@ import org.quartz.JobExecutionException;
 public class QuartzJob implements Job {
 
     protected final JobExecuteService jobExecuteService;
+    protected final JobTenantProvider jobTenantProvider;
 
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
@@ -26,6 +29,10 @@ public class QuartzJob implements Job {
             Long tenantId = jobDataMap.containsKey(QuartzConstants.TENANT_ID)
                     ? jobDataMap.getLong(QuartzConstants.TENANT_ID)
                     : null;
+            if (!jobTenantProvider.isEnabledTenant(tenantId)) {
+                log.info("跳过已停用、过期或无归属租户的任务 tenant={}", tenantId);
+                return;
+            }
             TenantContextHolder.runWithTenantId(tenantId, () -> executeWithinTenant(jobDataMap));
         } catch (Exception e) {
             log.error("Error executing Quartz job", e);
@@ -44,7 +51,8 @@ public class QuartzJob implements Job {
             return;
         }
 
-        jobExecuteService.execute(invokeTarget);
+        jobExecuteService.executeOrThrow(new JobInvocation(jobId, jobDataMap.getString(QuartzConstants.JOB_NAME),
+                jobDataMap.getString(QuartzConstants.JOB_GROUP), invokeTarget));
         log.info("Successfully executed Quartz job {}", jobId);
     }
 }

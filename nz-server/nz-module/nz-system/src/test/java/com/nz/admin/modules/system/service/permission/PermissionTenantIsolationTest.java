@@ -5,6 +5,7 @@ import com.nz.admin.framework.tenant.core.TenantContextHolder;
 import com.nz.admin.framework.test.core.ut.BaseMockitoUnitTest;
 import com.nz.admin.modules.system.entity.dataobject.menu.MenuDO;
 import com.nz.admin.modules.system.entity.dataobject.role.RoleMenuDO;
+import com.nz.admin.modules.system.entity.dataobject.role.RoleDO;
 import com.nz.admin.modules.system.entity.dataobject.tenant.TenantDO;
 import com.nz.admin.modules.system.entity.dataobject.user.UserRoleDO;
 import com.nz.admin.modules.system.mapper.menu.MenuMapper;
@@ -59,11 +60,12 @@ class PermissionTenantIsolationTest extends BaseMockitoUnitTest {
         when(tenantPackageService.getMenuIds(7L)).thenReturn(Set.of(10L));
         when(userRoleMapper.selectByUserId(9L))
                 .thenReturn(List.of(new UserRoleDO().setUserId(9L).setRoleId(3L)));
+        when(roleMapper.selectById(3L)).thenReturn(new RoleDO().setId(3L).setStatus(0));
         when(roleMenuMapper.selectByRoleId(3L)).thenReturn(List.of(
                 new RoleMenuDO().setRoleId(3L).setMenuId(10L),
                 new RoleMenuDO().setRoleId(3L).setMenuId(11L)
         ));
-        when(menuMapper.selectById(10L)).thenReturn(new MenuDO().setId(10L).setPerm("system:user:list"));
+        when(menuMapper.selectBatchIds(Set.of(10L))).thenReturn(List.of(new MenuDO().setId(10L).setPerm("system:user:list").setStatus(0).setType("C")));
 
         Set<String> permissions = permissionService.getPermsByUserId(9L);
 

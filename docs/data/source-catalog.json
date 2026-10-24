@@ -36,8 +36,11 @@
         "nz-server/nz-app/src/test/java/com/nz/admin/DataScopePostgresTest.java",
         "nz-server/nz-app/src/test/java/com/nz/admin/DemoItemExcelPostgresTest.java",
         "nz-server/nz-app/src/test/java/com/nz/admin/IdempotencyPostgresTest.java",
+        "nz-server/nz-app/src/test/java/com/nz/admin/JobReadinessPostgresTest.java",
+        "nz-server/nz-app/src/test/java/com/nz/admin/JobRestartPostgresTest.java",
         "nz-server/nz-app/src/test/java/com/nz/admin/NzAdminApplicationTest.java",
         "nz-server/nz-app/src/test/java/com/nz/admin/NzAdminE2eProfileTest.java",
+        "nz-server/nz-app/src/test/java/com/nz/admin/PermissionRevocationPostgresTest.java",
         "nz-server/nz-app/src/test/java/com/nz/admin/WarmFlowPostgresTest.java",
         "nz-server/nz-app/src/test/java/com/nz/admin/config/ModulePropertiesBindingTest.java",
         "nz-server/nz-app/src/test/java/com/nz/admin/migration/FlywayMigrationResourcesTest.java",
@@ -123,6 +126,10 @@
         {
           "name": "JobInvokeLogSink",
           "source": "nz-server/nz-common/nz-common-job/src/main/java/com/nz/admin/common/job/JobInvokeLogSink.java"
+        },
+        {
+          "name": "JobTenantProvider",
+          "source": "nz-server/nz-common/nz-common-job/src/main/java/com/nz/admin/common/job/JobTenantProvider.java"
         }
       ],
       "tests": [
@@ -381,7 +388,9 @@
           "source": "nz-server/nz-module/nz-job/src/main/java/com/nz/admin/modules/job/service/job/JobService.java"
         }
       ],
-      "tests": [],
+      "tests": [
+        "nz-server/nz-module/nz-job/src/test/java/com/nz/admin/modules/job/service/job/JobSchedulerInitializerTest.java"
+      ],
       "manifest": {
         "source": "nz-server/nz-module/nz-job/src/main/resources/META-INF/nz/module.yaml",
         "code": "job",
@@ -1419,6 +1428,7 @@
       "tests": [
         "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/config/DataInitializerTest.java",
         "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/config/SystemDataScopeResolverTest.java",
+        "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/config/SystemJobTenantProviderTest.java",
         "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/controller/auth/LoginControllerTest.java",
         "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/service/DeptServiceImplTest.java",
         "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/service/DictTypeServiceImplTest.java",
@@ -1616,6 +1626,13 @@
       "module": "nz-starter-file",
       "purpose": "替换文件存储实现",
       "guide": "/file-configuration"
+    },
+    {
+      "name": "JobTenantProvider",
+      "source": "nz-server/nz-common/nz-common-job/src/main/java/com/nz/admin/common/job/JobTenantProvider.java",
+      "module": "nz-common-job",
+      "purpose": "为调度恢复和触发提供有效租户",
+      "guide": "/platform/system/jobs-logs"
     },
     {
       "name": "MybatisPlusInterceptorCustomizer",
@@ -1848,6 +1865,10 @@
     {
       "path": "nz-server/nz-common/nz-common-job/src/main/java/com/nz/admin/common/job/JobInvokeLogSink.java",
       "sha256": "40a16e0f015899788e35b53254130298ff81d0e1cdabfabaed21f0a102d9345c"
+    },
+    {
+      "path": "nz-server/nz-common/nz-common-job/src/main/java/com/nz/admin/common/job/JobTenantProvider.java",
+      "sha256": "836cb6dcf4e68e4412af2355ee1ed16f2894163201966dce7718319963300778"
     },
     {
       "path": "nz-server/nz-common/nz-common-module/pom.xml",

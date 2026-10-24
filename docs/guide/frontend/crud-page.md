@@ -44,3 +44,11 @@ return {
 UI 确认框放在页面事件适配中，业务请求保留在 hook。没有表单的只读页可不返回 form，不需要为了三段结构创建空对象。
 
 实现参考：[notice hook](https://github.com/Nicander93/nz-admin/blob/master/nz-web/src/views/system/notice/hooks.ts)、[CRUD 工具入口](https://github.com/Nicander93/nz-admin/blob/master/nz-web/src/utils/CRUD.ts)。测试时检查 API 参数、失败保留输入、成功刷新和权限按钮，见[测试分层](/guide/testing/)。
+
+## 保存成功后的界面状态
+
+默认列表表单可以调用 `useCrud` 的 `actions.submit`：保存成功后关闭弹窗并刷新列表，保存失败时保留用户输入。若只是刷新失败，会提示“保存已成功”，不把已经写入的数据误报为保存失败。
+
+需要业务校验或多步提交时使用底层 `form.submit`，根据返回的 `ok` 再处理后续步骤；不要直接绑定底层方法后遗漏关闭和刷新。用户、角色、公告和字典页已统一使用完整保存生命周期。
+
+`actions.remove` 同样区分删除与刷新：删除接口成功后即返回成功；列表刷新失败会提示“删除已成功，列表刷新失败，请重新查询”，避免用户重复删除。取消操作不显示失败提示。

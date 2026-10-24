@@ -18,6 +18,7 @@ public class JobLogDO {
 
     @TableId(type = IdType.AUTO)
     private Long id;
+    private Long jobId;
     /**
      * 任务名称。
      */

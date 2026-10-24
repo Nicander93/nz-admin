@@ -12,7 +12,11 @@ export function useRoleCrud() {
     const response = await listDepts()
     departments.value = response.data
   }
-  const { table, form, actions } = useCrud<SysRole, SysRole, RoleQuery & Record<string, unknown>>({
+  const { table, form, actions } = useCrud<
+    SysRole,
+    SysRole,
+    RoleQuery & Record<string, unknown>
+  >({
     name: '角色',
     api: {
       page: (params) => pageRoles(params),
@@ -22,7 +26,13 @@ export function useRoleCrud() {
     },
     defaultForm: () => ({
       id: undefined as unknown as number,
-      name: '', roleKey: '', sort: 0, status: 0, remark: '', dataScope: 5, deptIds: [],
+      name: '',
+      roleKey: '',
+      sort: 0,
+      status: 0,
+      remark: '',
+      dataScope: 5,
+      deptIds: [],
       createTime: undefined as unknown as string,
     }),
     immediate: false,
@@ -54,7 +64,7 @@ export function useRoleCrud() {
 
   const actionsView = reactive({
     remove: actions.remove,
-    submit: form.submit,
+    submit: actions.submit,
   })
 
   return {

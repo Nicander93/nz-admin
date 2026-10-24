@@ -41,3 +41,7 @@ export default manifest
 修改权限后重新登录检查，避免旧的已装载路由影响判断。后端接口仍须授权，即使通过浏览器手工输入地址也不能扩大访问范围。
 
 实现参考：[路由守卫](https://github.com/Nicander93/nz-admin/blob/master/nz-web/src/router/index.ts)、[路由工具](https://github.com/Nicander93/nz-admin/blob/master/nz-web/src/utils/routeHelper.ts)。继续见[菜单操作](/platform/system/menus)。
+
+## 无可导航菜单的用户
+
+合法用户可能只获得按钮/API 权限，或者其菜单所属模块已关闭。首页落点只选择实际可加载且所属模块启用的路由；没有合适菜单时进入静态 `/profile` 个人中心，避免将 `/` 再重定向到自身。个人中心仍受登录身份和服务端当前用户边界保护，不因此授予其他业务功能。

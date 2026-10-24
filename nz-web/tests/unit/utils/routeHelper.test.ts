@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
+
 import type { MenuRouteItem } from '@/utils/routeHelper'
 import {
   buildTree,
@@ -11,8 +12,20 @@ describe('routeHelper', () => {
   it('buildTree 将扁平菜单列表转为树形结构', () => {
     const list: MenuRouteItem[] = [
       { id: 1, name: '系统管理', path: '/system', parentId: 0 },
-      { id: 2, name: '用户管理', path: 'user', parentId: 1, component: '@/views/system/user/index.vue' },
-      { id: 3, name: '角色管理', path: 'role', parentId: 1, component: '@/views/system/role/index.vue' },
+      {
+        id: 2,
+        name: '用户管理',
+        path: 'user',
+        parentId: 1,
+        component: '@/views/system/user/index.vue',
+      },
+      {
+        id: 3,
+        name: '角色管理',
+        path: 'role',
+        parentId: 1,
+        component: '@/views/system/role/index.vue',
+      },
     ]
 
     const tree = buildTree(list)
@@ -30,8 +43,18 @@ describe('routeHelper', () => {
         name: '系统管理',
         path: '/system',
         children: [
-          { id: 2, name: '用户管理', path: 'user', component: '@/views/system/user/index.vue' },
-          { id: 3, name: '角色管理', path: 'role', component: '@/views/system/role/index.vue' },
+          {
+            id: 2,
+            name: '用户管理',
+            path: 'user',
+            component: '@/views/system/user/index.vue',
+          },
+          {
+            id: 3,
+            name: '角色管理',
+            path: 'role',
+            component: '@/views/system/role/index.vue',
+          },
         ],
       },
     ]
@@ -89,12 +112,50 @@ describe('routeHelper', () => {
         name: '系统管理',
         path: '/system',
         children: [
-          { id: 2, name: '用户管理', path: 'user', component: '@/views/system/user/index.vue' },
-          { id: 3, name: '角色管理', path: 'role', component: '@/views/system/role/index.vue' },
+          {
+            id: 2,
+            name: '用户管理',
+            path: 'user',
+            component: '@/views/system/user/index.vue',
+          },
+          {
+            id: 3,
+            name: '角色管理',
+            path: 'role',
+            component: '@/views/system/role/index.vue',
+          },
         ],
       },
     ]
 
     expect(resolveFirstRoutePath(list)).toBe('/system/user')
+  })
+  it('空菜单用户进入个人中心而不是重复重定向到首页', () => {
+    expect(resolveFirstRoutePath([])).toBe('/profile')
+  })
+
+  it('只有关闭模块的菜单时进入个人中心', () => {
+    const menus = [
+      { id: 1, name: '示例', path: '/demo/item', component: 'demo/item/index' },
+    ]
+    expect(resolveFirstRoutePath(menus, new Set(['system']))).toBe('/profile')
+  })
+
+  it('未知组件不会成为登录落点', () => {
+    const warning = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    try {
+      expect(
+        resolveFirstRoutePath([
+          {
+            id: 1,
+            name: '不存在',
+            path: '/missing',
+            component: 'missing/index',
+          },
+        ]),
+      ).toBe('/profile')
+    } finally {
+      warning.mockRestore()
+    }
   })
 })

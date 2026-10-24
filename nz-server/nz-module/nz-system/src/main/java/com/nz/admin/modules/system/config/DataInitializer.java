@@ -16,7 +16,6 @@ import com.nz.admin.modules.system.entity.dataobject.role.RoleDO;
 import com.nz.admin.modules.system.entity.dataobject.tenant.TenantDO;
 import com.nz.admin.modules.system.entity.dataobject.user.UserDO;
 import com.nz.admin.modules.system.entity.query.dict.DictTypeQuery;
-import com.nz.admin.modules.system.mapper.tenant.TenantMapper;
 import com.nz.admin.modules.system.service.config.ConfigService;
 import com.nz.admin.modules.system.service.dept.DeptService;
 import com.nz.admin.modules.system.service.dept.PostService;
@@ -34,13 +33,12 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
 @Slf4j
+@org.springframework.core.annotation.Order(0)
 @ConditionalOnProperty(prefix = "nz.modules.system", name = "initialize-data", havingValue = "true")
 @Component
 public class DataInitializer implements CommandLineRunner {
@@ -69,7 +67,7 @@ public class DataInitializer implements CommandLineRunner {
     private PermissionService permissionService;
 
     @Autowired
-    private TenantMapper tenantMapper;
+    private com.nz.admin.framework.tenant.config.TenantProperties tenantProperties;
 
     @Value("${nz.modules.system.initial-admin-password:admin123}")
     private String initialAdminPassword = "admin123";
@@ -100,30 +98,11 @@ public class DataInitializer implements CommandLineRunner {
             // 分配管理员角色
             permissionService.assignUserRoles(admin.getId(), java.util.List.of(adminRole.getId()));
 
-            initializeSchedulerForActiveTenants();
 
             log.info("初始化完成，管理员账号为 admin");
 
             return null;
         });
-    }
-
-    private void initializeSchedulerForActiveTenants() {
-        List<JobDO> allJobs = new ArrayList<>();
-        List<TenantDO> tenants = tenantMapper.selectList(null).stream()
-                .filter(tenant -> tenant.getStatus() == null || tenant.getStatus() == 0)
-                .filter(tenant -> tenant.getExpireTime() == null
-                        || tenant.getExpireTime().isAfter(LocalDateTime.now()))
-                .toList();
-        for (TenantDO tenant : tenants) {
-            allJobs.addAll(TenantContextHolder.callWithTenantId(tenant.getId(),
-                    () -> jobService.listPage(1, 10000, null, null, null).getRecords()));
-        }
-        try {
-            jobService.initializeScheduler(allJobs);
-        } catch (Exception e) {
-            log.error("初始化 Quartz 调度失败", e);
-        }
     }
 
     private DeptDO ensureRootDept() {
@@ -359,7 +338,7 @@ public class DataInitializer implements CommandLineRunner {
         job.setConcurrent(1);
         job.setStatus(1);
         job.setRemark("初始化占位任务，默认暂停");
-        jobService.save(job);
+        TenantContextHolder.runWithTenantId(tenantProperties.getDefaultTenantId(), () -> jobService.save(job));
     }
 
     private MenuDO createMenu(Long parentId, String name, String path, String component, String icon, int sort, String type, String perm, int visible) {

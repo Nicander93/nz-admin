@@ -1,5 +1,5 @@
 import { ref, reactive } from 'vue'
-import { useCrud } from '@/utils/CRUD'
+
 import {
   userApi,
   deptApi,
@@ -11,6 +11,7 @@ import {
   type SysRole,
   type SysPost,
 } from '@/api/system'
+import { useCrud } from '@/utils/CRUD'
 import { buildTree } from '@/utils/tree'
 
 export interface UseUserCrudOptions {
@@ -170,7 +171,7 @@ export function useUserCrud(options: UseUserCrudOptions = {}) {
 
   const actionsView = reactive({
     remove: actions.remove,
-    submit: form.submit,
+    submit: actions.submit,
   })
 
   return {

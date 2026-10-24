@@ -4,18 +4,37 @@ type PageResponse<T> = {
   data: { records: T[]; total: number; current?: number; size?: number }
 }
 
-type PageQuery = Record<string, unknown> & { pageNum?: number; pageSize?: number }
+type PageQuery = Record<string, unknown> & {
+  pageNum?: number
+  pageSize?: number
+}
 type PageApi<T, Q extends PageQuery> = (query: Q) => Promise<PageResponse<T>>
 type FormApi<T> = (data: Partial<T>) => Promise<unknown>
 
+function isCancellationError(error: unknown) {
+  if (error === 'cancel' || error === 'close') return true
+  if (!error || typeof error !== 'object') return false
+
+  const cancellation = error as { code?: unknown; message?: unknown }
+  return (
+    cancellation.code === 'ERR_CANCELED' ||
+    cancellation.message === 'cancel' ||
+    cancellation.message === 'close'
+  )
+}
+
 function replaceObject<T extends object>(target: T, source: T) {
-  Object.keys(target).forEach(key => delete (target as Record<string, unknown>)[key])
+  Object.keys(target).forEach(
+    (key) => delete (target as Record<string, unknown>)[key],
+  )
   Object.assign(target, source)
 }
 
-export function createCrudFactory(options: {
-  notify?: (type: 'success' | 'error' | 'warning', message: string) => void
-} = {}) {
+export function createCrudFactory(
+  options: {
+    notify?: (type: 'success' | 'error' | 'warning', message: string) => void
+  } = {},
+) {
   function useForm<T extends object>(formOptions: {
     defaultForm: () => T
     addApi: FormApi<T>
@@ -40,20 +59,32 @@ export function createCrudFactory(options: {
 
     async function submit() {
       const currentMode = mode.value
-      const api = currentMode === 'add' ? formOptions.addApi : formOptions.updateApi
+      const api =
+        currentMode === 'add' ? formOptions.addApi : formOptions.updateApi
       try {
         await api({ ...form })
         return { ok: true, mode: currentMode }
       } catch (error) {
-        options.notify?.('error', error instanceof Error ? error.message : '提交失败')
+        options.notify?.(
+          'error',
+          error instanceof Error ? error.message : '提交失败',
+        )
         return { ok: false, mode: currentMode }
       }
     }
 
     return {
-      form, visible, mode, title, openAdd, openEdit,
-      toAdd: openAdd, toEdit: openEdit,
-      close: () => { visible.value = false },
+      form,
+      visible,
+      mode,
+      title,
+      openAdd,
+      openEdit,
+      toAdd: openAdd,
+      toEdit: openEdit,
+      close: () => {
+        visible.value = false
+      },
       submit,
     }
   }
@@ -80,14 +111,22 @@ export function createCrudFactory(options: {
     }
 
     function resetQuery() {
-      replaceObject(query, { pageNum: 1, pageSize: pagination.size } as unknown as Q)
+      replaceObject(query, {
+        pageNum: 1,
+        pageSize: pagination.size,
+      } as unknown as Q)
       pagination.current = 1
     }
 
     return { data, loading, pagination, query, refresh, resetQuery }
   }
 
-  function useCrud<T, F extends object, Q extends PageQuery, Id = number>(crudOptions: {
+  function useCrud<
+    T,
+    F extends object,
+    Q extends PageQuery,
+    Id = number,
+  >(crudOptions: {
     name: string
     api: {
       page: PageApi<T, Q>
@@ -99,29 +138,52 @@ export function createCrudFactory(options: {
     immediate?: boolean
   }) {
     const table = useTable(crudOptions.api.page)
-    const unsupported: FormApi<F> = async () => { throw new Error('当前页面不支持表单操作') }
+    const unsupported: FormApi<F> = async () => {
+      throw new Error('当前页面不支持表单操作')
+    }
     const form = useForm({
       defaultForm: crudOptions.defaultForm as () => F,
       addApi: crudOptions.api.add ?? unsupported,
       updateApi: crudOptions.api.update ?? unsupported,
     })
 
+    async function submit() {
+      const result = await form.submit()
+      if (!result.ok) return result
+      form.close()
+      options.notify?.('success', '保存成功')
+      try {
+        await table.refresh()
+      } catch {
+        options.notify?.('warning', '保存已成功，列表刷新失败，请重新查询')
+      }
+      return result
+    }
+
     async function remove(id: Id) {
       try {
         await crudOptions.api.delete([id])
-        options.notify?.('success', '删除成功')
-        await table.refresh()
-        return true
       } catch (error) {
-        options.notify?.('error', error instanceof Error ? error.message : '删除失败')
+        if (isCancellationError(error)) return false
+        options.notify?.(
+          'error',
+          error instanceof Error ? error.message : '删除失败',
+        )
         return false
       }
+
+      options.notify?.('success', '删除成功')
+      try {
+        await table.refresh()
+      } catch {
+        options.notify?.('warning', '删除已成功，列表刷新失败，请重新查询')
+      }
+      return true
     }
 
     if (crudOptions.immediate) void table.refresh()
-    return { table, form, actions: { remove } }
+    return { table, form, actions: { remove, submit } }
   }
 
   return { useTable, useCrud, useForm }
 }
-

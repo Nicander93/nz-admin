@@ -38,6 +38,17 @@ class WarmFlowPostgresTest {
     @Autowired JdbcTemplate jdbc;
     @Autowired com.nz.admin.framework.cache.core.AtomicStateStore states;
     private final String code = "test_" + UUID.randomUUID().toString().replace("-", "");
+    private static final Map<String, ApiTestClient> sessions = new HashMap<>();
+
+    private ApiTestClient adminApi() {
+        return session("default", "admin", "admin123");
+    }
+
+    private ApiTestClient session(String tenant, String username, String password) {
+        return sessions.computeIfAbsent(tenant + ":" + username,
+                key -> new ApiTestClient(rest).login(tenant, username, password));
+    }
+
     private Long definitionId;
     private Long instanceId;
     private Long foreignDefinitionId;
@@ -126,8 +137,8 @@ class WarmFlowPostgresTest {
         assertThat(SaManager.getSaTokenDao()).isInstanceOf(RedisSaTokenDao.class);
         long legacy =
                 jdbc.queryForObject("SELECT count(*) FROM nz_flow_instance_legacy", Long.class);
-        var api = new ApiTestClient(rest).login("default", "admin", "admin123");
-        var outsider = new ApiTestClient(rest).login("default", "engine-outsider", "test-password");
+        var api = adminApi();
+        var outsider = session("default", "engine-outsider", "test-password");
         long adminId =
                 jdbc.queryForObject(
                         "SELECT id FROM sys_user WHERE tenant_id=1 AND username='admin'",
@@ -211,7 +222,7 @@ class WarmFlowPostgresTest {
 
     @Test
     void parallelBranchesRemainPendingUntilBothAreApproved() {
-        var api = new ApiTestClient(rest).login("default", "admin", "admin123");
+        var api = adminApi();
         long adminId =
                 jdbc.queryForObject(
                         "SELECT id FROM sys_user WHERE tenant_id=1 AND username='admin'",
@@ -258,9 +269,9 @@ class WarmFlowPostgresTest {
 
     @Test
     void sameFlowCodeAndPublishingAreIsolatedBetweenTenants() {
-        var api = new ApiTestClient(rest).login("default", "admin", "admin123");
+        var api = adminApi();
         var foreign =
-                new ApiTestClient(rest).login("engine-tenant", "engine-foreign", "test-password");
+                session("engine-tenant", "engine-foreign", "test-password");
         var request =
                 Map.of(
                         "flowCode",
@@ -315,8 +326,8 @@ class WarmFlowPostgresTest {
 
     @Test
     void countersignRequiresEveryAssignedApprover() {
-        var api = new ApiTestClient(rest).login("default", "admin", "admin123");
-        var second = new ApiTestClient(rest).login("default", "engine-outsider", "test-password");
+        var api = adminApi();
+        var second = session("default", "engine-outsider", "test-password");
         long adminId =
                 jdbc.queryForObject(
                         "SELECT id FROM sys_user WHERE tenant_id=1 AND username='admin'",
@@ -392,8 +403,8 @@ class WarmFlowPostgresTest {
 
     @Test
     void officialDesignerSavesCoordinatesAndRejectsPublishedOrUnsafeModels() {
-        var api = new ApiTestClient(rest).login("default", "admin", "admin123");
-        var foreign = new ApiTestClient(rest).login("engine-tenant", "engine-foreign", "test-password");
+        var api = adminApi();
+        var foreign = session("engine-tenant", "engine-foreign", "test-password");
         definitionId = okWithKey(api, "/api/workflow/designer/definitions", Map.of("flowCode", code, "flowName", "官方设计器"), UUID.randomUUID().toString()).asLong();
         String path = "/api/workflow/designer/warm-flow/query-def/" + definitionId;
         assertThat(api.ok(HttpMethod.GET, "/api/workflow/designer/warm-flow/handler-feedback?storageIds[0]=user:1", null).get(0).path("handlerName").asText()).isEqualTo("管理员");
@@ -412,14 +423,15 @@ class WarmFlowPostgresTest {
         assertThat(next).isNotEqualTo(definitionId);
         assertThat(api.ok(HttpMethod.GET, "/api/workflow/designer/warm-flow/query-def/" + next, null).path("nodeList").get(1).path("coordinate").asText()).isEqualTo("520,300|520,330");
         api.ok(HttpMethod.POST, "/api/auth/logout", null);
+        sessions.remove("default:admin");
         assertThat(api.exchange(HttpMethod.GET, "/api/auth/info", null).path("code").asInt()).isEqualTo(401);
     }
 
     @Test
     void leaveRejectResubmitAndCallbackRetryKeepOneInstanceAndOrderedBusinessState() {
-        var api = new ApiTestClient(rest).login("default", "admin", "admin123");
-        var outsider = new ApiTestClient(rest).login("default", "engine-outsider", "test-password");
-        var applicant = new ApiTestClient(rest).login("default", "engine-applicant", "test-password");
+        var api = adminApi();
+        var outsider = session("default", "engine-outsider", "test-password");
+        var applicant = session("default", "engine-applicant", "test-password");
         assertThat(applicant.exchange(HttpMethod.GET, "/api/workflow/designer/definitions", null).path("code").asInt()).isNotEqualTo(200);
         definitionId = okWithKey(api, "/api/workflow/designer/definitions", Map.of("flowCode", code, "flowName", "请假测试", "businessType", "leave"), UUID.randomUUID().toString()).asLong();
         api.ok(HttpMethod.POST, "/api/workflow/engine/definitions/" + definitionId + "/publish", null);
@@ -460,8 +472,8 @@ class WarmFlowPostgresTest {
 
     @Test
     void transferDeputeSignatureReturnAndWithdrawRespectActorPermissions() {
-        var api = new ApiTestClient(rest).login("default", "admin", "admin123");
-        var other = new ApiTestClient(rest).login("default", "engine-outsider", "test-password");
+        var api = adminApi();
+        var other = session("default", "engine-outsider", "test-password");
         long admin = jdbc.queryForObject("SELECT id FROM sys_user WHERE tenant_id=1 AND username='admin'", Long.class);
         var review = node("review", 1, "user:" + admin, "end");
         review.put("nodeRatio", "100");

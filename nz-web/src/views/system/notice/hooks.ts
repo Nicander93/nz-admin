@@ -1,10 +1,15 @@
 import { reactive } from 'vue'
-import { useCrud } from '@/utils/CRUD'
+
 import { noticeApi, type NoticeQuery, type SysNotice } from '@/api/system'
+import { useCrud } from '@/utils/CRUD'
 
 /** 通知公告管理页面的 CRUD 逻辑。 */
 export function useNoticeCrud() {
-  const { table, form, actions } = useCrud<SysNotice, SysNotice, NoticeQuery & Record<string, unknown>>({
+  const { table, form, actions } = useCrud<
+    SysNotice,
+    SysNotice,
+    NoticeQuery & Record<string, unknown>
+  >({
     name: '通知公告',
     api: {
       page: noticeApi.pageNotices,
@@ -56,7 +61,7 @@ export function useNoticeCrud() {
 
   const actionsView = reactive({
     remove: actions.remove,
-    submit: form.submit,
+    submit: actions.submit,
   })
 
   return {

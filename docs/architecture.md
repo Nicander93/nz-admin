@@ -261,3 +261,11 @@ legacy 运行器支持顺序流、条件互斥分支和单任务转办；新引�
 官方 Warm-Flow 1.8.9 经典画布作为静态资源依赖，由 workflow 模块的受控控制器适配。用户/角色选择通过公共 `NzWorkflowParticipantProvider` 由 system 实现；业务启动和结果同步通过 `NzWorkflowBusinessLauncher` / `NzWorkflowBusinessHandler`，demo 请假模块不引用 workflow 实现。定义用途在设计权限下绑定，业务入口只接受属于自身用途的发布流程。
 
 V30 增加业务绑定、事件投递与请假表，扩展官方坐标与用途字段。字符串租户表由模块独立拦截器管理，业务 JDBC 查询显式限定可信租户。事务事件保存每次审批的业务快照，双节点竞争投递，失败重试，处理方按实例与序号幂等；跨数据源外部副作用仍需要接收方幂等。具体协议与边界见 [workflow.md](workflow.md)。
+
+## 任务生命周期与可信写入
+
+任务写入通过 DTO 白名单，由服务端固定租户；调度恢复不再依赖 `DataInitializer`。`nz-common-job` 定义 `JobTask` 显式执行标记与 `JobTenantProvider` 租户协议，system 实现租户有效性，job 的独立 Runner 分页恢复任务，Quartz 负责执行与关闭。任务每次触发再次核对租户状态。
+
+Quartz 注册失败会让写入失败，数据库回滚时补偿原调度；重启以数据库为准恢复。它不是跨系统事务，也不承诺多个节点全局只执行一次，具体使用和升级步骤见[任务与日志](/platform/system/jobs-logs)。
+
+角色、功能权限和导航统一从启用角色及启用菜单解析。禁用立即影响既有会话的后续鉴权；`visible` 只控制展示，隐藏但启用的功能仍可授权，目录项不授予功能权限。

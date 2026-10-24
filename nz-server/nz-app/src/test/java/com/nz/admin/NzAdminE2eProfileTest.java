@@ -20,6 +20,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 )
 @ActiveProfiles("e2e")
 class NzAdminE2eProfileTest {
+    // H2 壳层测试不包含任务运营表；真实恢复由 PostgreSQL 生命周期测试负责。
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
+    com.nz.admin.common.job.JobTenantProvider jobTenantProvider;
+
 
     private final TestRestTemplate restTemplate;
     @Autowired

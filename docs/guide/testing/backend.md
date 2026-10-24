@@ -43,3 +43,7 @@ var data = api.ok(HttpMethod.GET, "/api/system/user/page", null);
 WarmFlowPostgresTest 验证设计器白名单、用途绑定、回调失败重试及高级办理动作。故障注入使用独立数据库，避免另一实际节点抢先消费事件。Warm-Flow 的静态 Spring 上下文不能在同一 JVM 任意切换 H2 / PostgreSQL，应用集成测试按类使用独立进程。
 
 Redis 测试使用专属前缀，不关闭生产频控来迁就测试。更多类名和命令见[通用测试手册](/testing)。
+
+## 撤权与任务生命周期回归
+
+`PermissionRevocationPostgresTest` 使用真实数据库及同一个登录会话验证角色/菜单禁用、恢复、隐藏权限和目录权限边界。任务回归覆盖可信租户写入、外部租户对象拒绝、任务方法白名单、调度失败回滚，以及 `initialize-data=false` 的真实触发与重启恢复。新增回归纳入 CI 的 PostgreSQL 测试名单，普通不带环境的 Maven 测试跳过不能替代该项验收。

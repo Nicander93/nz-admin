@@ -42,7 +42,7 @@ class PermissionServiceImplTest extends BaseDbUnitTest {
     void testGetRoleKeysByUserId() {
         RoleDO role = randomPojo(RoleDO.class)
                 .setId(null)
-                .setRoleKey("admin");
+                .setRoleKey("admin").setStatus(0);
         roleMapper.insert(role);
 
         UserRoleDO userRole = randomPojo(UserRoleDO.class)
@@ -65,7 +65,7 @@ class PermissionServiceImplTest extends BaseDbUnitTest {
     @Test
     void testGetPermsByUserId() {
         RoleDO role = randomPojo(RoleDO.class)
-                .setId(null);
+                .setId(null).setStatus(0);
         roleMapper.insert(role);
 
         UserRoleDO userRole = randomPojo(UserRoleDO.class)
@@ -75,12 +75,12 @@ class PermissionServiceImplTest extends BaseDbUnitTest {
 
         MenuDO menu1 = randomPojo(MenuDO.class)
                 .setId(null)
-                .setPerm("system:user:list");
+                .setPerm("system:user:list").setStatus(0).setType("C");
         menuMapper.insert(menu1);
 
         MenuDO menu2 = randomPojo(MenuDO.class)
                 .setId(null)
-                .setPerm("system:user:add");
+                .setPerm("system:user:add").setStatus(0).setType("F");
         menuMapper.insert(menu2);
 
         RoleMenuDO roleMenu1 = randomPojo(RoleMenuDO.class)
@@ -103,7 +103,7 @@ class PermissionServiceImplTest extends BaseDbUnitTest {
     @Test
     void testGetPermsByUserId_filterBlankPerms() {
         RoleDO role = randomPojo(RoleDO.class)
-                .setId(null);
+                .setId(null).setStatus(0);
         roleMapper.insert(role);
 
         UserRoleDO userRole = randomPojo(UserRoleDO.class)
@@ -113,7 +113,7 @@ class PermissionServiceImplTest extends BaseDbUnitTest {
 
         MenuDO menu = randomPojo(MenuDO.class)
                 .setId(null)
-                .setPerm("");
+                .setPerm("").setStatus(0).setType("F");
         menuMapper.insert(menu);
 
         RoleMenuDO roleMenu = randomPojo(RoleMenuDO.class)
@@ -124,6 +124,54 @@ class PermissionServiceImplTest extends BaseDbUnitTest {
         Set<String> perms = permissionService.getPermsByUserId(1L);
 
         assertTrue(perms.isEmpty());
+    }
+
+    @Test
+    void disabledRoleImmediatelyLosesRolesMenusAndPermissions() {
+        var role = createRoleAndMenu(0, 0, "F", 0);
+        assertTrue(permissionService.getPermsByUserId(1L).contains("test:protected"));
+        roleMapper.updateById(new RoleDO().setId(role.getId()).setStatus(1));
+
+        assertTrue(permissionService.getRoleKeysByUserId(1L).isEmpty());
+        assertTrue(permissionService.getPermsByUserId(1L).isEmpty());
+        assertTrue(permissionService.getMenusByUserId(1L).isEmpty());
+        // 管理页仍能看到已分配但禁用的角色，重新启用不需要重绑。
+        assertEquals(List.of(role.getId()), permissionService.getRoleIdsByUserId(1L));
+        roleMapper.updateById(new RoleDO().setId(role.getId()).setStatus(0));
+        assertTrue(permissionService.getPermsByUserId(1L).contains("test:protected"));
+    }
+
+    @Test
+    void disabledMenuIsExcludedFromBothPermissionsAndNavigation() {
+        createRoleAndMenu(0, 1, "C", 0);
+        assertTrue(permissionService.getPermsByUserId(1L).isEmpty());
+        assertTrue(permissionService.getMenusByUserId(1L).isEmpty());
+        assertEquals(Set.of("test-active-role"), permissionService.getRoleKeysByUserId(1L));
+    }
+
+    @Test
+    void hiddenEnabledMenuStillGrantsItsPermission() {
+        createRoleAndMenu(0, 0, "C", 1);
+        assertEquals(Set.of("test:protected"), permissionService.getPermsByUserId(1L));
+        assertEquals(1, permissionService.getMenusByUserId(1L).size());
+    }
+
+    @Test
+    void directoryDoesNotGrantFunctionalPermission() {
+        createRoleAndMenu(0, 0, "M", 0);
+        assertTrue(permissionService.getPermsByUserId(1L).isEmpty());
+        assertEquals(1, permissionService.getMenusByUserId(1L).size());
+    }
+
+    private RoleDO createRoleAndMenu(int roleStatus, int menuStatus, String menuType, int visible) {
+        var role = new RoleDO().setName("测试角色").setRoleKey("test-active-role").setStatus(roleStatus).setSort(0);
+        roleMapper.insert(role);
+        var menu = new MenuDO().setName("测试菜单").setParentId(0L).setPerm("test:protected")
+                .setStatus(menuStatus).setType(menuType).setVisible(visible).setSort(0);
+        menuMapper.insert(menu);
+        userRoleMapper.insert(new UserRoleDO().setUserId(1L).setRoleId(role.getId()));
+        roleMenuMapper.insert(new RoleMenuDO().setRoleId(role.getId()).setMenuId(menu.getId()));
+        return role;
     }
 
     @Test

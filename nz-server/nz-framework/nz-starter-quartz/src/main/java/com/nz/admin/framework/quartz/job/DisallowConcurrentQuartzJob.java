@@ -1,6 +1,7 @@
 package com.nz.admin.framework.quartz.job;
 
 import com.nz.admin.common.job.JobExecuteService;
+import com.nz.admin.common.job.JobTenantProvider;
 import org.quartz.DisallowConcurrentExecution;
 
 /**
@@ -9,7 +10,7 @@ import org.quartz.DisallowConcurrentExecution;
 @DisallowConcurrentExecution
 public class DisallowConcurrentQuartzJob extends QuartzJob {
 
-    public DisallowConcurrentQuartzJob(JobExecuteService jobExecuteService) {
-        super(jobExecuteService);
+    public DisallowConcurrentQuartzJob(JobExecuteService jobExecuteService, JobTenantProvider jobTenantProvider) {
+        super(jobExecuteService, jobTenantProvider);
     }
 }

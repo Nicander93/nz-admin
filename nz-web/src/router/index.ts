@@ -1,6 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router'
+
 import { useUserStore } from '@/stores/user'
-import { buildDynamicChildrenRoutes, resolveFirstRoutePath } from '@/utils/routeHelper'
+import {
+  buildDynamicChildrenRoutes,
+  resolveFirstRoutePath,
+} from '@/utils/routeHelper'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -56,7 +60,8 @@ const router = createRouter({
 router.beforeEach(async (to, _from, next) => {
   const userStore = useUserStore()
   const token = localStorage.getItem('token')
-  const publicRoute = to.path === '/login' || to.path.startsWith('/oauth/callback/')
+  const publicRoute =
+    to.path === '/login' || to.path.startsWith('/oauth/callback/')
   if (!publicRoute && !token) {
     next('/login')
     return
@@ -79,7 +84,10 @@ router.beforeEach(async (to, _from, next) => {
       } else if (!userStore.menus.length) {
         await userStore.fetchUserMenus()
       }
-      const childrenRoutes = buildDynamicChildrenRoutes(userStore.menus, userStore.enabledModuleCodes)
+      const childrenRoutes = buildDynamicChildrenRoutes(
+        userStore.menus,
+        userStore.enabledModuleCodes,
+      )
       childrenRoutes.forEach((route) => {
         const name = route.name
         if (typeof name === 'string' && !router.hasRoute(name)) {
@@ -97,7 +105,7 @@ router.beforeEach(async (to, _from, next) => {
   }
 
   if (to.path === '/') {
-    next(resolveFirstRoutePath(userStore.menus))
+    next(resolveFirstRoutePath(userStore.menus, userStore.enabledModuleCodes))
     return
   }
 

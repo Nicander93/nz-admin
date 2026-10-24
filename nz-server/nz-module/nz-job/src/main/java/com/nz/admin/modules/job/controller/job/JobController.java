@@ -7,6 +7,9 @@ import com.nz.admin.framework.log.annotation.BusinessType;
 import com.nz.admin.framework.log.annotation.Log;
 import com.nz.admin.framework.quartz.core.QuartzCronUtils;
 import com.nz.admin.modules.job.entity.dataobject.job.JobDO;
+import com.nz.admin.modules.job.entity.dto.job.JobWriteRequest;
+import jakarta.validation.Valid;
+import org.springframework.validation.annotation.Validated;
 import com.nz.admin.modules.job.service.job.JobService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -54,16 +57,16 @@ public class JobController {
     @Log(title = "定时任务", businessType = BusinessType.INSERT)
     @SaCheckPermission("system:job:add")
     @PostMapping
-    public R<Void> add(@RequestBody JobDO job) {
-        jobService.save(job);
+    public R<Void> add(@Valid @RequestBody JobWriteRequest request) {
+        jobService.save(request.toEntity());
         return R.ok();
     }
 
     @Log(title = "定时任务", businessType = BusinessType.UPDATE)
     @SaCheckPermission("system:job:edit")
     @PutMapping
-    public R<Void> update(@RequestBody JobDO job) {
-        jobService.updateById(job);
+    public R<Void> update(@Validated(JobWriteRequest.Update.class) @RequestBody JobWriteRequest request) {
+        jobService.updateById(request.toEntity());
         return R.ok();
     }
 

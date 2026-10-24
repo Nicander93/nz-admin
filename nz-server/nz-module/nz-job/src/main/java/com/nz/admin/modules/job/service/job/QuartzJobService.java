@@ -1,44 +1,39 @@
 package com.nz.admin.modules.job.service.job;
 
+import com.nz.admin.common.job.JobExecuteService;
+import com.nz.admin.common.core.BusinessException;
 import com.nz.admin.framework.quartz.core.QuartzJobDescriptor;
 import com.nz.admin.framework.quartz.core.QuartzSchedulerManager;
 import com.nz.admin.modules.job.entity.dataobject.job.JobDO;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-/**
- * Quartz 任务调度封装，不负责数据库 CRUD。
- */
-@Slf4j
+/** 调度失败必须让请求或启动失败，不能把未注册任务报告为成功。 */
 @Service
 @RequiredArgsConstructor
 public class QuartzJobService {
-
     private final Scheduler scheduler;
     private final QuartzSchedulerManager quartzSchedulerManager;
+    private final JobExecuteService jobExecuteService;
 
     public void removeById(Long id) {
-        try {
-            quartzSchedulerManager.delete(id);
-        } catch (SchedulerException e) {
-            log.warn("从 Quartz 删除任务失败 id={}", id, e);
-        }
+        try { quartzSchedulerManager.delete(id); }
+        catch (SchedulerException error) { throw schedulingFailure(error); }
     }
 
     public void scheduleJobIfActive(JobDO job) {
         try {
+            if (job.getStatus() != null && job.getStatus() == 0) jobExecuteService.validateTarget(job.getInvokeTarget());
             quartzSchedulerManager.update(toDescriptor(job));
-        } catch (SchedulerException e) {
-            log.error("调度任务失败 id={}", job.getId(), e);
-        }
+        } catch (SchedulerException error) { throw schedulingFailure(error); }
     }
 
     public void scheduleJob(JobDO job) throws SchedulerException {
+        jobExecuteService.validateTarget(job.getInvokeTarget());
         quartzSchedulerManager.schedule(toDescriptor(job));
     }
 
@@ -46,21 +41,20 @@ public class QuartzJobService {
         try {
             scheduler.clear();
             for (JobDO job : jobs) {
-                if (quartzSchedulerManager.isSchedulable(toDescriptor(job))) {
-                    scheduleJob(job);
-                }
+                if (quartzSchedulerManager.isSchedulable(toDescriptor(job))) scheduleJob(job);
             }
-            if (!scheduler.isShutdown()) {
-                scheduler.start();
-            }
-            log.info("启动时共注册 {} 条任务记录（仅启用的会进调度器）", jobs.size());
-        } catch (SchedulerException e) {
-            log.error("批量注册 Quartz 任务失败", e);
-        }
+            scheduler.start();
+        } catch (SchedulerException error) { throw schedulingFailure(error); }
+    }
+
+    private BusinessException schedulingFailure(SchedulerException error) {
+        var failure = new BusinessException("Quartz 调度失败，请检查任务配置和调度器状态");
+        failure.initCause(error);
+        return failure;
     }
 
     private QuartzJobDescriptor toDescriptor(JobDO job) {
-        QuartzJobDescriptor descriptor = new QuartzJobDescriptor();
+        var descriptor = new QuartzJobDescriptor();
         descriptor.setJobId(job.getId());
         descriptor.setTenantId(job.getTenantId());
         descriptor.setJobName(job.getJobName());

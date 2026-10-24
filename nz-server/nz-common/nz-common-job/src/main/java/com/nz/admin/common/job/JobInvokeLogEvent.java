@@ -12,6 +12,9 @@ import java.time.LocalDateTime;
 @Accessors(chain = true)
 public class JobInvokeLogEvent {
 
+    private Long jobId;
+    private String jobName;
+    private String jobGroup;
     private String invokeTarget;
     private Integer status;
     private String jobMessage;

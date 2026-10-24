@@ -51,41 +51,19 @@ public class PermissionServiceImpl implements PermissionService {
      */
     @Override
     public Set<String> getRoleKeysByUserId(Long userId) {
-        List<Long> roleIds = getRoleIdsByUserId(userId);
-        if (roleIds.isEmpty()) {
-            return Collections.emptySet();
-        }
-        return roleIds.stream()
-                .map(roleMapper::selectById)
-                .filter(Objects::nonNull)
+        return getEnabledRolesByUserId(userId).stream()
                 .map(RoleDO::getRoleKey)
+                .filter(StrUtil::isNotBlank)
                 .collect(Collectors.toSet());
     }
 
     /**
-     * 按用户 id 拿权限标识集合。
+     * 只从启用角色和启用菜单中解析功能权限；隐藏菜单仍可授权。
      */
     @Override
     public Set<String> getPermsByUserId(Long userId) {
-        List<Long> roleIds = getRoleIdsByUserId(userId);
-        if (roleIds.isEmpty()) {
-            return Collections.emptySet();
-        }
-
-        Set<Long> menuIds = new HashSet<>();
-        for (Long roleId : roleIds) {
-            roleMenuMapper.selectByRoleId(roleId).stream()
-                    .map(RoleMenuDO::getMenuId)
-                    .forEach(menuIds::add);
-        }
-        if (menuIds.isEmpty()) {
-            return Collections.emptySet();
-        }
-        retainMenusWithinTenantPackage(menuIds);
-
-        return menuIds.stream()
-                .map(menuMapper::selectById)
-                .filter(Objects::nonNull)
+        return getGrantedMenusByUserId(userId).stream()
+                .filter(menu -> "C".equals(menu.getType()) || "F".equals(menu.getType()))
                 .map(MenuDO::getPerm)
                 .filter(StrUtil::isNotBlank)
                 .collect(Collectors.toSet());
@@ -96,26 +74,32 @@ public class PermissionServiceImpl implements PermissionService {
      */
     @Override
     public List<MenuDO> getMenusByUserId(Long userId) {
-        List<Long> roleIds = getRoleIdsByUserId(userId);
-        if (roleIds.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        Set<Long> menuIds = new HashSet<>();
-        for (Long roleId : roleIds) {
-            roleMenuMapper.selectByRoleId(roleId).stream()
-                    .map(RoleMenuDO::getMenuId)
-                    .forEach(menuIds::add);
-        }
-        if (menuIds.isEmpty()) {
-            return Collections.emptyList();
-        }
-        retainMenusWithinTenantPackage(menuIds);
-
-        return menuMapper.selectBatchIds(menuIds).stream()
-                .filter(Objects::nonNull)
+        return getGrantedMenusByUserId(userId).stream()
                 .sorted(Comparator.comparing(MenuDO::getSort, Comparator.nullsLast(Integer::compareTo))
                         .thenComparing(MenuDO::getId))
+                .toList();
+    }
+
+    private List<RoleDO> getEnabledRolesByUserId(Long userId) {
+        return getRoleIdsByUserId(userId).stream()
+                .map(roleMapper::selectById)
+                .filter(Objects::nonNull)
+                .filter(role -> Integer.valueOf(0).equals(role.getStatus()))
+                .toList();
+    }
+
+    private List<MenuDO> getGrantedMenusByUserId(Long userId) {
+        Set<Long> menuIds = new HashSet<>();
+        for (RoleDO role : getEnabledRolesByUserId(userId)) {
+            roleMenuMapper.selectByRoleId(role.getId()).stream()
+                    .map(RoleMenuDO::getMenuId).forEach(menuIds::add);
+        }
+        if (menuIds.isEmpty()) return List.of();
+        retainMenusWithinTenantPackage(menuIds);
+        if (menuIds.isEmpty()) return List.of();
+        return menuMapper.selectBatchIds(menuIds).stream()
+                .filter(Objects::nonNull)
+                .filter(menu -> Integer.valueOf(0).equals(menu.getStatus()))
                 .toList();
     }
 
