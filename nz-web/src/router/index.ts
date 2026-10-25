@@ -14,6 +14,11 @@ const router = createRouter({
       component: () => import('@/views/login/index.vue'),
     },
     {
+      path: '/auth-unavailable',
+      name: 'AuthUnavailable',
+      component: () => import('@/views/auth-unavailable/index.vue'),
+    },
+    {
       path: '/oauth/callback/:provider',
       component: () => import('@/views/oauth/callback/index.vue'),
     },
@@ -57,25 +62,44 @@ const router = createRouter({
   ],
 })
 
+const removeDynamicRoutes: (() => void)[] = []
+
+function clearDynamicRoutes() {
+  removeDynamicRoutes.splice(0).forEach((remove) => remove())
+}
+
 router.beforeEach(async (to, _from, next) => {
   const userStore = useUserStore()
   const token = localStorage.getItem('token')
+  const authUnavailableRoute = to.path === '/auth-unavailable'
   const publicRoute =
-    to.path === '/login' || to.path.startsWith('/oauth/callback/')
+    to.path === '/login' ||
+    authUnavailableRoute ||
+    to.path.startsWith('/oauth/callback/')
   if (!publicRoute && !token) {
     next('/login')
     return
   }
 
   if (to.path === '/login' && token) {
+    if (userStore.token !== token) userStore.setToken(token)
     next('/')
     return
   }
 
   if (!token) {
+    clearDynamicRoutes()
     next()
     return
   }
+
+  if (authUnavailableRoute) {
+    if (userStore.token !== token) userStore.setToken(token)
+    next()
+    return
+  }
+
+  if (userStore.token !== token) userStore.setToken(token)
 
   if (!userStore.routesLoaded) {
     try {
@@ -84,6 +108,11 @@ router.beforeEach(async (to, _from, next) => {
       } else if (!userStore.menus.length) {
         await userStore.fetchUserMenus()
       }
+      if (!isCurrentIdentity(userStore, token)) {
+        next(localStorage.getItem('token') ? '/' : '/login')
+        return
+      }
+
       const childrenRoutes = buildDynamicChildrenRoutes(
         userStore.menus,
         userStore.enabledModuleCodes,
@@ -91,15 +120,21 @@ router.beforeEach(async (to, _from, next) => {
       childrenRoutes.forEach((route) => {
         const name = route.name
         if (typeof name === 'string' && !router.hasRoute(name)) {
-          router.addRoute('Root', route)
+          removeDynamicRoutes.push(router.addRoute('Root', route))
         }
       })
       userStore.setRoutesLoaded(true)
       next({ ...to, replace: true })
       return
     } catch {
-      userStore.logout()
-      next('/login')
+      if (!isCurrentIdentity(userStore, token)) {
+        next(localStorage.getItem('token') ? '/' : '/login')
+        return
+      }
+
+      clearDynamicRoutes()
+      userStore.clearUserState()
+      next('/auth-unavailable')
       return
     }
   }
@@ -111,6 +146,10 @@ router.beforeEach(async (to, _from, next) => {
 
   next()
 })
+
+function isCurrentIdentity(userStore: ReturnType<typeof useUserStore>, requestToken: string) {
+  return userStore.token === requestToken && localStorage.getItem('token') === requestToken
+}
 
 router.onError((error) => {
   console.error('[router]', error)

@@ -1,6 +1,7 @@
 package com.nz.admin.modules.system.service.realtime;
 
 import com.nz.admin.common.core.BusinessException;
+import com.nz.admin.common.core.identity.IdentitySnapshot;
 import com.nz.admin.framework.auth.core.LoginUserContext;
 import com.nz.admin.framework.realtime.config.RealtimeProperties;
 import com.nz.admin.framework.realtime.core.RealtimeConnectionStats;
@@ -37,9 +38,9 @@ class RealtimeServiceImplTest {
 
     @Test
     void issuesShortLivedTicketForCurrentTenantIdentity() {
-        when(loginUserContext.getLoginUserIdOrNull()).thenReturn(7L);
+        when(loginUserContext.getIdentityOrNull()).thenReturn(new IdentitySnapshot(7L, 3L, 0L, 0L));
         when(ticketService.issue(
-                new RealtimePrincipal(7L, 3L),
+                new RealtimePrincipal(7L, 3L, 0L, 0L),
                 RealtimeTransport.WEBSOCKET
         )).thenReturn("ticket-1");
         properties.setTicketTtl(Duration.ofSeconds(20));
@@ -54,7 +55,7 @@ class RealtimeServiceImplTest {
 
     @Test
     void sendsTestMessageOnlyToCurrentUserAndTenant() {
-        when(loginUserContext.getLoginUserIdOrNull()).thenReturn(7L);
+        when(loginUserContext.getIdentityOrNull()).thenReturn(new IdentitySnapshot(7L, 3L, 0L, 0L));
         when(publisher.publishToUser(any(), any(), any())).thenReturn(2);
         TenantContextHolder.setTenantId(3L);
 
@@ -68,7 +69,7 @@ class RealtimeServiceImplTest {
 
     @Test
     void rejectsMissingTenantContext() {
-        when(loginUserContext.getLoginUserIdOrNull()).thenReturn(7L);
+        when(loginUserContext.getIdentityOrNull()).thenReturn(new IdentitySnapshot(7L, 3L, 0L, 0L));
 
         assertThatThrownBy(() -> service.issueTicket(RealtimeTransport.SSE))
                 .isInstanceOf(BusinessException.class)

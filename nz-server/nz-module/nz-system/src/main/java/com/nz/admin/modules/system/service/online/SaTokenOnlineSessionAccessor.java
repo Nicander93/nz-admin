@@ -4,6 +4,9 @@ import cn.dev33.satoken.session.SaSession;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.convert.Convert;
 import com.nz.admin.framework.tenant.core.TenantConstants;
+import com.nz.admin.framework.auth.core.AuthSessionIdentity;
+import com.nz.admin.common.core.identity.IdentityValidator;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -16,6 +19,8 @@ import java.util.List;
  */
 @Component
 public class SaTokenOnlineSessionAccessor implements OnlineSessionAccessor {
+    @Autowired(required = false)
+    private IdentityValidator identityValidator;
 
     @Override
     public List<String> listTokenValues() {
@@ -29,6 +34,8 @@ public class SaTokenOnlineSessionAccessor implements OnlineSessionAccessor {
         if (loginId == null || session == null) {
             return null;
         }
+        if (identityValidator != null && !identityValidator.isValid(
+                AuthSessionIdentity.read(Convert.toLong(loginId), session))) return null;
         return new OnlineSessionSnapshot(
                 tokenValue,
                 Convert.toLong(loginId),

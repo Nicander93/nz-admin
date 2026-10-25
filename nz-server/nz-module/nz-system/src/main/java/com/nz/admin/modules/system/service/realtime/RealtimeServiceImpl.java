@@ -65,11 +65,11 @@ public class RealtimeServiceImpl implements RealtimeService {
     }
 
     private RealtimePrincipal currentPrincipal() {
-        Long userId = loginUserContext.getLoginUserIdOrNull();
+        var identity = loginUserContext.getIdentityOrNull();
         Long tenantId = TenantContextHolder.getTenantIdOrNull();
-        if (userId == null || tenantId == null) {
+        if (identity == null || !identity.isComplete() || tenantId == null || !tenantId.equals(identity.tenantId())) {
             throw new BusinessException("当前登录身份或租户上下文无效");
         }
-        return new RealtimePrincipal(userId, tenantId);
+        return new RealtimePrincipal(identity.userId(), tenantId, identity.userVersion(), identity.tenantVersion());
     }
 }

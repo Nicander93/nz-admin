@@ -170,7 +170,7 @@ jobs:
           cache-dependency-path: nz-web/pnpm-lock.yaml
       - name: Verify real PostgreSQL migrations and HTTP permissions
         working-directory: nz-server
-        run: ./mvnw -q -pl nz-app -am install -Dtest=DataScopePostgresTest,IdempotencyPostgresTest,ClusterStateRedisTest,RedisAtomicStateStoreTest,WarmFlowPostgresTest,DemoItemExcelPostgresTest,PermissionRevocationPostgresTest,JobReadinessPostgresTest,JobRestartPostgresTest -Dsurefire.failIfNoSpecifiedTests=false
+        run: ./mvnw -q -pl nz-app -am install -Dtest=DataScopePostgresTest,IdempotencyPostgresTest,ClusterStateRedisTest,RedisAtomicStateStoreTest,WarmFlowPostgresTest,DemoItemExcelPostgresTest,PermissionRevocationPostgresTest,JobReadinessPostgresTest,JobRestartPostgresTest,IdentityLifecyclePostgresTest,MessageLifecyclePostgresTest -Dsurefire.failIfNoSpecifiedTests=false
       - name: Install browser dependencies
         working-directory: nz-web
         run: |
@@ -200,7 +200,9 @@ jobs:
         working-directory: nz-web
         run: pnpm e2e
       - name: Verify two backend nodes
-        run: node tools/tests/workflow-cluster.mjs
+        run: |
+          node tools/tests/workflow-cluster.mjs
+          node tools/tests/identity-cluster.mjs
       - uses: actions/upload-artifact@v4
         if: failure()
         with:

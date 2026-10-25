@@ -51,12 +51,14 @@ public class MinioFileStorageServiceImpl implements FileStorageService {
                 + (StrUtil.isNotBlank(fileExt) ? "." + fileExt : "");
 
         try {
-            clientSupplier.get().putObject(PutObjectArgs.builder()
-                    .bucket(properties.getS3().getBucketName())
-                    .object(fileName)
-                    .contentType(file.getContentType())
-                    .stream(file.getInputStream(), file.getSize(), -1)
-                    .build());
+            try (MinioClient client = clientSupplier.get()) {
+                client.putObject(PutObjectArgs.builder()
+                        .bucket(properties.getS3().getBucketName())
+                        .object(fileName)
+                        .contentType(file.getContentType())
+                        .stream(file.getInputStream(), file.getSize(), -1)
+                        .build());
+            }
             return new FileStorageObject()
                     .setOriginalName(originalName)
                     .setFileName(fileName)
@@ -76,10 +78,12 @@ public class MinioFileStorageServiceImpl implements FileStorageService {
             return;
         }
         try {
-            clientSupplier.get().removeObject(RemoveObjectArgs.builder()
-                    .bucket(properties.getS3().getBucketName())
-                    .object(file.getFileName())
-                    .build());
+            try (MinioClient client = clientSupplier.get()) {
+                client.removeObject(RemoveObjectArgs.builder()
+                        .bucket(properties.getS3().getBucketName())
+                        .object(file.getFileName())
+                        .build());
+            }
         } catch (Exception e) {
             throw new IllegalStateException("删除 S3 兼容存储文件失败", e);
         }
@@ -92,12 +96,15 @@ public class MinioFileStorageServiceImpl implements FileStorageService {
             return;
         }
         try {
-            String url = clientSupplier.get().getPresignedObjectUrl(GetPresignedObjectUrlArgs.builder()
-                    .method(Method.GET)
-                    .bucket(properties.getS3().getBucketName())
-                    .object(file.getFileName())
-                    .expiry(5, TimeUnit.MINUTES)
-                    .build());
+            String url;
+            try (MinioClient client = clientSupplier.get()) {
+                url = client.getPresignedObjectUrl(GetPresignedObjectUrlArgs.builder()
+                        .method(Method.GET)
+                        .bucket(properties.getS3().getBucketName())
+                        .object(file.getFileName())
+                        .expiry(5, TimeUnit.MINUTES)
+                        .build());
+            }
             response.sendRedirect(url);
         } catch (Exception e) {
             throw new IOException("生成 S3 兼容存储下载地址失败", e);
@@ -115,9 +122,12 @@ public class MinioFileStorageServiceImpl implements FileStorageService {
     @Override
     public void checkAvailable() {
         try {
-            boolean exists = clientSupplier.get().bucketExists(BucketExistsArgs.builder()
-                    .bucket(properties.getS3().getBucketName())
-                    .build());
+            boolean exists;
+            try (MinioClient client = clientSupplier.get()) {
+                exists = client.bucketExists(BucketExistsArgs.builder()
+                        .bucket(properties.getS3().getBucketName())
+                        .build());
+            }
             if (!exists) {
                 throw new IllegalStateException("S3 bucket 不存在: " + properties.getS3().getBucketName());
             }

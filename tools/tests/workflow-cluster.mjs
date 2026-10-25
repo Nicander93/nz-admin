@@ -2,6 +2,8 @@ import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
 import { setTimeout as delay } from 'node:timers/promises'
 
+import { loginByHttp } from './login.mjs'
+
 const nodes = [process.env.NZ_CLUSTER_NODE_A ?? 'http://127.0.0.1:8080', process.env.NZ_CLUSTER_NODE_B ?? 'http://127.0.0.1:8081']
 const credentials = { tenantCode: process.env.E2E_TENANT_CODE ?? 'default', clientId: 'nz-web-account', username: process.env.E2E_USERNAME, password: process.env.E2E_PASSWORD }
 assert(credentials.username && credentials.password, 'Configure E2E_USERNAME and E2E_PASSWORD for an isolated test database')
@@ -24,7 +26,7 @@ async function eventually(predicate, label) {
 }
 
 // Authenticate on one process and use its session on the other.
-token = await api(0, '/api/auth/login', 'POST', credentials)
+token = await loginByHttp(nodes[0], credentials)
 const identity = await api(1, '/api/auth/info')
 const code = `cluster_${randomUUID().replaceAll('-', '')}`
 const drafts = await Promise.all([0, 1, 0].map(node => api(node, '/api/workflow/designer/definitions', 'POST', { flowCode: code, flowName: code, businessType: 'leave' }, randomUUID())))

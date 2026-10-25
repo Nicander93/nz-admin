@@ -25,6 +25,8 @@ public class UserDO extends BaseEntity {
     private String username;
     private String password;
     @JsonIgnore
+    private Long authVersion;
+    @JsonIgnore
     private String phoneHash;
     private String nickname;
     @TableField(typeHandler = EncryptedStringTypeHandler.class)

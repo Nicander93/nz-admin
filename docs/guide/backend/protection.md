@@ -49,3 +49,7 @@ await request.post('/api/demo/leave/example-id/submit', undefined, {
 本地频控状态与 Redis 集群共享状态的运行方式不同。多节点要启用 cluster、Redis 和一致前缀，否则每个节点各自计数。业务幂等还依赖共享 PostgreSQL；Redis 开启不能代替数据库事务。
 
 验证同键并发、不同键同业务、失败回滚、成功重试和跨节点重放。参考[测试指南](/guide/testing/backend)与[双节点配置](/operations/cluster)。
+
+## 频控后的重试时间
+
+频控拒绝仍返回业务码 `429`，并附带秒数形式的 `Retry-After`。该值保守地采用当前配置窗口时长，不承诺是精确剩余秒数；频控阈值不变。客户端应等待提示时间再尝试，存储故障或其他业务错误不能按限流自动重试。

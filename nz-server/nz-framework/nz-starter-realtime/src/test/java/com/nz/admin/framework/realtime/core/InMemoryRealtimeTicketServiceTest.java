@@ -52,4 +52,16 @@ class InMemoryRealtimeTicketServiceTest {
         assertThat(service.consume(revoked, RealtimeTransport.SSE)).isEmpty();
         assertThat(service.consume(retained, RealtimeTransport.SSE)).isPresent();
     }
+    @Test
+    void anInvalidatedTicketCannotReviveAfterReenablingTheIdentity() {
+        var valid = new java.util.concurrent.atomic.AtomicBoolean(true);
+        var service = new InMemoryRealtimeTicketService(Duration.ofSeconds(30), Clock.systemUTC(), identity -> valid.get());
+        var principal = new RealtimePrincipal(7L, 3L, 0L, 0L);
+        String old = service.issue(principal, RealtimeTransport.SSE);
+        valid.set(false);
+        assertThat(service.consume(old, RealtimeTransport.SSE)).isEmpty();
+        valid.set(true);
+        assertThat(service.consume(old, RealtimeTransport.SSE)).isEmpty();
+        assertThat(service.consume(service.issue(principal, RealtimeTransport.SSE), RealtimeTransport.SSE)).contains(principal);
+    }
 }

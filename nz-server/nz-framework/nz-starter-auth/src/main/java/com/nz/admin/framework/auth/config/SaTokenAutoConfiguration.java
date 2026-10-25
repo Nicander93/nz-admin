@@ -4,6 +4,10 @@ import cn.dev33.satoken.interceptor.SaInterceptor;
 import cn.dev33.satoken.router.SaRouter;
 import cn.dev33.satoken.stp.StpUtil;
 import com.nz.admin.framework.auth.properties.AuthFrameworkProperties;
+import com.nz.admin.framework.auth.core.AuthSessionIdentity;
+import com.nz.admin.common.core.BusinessException;
+import com.nz.admin.common.core.identity.IdentityValidator;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -36,9 +40,11 @@ public class SaTokenAutoConfiguration implements WebMvcConfigurer {
     }
 
     private final AuthFrameworkProperties properties;
+    private final ObjectProvider<IdentityValidator> validators;
 
-    public SaTokenAutoConfiguration(AuthFrameworkProperties properties) {
+    public SaTokenAutoConfiguration(AuthFrameworkProperties properties, ObjectProvider<IdentityValidator> validators) {
         this.properties = properties;
+        this.validators = validators;
     }
 
     @Override
@@ -46,7 +52,15 @@ public class SaTokenAutoConfiguration implements WebMvcConfigurer {
         registry.addInterceptor(new SaInterceptor(handle -> {
                     SaRouter.match(properties.getIncludePaths().toArray(String[]::new))
                             .notMatch(properties.getExcludePaths().toArray(String[]::new))
-                            .check(r -> StpUtil.checkLogin());
+                            .check(r -> {
+                                StpUtil.checkLogin();
+                                var validator = validators.getIfAvailable();
+                                if (validator == null) throw new BusinessException(503, "身份校验未配置");
+                                if (!validator.isValid(AuthSessionIdentity.current())) {
+                                    StpUtil.logout();
+                                    throw new BusinessException(401, "登录状态已失效，请重新登录");
+                                }
+                            });
                 }))
                 .addPathPatterns(properties.getIncludePaths().toArray(String[]::new));
     }

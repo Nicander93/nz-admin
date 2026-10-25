@@ -1,6 +1,12 @@
 package com.nz.admin.framework.realtime.core;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nz.admin.common.core.identity.IdentityValidator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
@@ -8,6 +14,7 @@ import org.springframework.web.socket.WebSocketSession;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Map;
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -19,17 +26,27 @@ import java.util.function.Predicate;
  */
 public class RealtimeConnectionRegistry implements RealtimePublisher, RealtimeConnectionManager {
 
+    private static final Logger log = LoggerFactory.getLogger(RealtimeConnectionRegistry.class);
+
     private final ConcurrentMap<String, SseConnection> sseConnections = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, WebSocketConnection> webSocketConnections = new ConcurrentHashMap<>();
     private final ObjectMapper objectMapper;
     private final Duration sseTimeout;
+    private final IdentityValidator validator;
 
     public RealtimeConnectionRegistry(ObjectMapper objectMapper, Duration sseTimeout) {
+        this(objectMapper, sseTimeout, null);
+    }
+
+    public RealtimeConnectionRegistry(ObjectMapper objectMapper, Duration sseTimeout, IdentityValidator validator) {
         this.objectMapper = objectMapper;
         this.sseTimeout = sseTimeout;
+        this.validator = validator;
     }
 
     public SseEmitter connectSse(RealtimePrincipal principal) {
+        if (!isAuthorized(principal))
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "实时连接身份已失效");
         String connectionId = UUID.randomUUID().toString();
         SseEmitter emitter = new SseEmitter(sseTimeout.toMillis());
         sseConnections.put(connectionId, new SseConnection(principal, emitter));
@@ -47,6 +64,7 @@ public class RealtimeConnectionRegistry implements RealtimePublisher, RealtimeCo
     }
 
     public void connectWebSocket(WebSocketSession session, RealtimePrincipal principal) throws IOException {
+        if (!isAuthorized(principal)) throw new IOException("实时连接身份已失效");
         webSocketConnections.put(session.getId(), new WebSocketConnection(principal, session));
         if (!sendWebSocket(session.getId(), RealtimeMessage.of(
                 "connected",
@@ -89,11 +107,15 @@ public class RealtimeConnectionRegistry implements RealtimePublisher, RealtimeCo
     }
     @Override
     public int disconnectUser(Long tenantId, Long userId) {
+        return disconnect(principal -> Objects.equals(principal.tenantId(), tenantId)
+                && Objects.equals(principal.userId(), userId));
+    }
+
+    private int disconnect(Predicate<RealtimePrincipal> predicate) {
         int disconnected = 0;
         for (Map.Entry<String, SseConnection> entry : sseConnections.entrySet()) {
             RealtimePrincipal principal = entry.getValue().principal();
-            if (Objects.equals(principal.tenantId(), tenantId)
-                    && Objects.equals(principal.userId(), userId)
+            if (predicate.test(principal)
                     && sseConnections.remove(entry.getKey(), entry.getValue())) {
                 entry.getValue().emitter().complete();
                 disconnected++;
@@ -101,8 +123,7 @@ public class RealtimeConnectionRegistry implements RealtimePublisher, RealtimeCo
         }
         for (Map.Entry<String, WebSocketConnection> entry : webSocketConnections.entrySet()) {
             RealtimePrincipal principal = entry.getValue().principal();
-            if (Objects.equals(principal.tenantId(), tenantId)
-                    && Objects.equals(principal.userId(), userId)
+            if (predicate.test(principal)
                     && webSocketConnections.remove(entry.getKey(), entry.getValue())) {
                 try {
                     entry.getValue().session().close();
@@ -115,6 +136,28 @@ public class RealtimeConnectionRegistry implements RealtimePublisher, RealtimeCo
         return disconnected;
     }
 
+
+    /** 不依赖用户继续发请求，自然到期的连接也会被关闭。 */
+    @Scheduled(fixedDelayString = "${nz.realtime.identity-check-interval-ms:1000}")
+    public void disconnectInvalidIdentities() {
+        if (validator == null) return;
+        var principals = new HashSet<RealtimePrincipal>();
+        sseConnections.values().forEach(connection -> principals.add(connection.principal()));
+        webSocketConnections.values().forEach(connection -> principals.add(connection.principal()));
+        for (var principal : principals) {
+            if (!isAuthorized(principal)) disconnect(principal::equals);
+        }
+    }
+
+    private boolean isAuthorized(RealtimePrincipal principal) {
+        if (validator == null) return true;
+        try {
+            return validator.isValid(principal.identity());
+        } catch (RuntimeException error) {
+            log.warn("身份状态无法核对，关闭实时连接", error);
+            return false;
+        }
+    }
 
     private int publish(Predicate<RealtimePrincipal> predicate, RealtimeMessage message) {
         int delivered = 0;
@@ -136,6 +179,10 @@ public class RealtimeConnectionRegistry implements RealtimePublisher, RealtimeCo
         if (connection == null) {
             return false;
         }
+        if (!isAuthorized(connection.principal())) {
+            disconnect(connection.principal()::equals);
+            return false;
+        }
         try {
             connection.emitter().send(SseEmitter.event()
                     .id(message.id())
@@ -153,6 +200,10 @@ public class RealtimeConnectionRegistry implements RealtimePublisher, RealtimeCo
         WebSocketConnection connection = webSocketConnections.get(connectionId);
         if (connection == null || !connection.session().isOpen()) {
             webSocketConnections.remove(connectionId);
+            return false;
+        }
+        if (!isAuthorized(connection.principal())) {
+            disconnect(connection.principal()::equals);
             return false;
         }
         try {

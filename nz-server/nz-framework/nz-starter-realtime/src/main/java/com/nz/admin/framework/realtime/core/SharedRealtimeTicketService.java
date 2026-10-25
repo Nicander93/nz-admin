@@ -1,6 +1,7 @@
 package com.nz.admin.framework.realtime.core;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.nz.admin.common.core.identity.IdentityValidator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nz.admin.framework.cache.core.AtomicStateStore;
 
@@ -14,11 +15,17 @@ public class SharedRealtimeTicketService implements RealtimeTicketService {
     private final AtomicStateStore states;
     private final ObjectMapper mapper;
     private final Duration ttl;
+    private final IdentityValidator validator;
 
     public SharedRealtimeTicketService(AtomicStateStore states, ObjectMapper mapper, Duration ttl) {
+        this(states, mapper, ttl, null);
+    }
+
+    public SharedRealtimeTicketService(AtomicStateStore states, ObjectMapper mapper, Duration ttl, IdentityValidator validator) {
         this.states = states;
         this.mapper = mapper;
         this.ttl = ttl;
+        this.validator = validator;
     }
 
     private String owner(Long tenant, Long user) {
@@ -26,6 +33,8 @@ public class SharedRealtimeTicketService implements RealtimeTicketService {
     }
 
     public String issue(RealtimePrincipal principal, RealtimeTransport transport) {
+        if (validator != null && !validator.isValid(principal.identity()))
+            throw new IllegalArgumentException("实时连接身份已失效");
         String name = owner(principal.tenantId(), principal.userId());
         String epoch = null;
         boolean refreshed = false;
@@ -62,6 +71,7 @@ public class SharedRealtimeTicketService implements RealtimeTicketService {
                                     owner(
                                             entry.principal().tenantId(),
                                             entry.principal().userId())))) return Optional.empty();
+            if (validator != null && !validator.isValid(entry.principal().identity())) return Optional.empty();
             return Optional.of(entry.principal());
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("票据无法读取", e);

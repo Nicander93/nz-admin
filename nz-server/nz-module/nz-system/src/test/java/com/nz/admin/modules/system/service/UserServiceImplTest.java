@@ -7,15 +7,20 @@ import com.nz.admin.modules.system.entity.dataobject.user.UserDO;
 import com.nz.admin.modules.system.entity.query.user.UserQuery;
 import com.nz.admin.modules.system.mapper.user.UserMapper;
 import com.nz.admin.modules.system.service.user.UserServiceImpl;
+import com.nz.admin.modules.system.service.config.ConfigService;
+import com.nz.admin.framework.tenant.core.TenantContextHolder;
 import jakarta.annotation.Resource;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.Import;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import static com.nz.admin.framework.test.core.util.RandomPojoUtils.randomPojo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.when;
 
 @Import(NzSystemTestApplication.class)
 class UserServiceImplTest extends BaseDbUnitTest {
@@ -24,6 +29,8 @@ class UserServiceImplTest extends BaseDbUnitTest {
     private UserServiceImpl userService;
     @Resource
     private UserMapper userMapper;
+    @MockBean
+    private ConfigService configService;
 
     @Test
     void testListPage() {
@@ -112,6 +119,69 @@ class UserServiceImplTest extends BaseDbUnitTest {
         UserDO dbUser = userMapper.selectById(user.getId());
         assertNotNull(dbUser);
         assertEquals("新昵称", dbUser.getNickname());
+        assertEquals(0L, dbUser.getAuthVersion());
+    }
+
+    @Test
+    void securityFieldChangesIncrementAuthVersion() {
+        UserDO user = randomUser("versioned_user");
+        userMapper.insert(user);
+
+        userService.updateById(new UserDO().setId(user.getId()).setUsername("renamed_user"));
+        assertEquals(1L, userMapper.selectById(user.getId()).getAuthVersion());
+        userService.updateById(new UserDO().setId(user.getId()).setPassword("new-hash"));
+        assertEquals(2L, userMapper.selectById(user.getId()).getAuthVersion());
+        userService.updateById(new UserDO().setId(user.getId()).setStatus(1));
+        assertEquals(3L, userMapper.selectById(user.getId()).getAuthVersion());
+        userService.updateById(new UserDO().setId(user.getId()).setPhone("13800138000"));
+        assertEquals(4L, userMapper.selectById(user.getId()).getAuthVersion());
+    }
+
+    @Test
+    void resetPasswordIncrementsAuthVersion() {
+        UserDO user = randomUser("reset_password_user");
+        userMapper.insert(user);
+        when(configService.getConfigValue("sys.user.initPassword")).thenReturn("initial-password");
+
+        userService.resetPassword(user.getId());
+
+        assertEquals(1L, userMapper.selectById(user.getId()).getAuthVersion());
+    }
+
+    @Test
+    void clientSuppliedAuthVersionIsIgnored() throws Exception {
+        ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
+        UserDO parsed = objectMapper.readValue("{\"authVersion\":91}", UserDO.class);
+        UserDO user = randomUser("client_version_user");
+        userMapper.insert(user);
+
+        userService.updateById(new UserDO().setId(user.getId()).setNickname("changed").setAuthVersion(91L));
+
+        assertNull(parsed.getAuthVersion());
+        assertEquals(0L, userMapper.selectById(user.getId()).getAuthVersion());
+        org.junit.jupiter.api.Assertions.assertFalse(objectMapper.writeValueAsString(userMapper.selectById(user.getId())).contains("authVersion"));
+    }
+
+    @Test
+    void updateRejectsUserOutsideTrustedTenant() {
+        UserDO user = randomUser("other_tenant_user").setTenantId(2L);
+        userMapper.insert(user);
+
+        assertThrows(com.nz.admin.common.core.BusinessException.class, () ->
+                TenantContextHolder.runWithTenantId(1L, () ->
+                        userService.updateById(new UserDO().setId(user.getId()).setStatus(1))));
+        assertEquals(0L, userMapper.selectById(user.getId()).getAuthVersion());
+    }
+
+    @Test
+    void failedSecurityUpdateDoesNotIncrementAuthVersion() {
+        UserDO user = randomUser("rollback_version_user");
+        userMapper.insert(user);
+
+        assertThrows(RuntimeException.class, () -> userService.updateById(
+                new UserDO().setId(user.getId()).setUsername("x".repeat(60))));
+
+        assertEquals(0L, userMapper.selectById(user.getId()).getAuthVersion());
     }
 
     @Test
@@ -145,6 +215,8 @@ class UserServiceImplTest extends BaseDbUnitTest {
     private UserDO randomUser(String username) {
         return randomPojo(UserDO.class)
                 .setId(null)
+                .setTenantId(1L)
+                .setAuthVersion(0L)
                 .setUsername(username)
                 .setGender("2");
     }

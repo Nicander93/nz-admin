@@ -3,7 +3,6 @@ package com.nz.admin.framework.protection.aspect;
 import com.nz.admin.common.core.BusinessException;
 import com.nz.admin.common.core.CommonErrorCode;
 import com.nz.admin.framework.protection.annotation.RateLimit;
-import com.nz.admin.framework.protection.core.InMemoryProtectionStore;
 import com.nz.admin.framework.protection.core.ProtectionStore;
 import com.nz.admin.framework.protection.core.ProtectionKeyResolver;
 import jakarta.servlet.http.HttpServletRequest;
@@ -32,6 +31,10 @@ public class RateLimitAspect {
         HttpServletRequest request = currentRequest();
         String key = protectionKeyResolver.resolve("rate-limit", rateLimit.key(), request);
         if (!protectionStore.tryAcquire(key, rateLimit.permits(), rateLimit.windowSeconds())) {
+            var attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attributes != null && attributes.getResponse() != null) {
+                attributes.getResponse().setHeader("Retry-After", Integer.toString(rateLimit.windowSeconds()));
+            }
             throw new BusinessException(CommonErrorCode.TOO_MANY_REQUESTS);
         }
         return joinPoint.proceed();

@@ -80,5 +80,63 @@ class RealtimeConnectionRegistryTest {
         assertThat(registry.stats()).isEqualTo(new RealtimeConnectionStats(1, 0));
         verify(session).close();
     }
+    @Test
+    void invalidatingAnOldVersionKeepsNewlyLoggedInConnections() throws Exception {
+        var version = new java.util.concurrent.atomic.AtomicLong(0);
+        var registry = new RealtimeConnectionRegistry(new ObjectMapper().findAndRegisterModules(),
+                Duration.ofMinutes(1), identity -> identity.userVersion() == version.get());
+        var old = new RealtimePrincipal(7L, 3L, 0L, 0L);
+        registry.connectSse(old);
+        var oldSocket = mock(WebSocketSession.class);
+        when(oldSocket.getId()).thenReturn("old");
+        when(oldSocket.isOpen()).thenReturn(true);
+        registry.connectWebSocket(oldSocket, old);
+        version.incrementAndGet();
+        var current = new RealtimePrincipal(7L, 3L, 1L, 0L);
+        registry.connectSse(current);
+        var newSocket = mock(WebSocketSession.class);
+        when(newSocket.getId()).thenReturn("new");
+        when(newSocket.isOpen()).thenReturn(true);
+        registry.connectWebSocket(newSocket, current);
+
+        registry.disconnectInvalidIdentities();
+
+        assertThat(registry.stats()).isEqualTo(new RealtimeConnectionStats(1, 1));
+        verify(oldSocket).close();
+        org.mockito.Mockito.verify(newSocket, org.mockito.Mockito.never()).close();
+        assertThat(registry.publishToUser(3L, 7L, RealtimeMessage.of("notice", "new only"))).isEqualTo(2);
+        verify(oldSocket, times(1)).sendMessage(any(TextMessage.class));
+    }
+
+    @Test
+    void storageFailureClosesConnectionsBeforeDelivering() throws Exception {
+        var failed = new java.util.concurrent.atomic.AtomicBoolean();
+        var registry = new RealtimeConnectionRegistry(new ObjectMapper().findAndRegisterModules(),
+                Duration.ofMinutes(1), identity -> {
+                    if (failed.get()) throw new IllegalStateException("database unavailable");
+                    return true;
+                });
+        var socket = mock(WebSocketSession.class);
+        when(socket.getId()).thenReturn("failure");
+        when(socket.isOpen()).thenReturn(true);
+        registry.connectWebSocket(socket, new RealtimePrincipal(7L, 3L, 0L, 0L));
+        failed.set(true);
+
+        assertThat(registry.publishToUser(3L, 7L, RealtimeMessage.of("notice", "blocked"))).isZero();
+        assertThat(registry.stats().webSocketConnections()).isZero();
+        verify(socket).close();
+        verify(socket, times(1)).sendMessage(any(TextMessage.class));
+    }
+
+    @Test
+    void deliveryRechecksIdentityWithoutWaitingForTheSweep() {
+        var valid = new java.util.concurrent.atomic.AtomicBoolean(true);
+        var registry = new RealtimeConnectionRegistry(new ObjectMapper().findAndRegisterModules(),
+                Duration.ofMinutes(1), identity -> valid.get());
+        registry.connectSse(new RealtimePrincipal(7L, 3L, 0L, 0L));
+        valid.set(false);
+        assertThat(registry.publishToUser(3L, 7L, RealtimeMessage.of("notice", "blocked"))).isZero();
+        assertThat(registry.stats().sseConnections()).isZero();
+    }
 }
 

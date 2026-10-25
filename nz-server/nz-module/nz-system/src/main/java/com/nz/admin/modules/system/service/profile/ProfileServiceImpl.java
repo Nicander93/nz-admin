@@ -162,6 +162,7 @@ public class ProfileServiceImpl implements ProfileService {
                     .set(StrUtil.isBlank(email), UserDO::getEmail, null)
                     .set(StrUtil.isBlank(phone), UserDO::getPhone, null)
                     .set(StrUtil.isBlank(phone), UserDO::getPhoneHash, null)
+                    .setSql(StrUtil.isBlank(phone), "auth_version = auth_version + CASE WHEN phone IS NULL OR phone = '' THEN 0 ELSE 1 END")
                     .eq(UserDO::getId, userId));
             return null;
         });

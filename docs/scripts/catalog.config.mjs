@@ -34,6 +34,7 @@ export const moduleGuides = {
 }
 
 export const extensionSpecs = [
+  ['IdentityValidator', '统一核对会话与实时连接的身份状态和版本', '/platform/security/session-lifecycle'],
   ['JobTenantProvider', '为调度恢复和触发提供有效租户', '/platform/system/jobs-logs'],
   ['AuthUserResolver', '解析可信登录身份', '/platform/security/authentication'],
   [

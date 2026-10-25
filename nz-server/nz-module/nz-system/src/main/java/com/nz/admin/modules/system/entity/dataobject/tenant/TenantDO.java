@@ -1,5 +1,6 @@
 package com.nz.admin.modules.system.entity.dataobject.tenant;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -22,6 +23,8 @@ public class TenantDO extends BaseEntity {
     @TableId(type = IdType.AUTO)
     private Long id;
     private String tenantCode;
+    @JsonIgnore
+    private Long authVersion;
     private String tenantName;
     private String contactUser;
     private String contactPhone;

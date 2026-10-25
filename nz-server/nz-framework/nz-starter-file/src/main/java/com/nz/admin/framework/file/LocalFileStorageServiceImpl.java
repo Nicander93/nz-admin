@@ -10,6 +10,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 /**
  * 本地文件存储实现。
@@ -53,8 +55,18 @@ public class LocalFileStorageServiceImpl implements FileStorageService {
 
     @Override
     public void delete(FileStorageObject file) {
-        if (file != null && StrUtil.isNotBlank(file.getFilePath())) {
-            FileUtil.del(file.getFilePath());
+        if (file == null || StrUtil.isBlank(file.getFilePath())) {
+            return;
+        }
+
+        try {
+            Path filePath = resolveDeletePath(file.getFilePath());
+            if (Files.isDirectory(filePath)) {
+                throw new IllegalArgumentException("不能删除目录: " + file.getFilePath());
+            }
+            Files.deleteIfExists(filePath);
+        } catch (IOException exception) {
+            throw new IllegalStateException("删除本地文件失败: " + file.getFilePath(), exception);
         }
     }
 
@@ -65,16 +77,8 @@ public class LocalFileStorageServiceImpl implements FileStorageService {
             return;
         }
 
-        File baseDir = FileUtil.file(properties.getBasePath());
-        String baseCanonicalPath = baseDir.getCanonicalPath();
-        String expectedPrefix = baseCanonicalPath + File.separator;
-
-        File file = FileUtil.file(fileObject.getFilePath());
-        String fileCanonicalPath = file.getCanonicalPath();
-        if (!StrUtil.startWith(fileCanonicalPath, expectedPrefix)
-                && !StrUtil.equals(fileCanonicalPath, baseCanonicalPath)) {
-            throw new IllegalArgumentException("非法文件路径");
-        }
+        Path canonicalPath = resolveCanonicalPathWithinBase(fileObject.getFilePath(), true);
+        File file = canonicalPath.toFile();
 
         if (!file.exists() || !file.isFile()) {
             response.setStatus(404);
@@ -87,6 +91,32 @@ public class LocalFileStorageServiceImpl implements FileStorageService {
         response.setHeader("Content-Disposition", "attachment; filename*=UTF-8''" + encodedName);
         response.setContentLengthLong(file.length());
         FileUtil.writeToStream(file, response.getOutputStream());
+    }
+
+    private Path resolveDeletePath(String filePath) throws IOException {
+        Path inputPath = FileUtil.file(filePath).toPath().toAbsolutePath().normalize();
+        Path canonicalPath = resolveCanonicalPathWithinBase(inputPath.toString(), false);
+        if (inputPath.getFileName() == null || inputPath.getParent() == null) {
+            throw new IllegalArgumentException("非法文件路径");
+        }
+
+        Path canonicalParent = inputPath.getParent().toFile().getCanonicalFile().toPath();
+        Path deletePath = canonicalParent.resolve(inputPath.getFileName());
+        Path canonicalBase = FileUtil.file(properties.getBasePath()).getCanonicalFile().toPath();
+        if (!deletePath.startsWith(canonicalBase) || Files.isDirectory(canonicalPath)) {
+            throw new IllegalArgumentException("不能删除目录或非法文件路径: " + filePath);
+        }
+        return deletePath;
+    }
+
+    private Path resolveCanonicalPathWithinBase(String filePath, boolean allowBasePath) throws IOException {
+        Path basePath = FileUtil.file(properties.getBasePath()).getCanonicalFile().toPath();
+        Path canonicalPath = FileUtil.file(filePath).getCanonicalFile().toPath();
+        if (!canonicalPath.startsWith(basePath)
+                || (!allowBasePath && canonicalPath.equals(basePath))) {
+            throw new IllegalArgumentException("非法文件路径");
+        }
+        return canonicalPath;
     }
 
     @Override

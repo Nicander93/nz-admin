@@ -124,6 +124,7 @@ export const sidebar: DefaultTheme.SidebarItem[] = [
         collapsed: true,
         items: [
           { text: '登录与可信身份', link: '/platform/security/authentication' },
+          { text: '会话失效与安全版本', link: '/platform/security/session-lifecycle' },
           {
             text: '租户管理与表隔离',
             link: '/platform/security/tenant-isolation',

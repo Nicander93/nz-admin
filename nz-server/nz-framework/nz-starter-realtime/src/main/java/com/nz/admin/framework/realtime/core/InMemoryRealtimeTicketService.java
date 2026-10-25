@@ -1,5 +1,7 @@
 package com.nz.admin.framework.realtime.core;
 
+import com.nz.admin.common.core.identity.IdentityValidator;
+
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -17,14 +19,22 @@ public class InMemoryRealtimeTicketService implements RealtimeTicketService {
     private final Map<String, TicketEntry> tickets = new ConcurrentHashMap<>();
     private final Duration ttl;
     private final Clock clock;
+    private final IdentityValidator validator;
 
     public InMemoryRealtimeTicketService(Duration ttl, Clock clock) {
+        this(ttl, clock, null);
+    }
+
+    public InMemoryRealtimeTicketService(Duration ttl, Clock clock, IdentityValidator validator) {
         this.ttl = ttl;
         this.clock = clock;
+        this.validator = validator;
     }
 
     @Override
     public String issue(RealtimePrincipal principal, RealtimeTransport transport) {
+        if (validator != null && !validator.isValid(principal.identity()))
+            throw new IllegalArgumentException("实时连接身份已失效");
         Instant now = clock.instant();
         tickets.entrySet().removeIf(entry -> !entry.getValue().expiresAt().isAfter(now));
         String ticket = UUID.randomUUID().toString().replace("-", "");
@@ -43,6 +53,7 @@ public class InMemoryRealtimeTicketService implements RealtimeTicketService {
                 || !entry.expiresAt().isAfter(clock.instant())) {
             return Optional.empty();
         }
+        if (validator != null && !validator.isValid(entry.principal().identity())) return Optional.empty();
         return Optional.of(entry.principal());
     }
 

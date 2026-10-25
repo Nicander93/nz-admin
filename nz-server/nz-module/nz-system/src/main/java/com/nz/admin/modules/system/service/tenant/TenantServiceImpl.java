@@ -2,6 +2,7 @@ package com.nz.admin.modules.system.service.tenant;
 
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.nz.admin.common.core.BusinessException;
 import com.nz.admin.framework.tenant.config.TenantProperties;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 /**
  * 租户管理服务。
@@ -90,32 +92,66 @@ public class TenantServiceImpl implements TenantService {
     @Override
     @Transactional
     public void update(TenantUpdateRequest request) {
-        TenantDO existing = getRequired(request.getId());
-        if (tenantProperties.getDefaultTenantId().equals(request.getId())
-                && !"default".equals(request.getTenantCode())) {
+        TenantDO existing = requireTenantForUpdate(request.getId());
+        boolean defaultTenant = tenantProperties.getDefaultTenantId().equals(request.getId());
+        if (defaultTenant && !"default".equals(request.getTenantCode())) {
             throw new BusinessException("默认租户编码不能修改");
+        }
+        if (defaultTenant && request.getStatus() != null && request.getStatus() != 0) {
+            throw new BusinessException("默认租户不能停用");
         }
         ensureCodeUnique(request.getTenantCode(), request.getId());
         tenantPackageService.getRequired(request.getPackageId());
 
+        boolean identityChanged = changedIfProvided(request.getStatus(), existing.getStatus())
+                || !Objects.equals(request.getExpireTime(), existing.getExpireTime())
+                || changedIfProvided(request.getPackageId(), existing.getPackageId());
         TenantDO tenant = new TenantDO();
         copyUpdate(request, tenant);
-        tenantMapper.updateById(tenant);
-        if (!request.getPackageId().equals(existing.getPackageId())) {
+        tenant.setExpireTime(null);
+        tenant.setAuthVersion(null);
+        var update = new LambdaUpdateWrapper<TenantDO>()
+                .set(TenantDO::getExpireTime, request.getExpireTime())
+                .eq(TenantDO::getId, request.getId());
+        if (identityChanged) {
+            update.setSql("auth_version = auth_version + 1");
+        }
+        if (tenantMapper.update(tenant, update) != 1) {
+            throw new BusinessException("租户不存在");
+        }
+        if (!Objects.equals(request.getPackageId(), existing.getPackageId())) {
             provisioningService.applyPackageMenus(request.getId(), request.getPackageId());
         }
     }
 
     @Override
+    @Transactional
     public void deactivate(Long id) {
-        getRequired(id);
+        requireTenantForUpdate(id);
         if (tenantProperties.getDefaultTenantId().equals(id)) {
             throw new BusinessException("默认租户不能停用");
         }
-        TenantDO tenant = new TenantDO();
-        tenant.setId(id);
-        tenant.setStatus(1);
-        tenantMapper.updateById(tenant);
+        int updated = tenantMapper.update(null, new LambdaUpdateWrapper<TenantDO>()
+                .set(TenantDO::getStatus, 1)
+                .setSql("auth_version = auth_version + 1")
+                .eq(TenantDO::getId, id));
+        if (updated != 1) {
+            throw new BusinessException("租户不存在");
+        }
+    }
+
+    private boolean changedIfProvided(Object requested, Object current) {
+        return requested != null && !Objects.equals(requested, current);
+    }
+
+    private TenantDO requireTenantForUpdate(Long id) {
+        TenantDO tenant = tenantMapper.selectOne(new LambdaQueryWrapper<TenantDO>()
+                .eq(TenantDO::getId, id)
+                .last("FOR UPDATE"));
+        if (tenant == null) {
+            throw new BusinessException("租户不存在");
+        }
+        return tenant;
     }
 
     private void ensureCodeUnique(String tenantCode, Long excludedId) {

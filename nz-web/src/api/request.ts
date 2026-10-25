@@ -1,11 +1,44 @@
 import axios, { type AxiosRequestConfig, type AxiosResponse } from 'axios'
 import { ElMessage } from 'element-plus'
+
 import router from '@/router'
+
 import type { R } from './types'
 
 const instance = axios.create({
   timeout: 10000,
 })
+
+let unauthorizedHandling: { token: string; promise: Promise<void> } | null = null
+
+function getRequestToken(config?: AxiosRequestConfig): string | undefined {
+  const headers = config?.headers
+  const value =
+    typeof headers?.get === 'function'
+      ? headers.get('Authorization')
+      : headers?.Authorization ?? headers?.authorization
+  return typeof value === 'string' ? value : undefined
+}
+
+async function expireSession(requestToken?: string) {
+  if (!requestToken || requestToken !== localStorage.getItem('token')) return
+  if (unauthorizedHandling?.token === requestToken)
+    return unauthorizedHandling.promise
+
+  const handling = (async () => {
+    const { useUserStore } = await import('@/stores/user')
+    if (requestToken !== localStorage.getItem('token')) return
+
+    const userStore = useUserStore()
+    userStore.logout()
+    await router.replace('/login')
+  })()
+  const promise = handling.finally(() => {
+    if (unauthorizedHandling?.promise === promise) unauthorizedHandling = null
+  })
+  unauthorizedHandling = { token: requestToken, promise }
+  return promise
+}
 
 instance.interceptors.request.use((config) => {
   const token = localStorage.getItem('token')
@@ -27,9 +60,7 @@ instance.interceptors.response.use(
         if (res.code !== 200) {
           ElMessage.error(res.msg || '请求失败')
           if (res.code === 401) {
-            localStorage.removeItem('token')
-            localStorage.removeItem('Warm-Authorization')
-            router.push('/login')
+            await expireSession(getRequestToken(response.config))
           }
           return Promise.reject(res)
         }
@@ -40,16 +71,19 @@ instance.interceptors.response.use(
     if (res.code !== 200) {
       ElMessage.error(res.msg || '请求失败')
       if (res.code === 401) {
-        localStorage.removeItem('token')
-        localStorage.removeItem('Warm-Authorization')
-        router.push('/login')
+        await expireSession(getRequestToken(response.config))
       }
       return Promise.reject(res)
     }
     return res
   },
-  (error) => {
-    ElMessage.error(error.message || '网络错误')
+  async (error) => {
+    if (error.response?.status === 401) {
+      ElMessage.error(error.response.data?.msg || '登录状态已失效')
+      await expireSession(getRequestToken(error.config))
+    } else {
+      ElMessage.error(error.message || '网络错误')
+    }
     return Promise.reject(error)
   },
 )

@@ -1,6 +1,7 @@
 package com.nz.admin.framework.auth.core;
 
 import cn.dev33.satoken.stp.StpUtil;
+import com.nz.admin.common.core.identity.IdentitySnapshot;
 import org.springframework.beans.factory.ObjectProvider;
 
 /**
@@ -31,6 +32,12 @@ public class LoginUserContext {
             return null;
         }
         return Long.parseLong(loginId.toString());
+    }
+
+    /** 当前令牌签发时的身份版本，用于长连接等无后续请求的场景。 */
+    public IdentitySnapshot getIdentityOrNull() {
+        Long userId = getLoginUserIdOrNull();
+        return userId == null ? null : AuthSessionIdentity.read(userId, StpUtil.getTokenSession());
     }
 
     public LoginUser getLoginUserOrNull() {

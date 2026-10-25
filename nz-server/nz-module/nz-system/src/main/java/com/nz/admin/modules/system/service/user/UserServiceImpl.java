@@ -26,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * 用户这块的服务实现。
@@ -112,13 +113,27 @@ public class UserServiceImpl implements UserService {
      * 按 id 更新用户。
      */
     @Override
+    @Transactional
     public void updateById(UserDO user) {
-        requireUser(user.getId());
+        UserDO current = requireUserForUpdate(user.getId());
         if (user.getDeptId() != null) {
             validateDepartment(user.getDeptId());
         }
         preparePhoneHash(user);
-        if (userMapper.updateById(user) != 1) {
+        boolean identityChanged = hasChanged(user.getUsername(), current.getUsername())
+                || hasChanged(user.getPassword(), current.getPassword())
+                || hasChanged(user.getStatus(), current.getStatus())
+                || hasChanged(user.getPhone(), current.getPhone());
+        user.setAuthVersion(null);
+        user.setTenantId(null);
+        Long tenantId = TenantContextHolder.getTenantIdOrNull();
+        var update = new LambdaUpdateWrapper<UserDO>()
+                .eq(UserDO::getId, user.getId())
+                .eq(tenantId != null, UserDO::getTenantId, tenantId);
+        if (identityChanged) {
+            update.setSql("auth_version = auth_version + 1");
+        }
+        if (userMapper.update(user, update) != 1) {
             throw new BusinessException("用户不存在或无权修改");
         }
     }
@@ -160,15 +175,21 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void resetPassword(Long userId) {
-        requireUser(userId);
+        requireUserForUpdate(userId);
         String raw = configService.getConfigValue("sys.user.initPassword");
         if (StrUtil.isBlank(raw)) {
             raw = "123456";
         }
         String hashed = BCrypt.hashpw(raw);
-        userMapper.update(null, new LambdaUpdateWrapper<UserDO>()
+        Long tenantId = TenantContextHolder.getTenantIdOrNull();
+        int updated = userMapper.update(null, new LambdaUpdateWrapper<UserDO>()
                 .set(UserDO::getPassword, hashed)
-                .eq(UserDO::getId, userId));
+                .setSql("auth_version = auth_version + 1")
+                .eq(UserDO::getId, userId)
+                .eq(tenantId != null, UserDO::getTenantId, tenantId));
+        if (updated != 1) {
+            throw new BusinessException("用户不存在或无权修改");
+        }
     }
 
     /**
@@ -234,6 +255,22 @@ public class UserServiceImpl implements UserService {
         if (getById(id) == null) {
             throw new BusinessException("用户不存在或无权访问");
         }
+    }
+
+    private UserDO requireUserForUpdate(Long id) {
+        Long tenantId = TenantContextHolder.getTenantIdOrNull();
+        UserDO user = userMapper.selectOne(new LambdaQueryWrapper<UserDO>()
+                .eq(UserDO::getId, id)
+                .eq(tenantId != null, UserDO::getTenantId, tenantId)
+                .last("FOR UPDATE"));
+        if (user == null) {
+            throw new BusinessException("用户不存在或无权访问");
+        }
+        return user;
+    }
+
+    private boolean hasChanged(Object requested, Object current) {
+        return requested != null && !Objects.equals(requested, current);
     }
 
     private void validateDepartment(Long deptId) {

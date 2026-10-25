@@ -36,8 +36,10 @@
         "nz-server/nz-app/src/test/java/com/nz/admin/DataScopePostgresTest.java",
         "nz-server/nz-app/src/test/java/com/nz/admin/DemoItemExcelPostgresTest.java",
         "nz-server/nz-app/src/test/java/com/nz/admin/IdempotencyPostgresTest.java",
+        "nz-server/nz-app/src/test/java/com/nz/admin/IdentityLifecyclePostgresTest.java",
         "nz-server/nz-app/src/test/java/com/nz/admin/JobReadinessPostgresTest.java",
         "nz-server/nz-app/src/test/java/com/nz/admin/JobRestartPostgresTest.java",
+        "nz-server/nz-app/src/test/java/com/nz/admin/MessageLifecyclePostgresTest.java",
         "nz-server/nz-app/src/test/java/com/nz/admin/NzAdminApplicationTest.java",
         "nz-server/nz-app/src/test/java/com/nz/admin/NzAdminE2eProfileTest.java",
         "nz-server/nz-app/src/test/java/com/nz/admin/PermissionRevocationPostgresTest.java",
@@ -96,6 +98,10 @@
         {
           "name": "ErrorCode",
           "source": "nz-server/nz-common/nz-common-core/src/main/java/com/nz/admin/common/core/ErrorCode.java"
+        },
+        {
+          "name": "IdentityValidator",
+          "source": "nz-server/nz-common/nz-common-core/src/main/java/com/nz/admin/common/core/identity/IdentityValidator.java"
         }
       ],
       "tests": [
@@ -884,6 +890,7 @@
       ],
       "tests": [
         "nz-server/nz-framework/nz-starter-protection/src/test/java/com/nz/admin/framework/protection/aspect/ProtectionAspectTest.java",
+        "nz-server/nz-framework/nz-starter-protection/src/test/java/com/nz/admin/framework/protection/aspect/RateLimitAspectTest.java",
         "nz-server/nz-framework/nz-starter-protection/src/test/java/com/nz/admin/framework/protection/config/NzProtectionAutoConfigurationTest.java",
         "nz-server/nz-framework/nz-starter-protection/src/test/java/com/nz/admin/framework/protection/core/InMemoryProtectionStoreTest.java",
         "nz-server/nz-framework/nz-starter-protection/src/test/java/com/nz/admin/framework/protection/core/RequestFingerprintTest.java"
@@ -1453,6 +1460,7 @@
         "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/service/sms/SmsServiceImplTest.java",
         "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/service/social/SocialAccountServiceImplTest.java",
         "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/service/tenant/TenantAdminGuardTest.java",
+        "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/service/tenant/TenantServiceAuthVersionTest.java",
         "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/service/tenant/TenantServiceImplTest.java",
         "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/service/workflow/SystemWorkflowAssigneeResolverTest.java"
       ],
@@ -1626,6 +1634,13 @@
       "module": "nz-starter-file",
       "purpose": "替换文件存储实现",
       "guide": "/file-configuration"
+    },
+    {
+      "name": "IdentityValidator",
+      "source": "nz-server/nz-common/nz-common-core/src/main/java/com/nz/admin/common/core/identity/IdentityValidator.java",
+      "module": "nz-common-core",
+      "purpose": "统一核对会话与实时连接的身份状态和版本",
+      "guide": "/platform/security/session-lifecycle"
     },
     {
       "name": "JobTenantProvider",
@@ -1859,6 +1874,10 @@
       "sha256": "993df6ac80c0923c4cd0c19098f7d3507aa8cdf21ea6045ac02701449f814ca1"
     },
     {
+      "path": "nz-server/nz-common/nz-common-core/src/main/java/com/nz/admin/common/core/identity/IdentityValidator.java",
+      "sha256": "0f7a6ebd3d3d06d301d2eef0e79685f27d7dc5363a197235df844e696bcc9b48"
+    },
+    {
       "path": "nz-server/nz-common/nz-common-job/pom.xml",
       "sha256": "73add2cc86869c3155b2fdb2b41fe889ae14f99fd53505cdb93668e6777d130e"
     },
@@ -1916,7 +1935,7 @@
     },
     {
       "path": "nz-server/nz-framework/nz-starter-auth/src/main/java/com/nz/admin/framework/auth/config/SaTokenAutoConfiguration.java",
-      "sha256": "86672f4aa5dee959c60c3fe4921b960fcdf2950e97f6fc6ee3a9c5a8c162c798"
+      "sha256": "a891ccf2ba7057bf14fcd70cebec71bada5da0823267b4ba8c8e4fe045e94ab4"
     },
     {
       "path": "nz-server/nz-framework/nz-starter-auth/src/main/java/com/nz/admin/framework/auth/core/AuthUserResolver.java",
@@ -2128,7 +2147,7 @@
     },
     {
       "path": "nz-server/nz-framework/nz-starter-realtime/src/main/java/com/nz/admin/framework/realtime/config/RealtimeAutoConfiguration.java",
-      "sha256": "33323572c157d130be552224ec67817f7e644eab65b9cc4c23011706cb8b7281"
+      "sha256": "72a4f03d46c6e5dd483a1e865d019964c2881904a3be2df2c3d8bd2b5e25b7d0"
     },
     {
       "path": "nz-server/nz-framework/nz-starter-realtime/src/main/java/com/nz/admin/framework/realtime/core/RealtimeConnectionManager.java",
@@ -2664,7 +2683,7 @@
     },
     {
       "path": "tools/tests/workflow-cluster.mjs",
-      "sha256": "fd9f4f8d1acf945ce7eff32fadcef02a5841085971d1577498e796e6a0879aa0"
+      "sha256": "4da629d5e90640c314e844f2b0eedbc684f4b3e89bff9dde77dac5fef751df49"
     }
   ]
 }

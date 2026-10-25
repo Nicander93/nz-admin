@@ -5,6 +5,7 @@ import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.digest.BCrypt;
 import com.nz.admin.common.core.BusinessException;
+import com.nz.admin.framework.auth.core.AuthSessionIdentity;
 import com.nz.admin.framework.tenant.core.TenantConstants;
 import com.nz.admin.modules.system.entity.dataobject.client.ClientDO;
 import com.nz.admin.modules.system.entity.dataobject.dept.DeptDO;
@@ -88,12 +89,15 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private String completeLogin(UserDO user, TenantDO tenant, ClientDO client,
                                  String loginType, LoginMetadata metadata) {
         StpUtil.login(user.getId(), new SaLoginModel()
+                .setIsShare(false)
                 .setTimeout(client.getTokenTimeout())
                 .setDevice(client.getClientId()));
         LocalDateTime loginTime = LocalDateTime.now();
         DeptDO dept = user.getDeptId() == null ? null : deptService.getById(user.getDeptId());
         StpUtil.getTokenSession()
                 .set(TenantConstants.TOKEN_SESSION_TENANT_ID, tenant.getId())
+                .set(AuthSessionIdentity.USER_VERSION, user.getAuthVersion() == null ? 0L : user.getAuthVersion())
+                .set(AuthSessionIdentity.TENANT_VERSION, tenant.getAuthVersion() == null ? 0L : tenant.getAuthVersion())
                 .set(OnlineSessionKeys.TENANT_CODE, tenant.getTenantCode())
                 .set(OnlineSessionKeys.USERNAME, user.getUsername())
                 .set(OnlineSessionKeys.DEPT_NAME, dept == null ? "" : dept.getName())

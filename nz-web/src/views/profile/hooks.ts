@@ -1,5 +1,6 @@
-import { reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import { reactive, ref } from 'vue'
+
 import {
   getProfile,
   getProfileAvatar,
@@ -9,6 +10,7 @@ import {
   type ProfileUpdateRequest,
   type UserProfile,
 } from '@/api/system/profile'
+import router from '@/router'
 import { useUserStore } from '@/stores/user'
 
 export function validateAvatarFile(file: File): string | null {
@@ -67,7 +69,14 @@ export function useProfile() {
     }
     saving.value = true
     try {
+      const phoneChanged = (profile.value?.phone ?? '') !== (form.phone ?? '')
       await updateProfile({ ...form, nickname: form.nickname.trim() })
+      if (phoneChanged) {
+        ElMessage.success('手机号已修改，请重新登录')
+        userStore.logout()
+        await router.replace('/login')
+        return
+      }
       await userStore.fetchUserInfo()
       if (profile.value) profile.value.nickname = form.nickname.trim()
       ElMessage.success('个人资料已保存')
@@ -90,7 +99,9 @@ export function useProfile() {
       newPassword: passwordForm.newPassword,
     })
     Object.assign(passwordForm, { oldPassword: '', newPassword: '', confirmPassword: '' })
-    ElMessage.success('密码修改成功')
+    ElMessage.success('密码修改成功，请重新登录')
+    userStore.logout()
+    await router.replace('/login')
   }
 
   async function uploadAvatar(file: File) {

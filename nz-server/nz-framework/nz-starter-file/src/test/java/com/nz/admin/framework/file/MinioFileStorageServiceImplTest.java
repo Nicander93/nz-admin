@@ -1,13 +1,20 @@
 package com.nz.admin.framework.file;
 
 import io.minio.BucketExistsArgs;
+import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
+import io.minio.RemoveObjectArgs;
+import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockMultipartFile;
 
+import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -33,7 +40,7 @@ class MinioFileStorageServiceImplTest {
     }
 
     @Test
-    void uploadsObjectWithConfiguredPrefix() throws Exception {
+    void uploadsObjectWithConfiguredPrefixAndClosesClient() throws Exception {
         var file = new MockMultipartFile("file", "avatar.png", "image/png", "image".getBytes());
 
         FileStorageObject result = storageService.upload(file, 7L);
@@ -42,14 +49,69 @@ class MinioFileStorageServiceImplTest {
         assertThat(result.getFilePath()).startsWith("s3://nz-admin/uploads/");
         assertThat(result.getUploaderId()).isEqualTo(7L);
         verify(client).putObject(any(PutObjectArgs.class));
+        verify(client).close();
     }
 
     @Test
-    void checksConfiguredBucket() throws Exception {
+    void closesClientWhenUploadFails() throws Exception {
+        when(client.putObject(any(PutObjectArgs.class))).thenThrow(new IOException("storage unavailable"));
+        var file = new MockMultipartFile("file", "avatar.png", "image/png", "image".getBytes());
+
+        assertThatThrownBy(() -> storageService.upload(file, 7L))
+                .isInstanceOf(IOException.class)
+                .hasMessage("上传到 S3 兼容存储失败");
+
+        verify(client).close();
+    }
+
+    @Test
+    void deleteClosesClientAfterSuccessfulOperation() throws Exception {
+        storageService.delete(new FileStorageObject().setFileName("uploads/avatar.png"));
+
+        verify(client).removeObject(any(RemoveObjectArgs.class));
+        verify(client).close();
+    }
+
+    @Test
+    void downloadCreatesRedirectAndClosesClient() throws Exception {
+        when(client.getPresignedObjectUrl(any(GetPresignedObjectUrlArgs.class)))
+                .thenReturn("https://storage.example/avatar.png");
+        HttpServletResponse response = mock(HttpServletResponse.class);
+
+        storageService.download(new FileStorageObject().setFileName("uploads/avatar.png"), response);
+
+        verify(response).sendRedirect("https://storage.example/avatar.png");
+        verify(client).close();
+    }
+
+    @Test
+    void checksConfiguredBucketAndClosesClient() throws Exception {
         when(client.bucketExists(any(BucketExistsArgs.class))).thenReturn(true);
 
         storageService.checkAvailable();
 
         verify(client).bucketExists(any(BucketExistsArgs.class));
+        verify(client).close();
+    }
+
+    @Test
+    void createsAndClosesFreshClientForEachOperation() throws Exception {
+        MinioClient firstClient = mock(MinioClient.class);
+        MinioClient secondClient = mock(MinioClient.class);
+        when(firstClient.bucketExists(any(BucketExistsArgs.class))).thenReturn(true);
+        when(secondClient.bucketExists(any(BucketExistsArgs.class))).thenReturn(true);
+        AtomicInteger supplied = new AtomicInteger();
+        MinioFileStorageServiceImpl service = new MinioFileStorageServiceImpl(
+                properties, new FileSecurityValidator(properties),
+                () -> supplied.getAndIncrement() == 0 ? firstClient : secondClient);
+
+        service.checkAvailable();
+        service.checkAvailable();
+
+        verify(firstClient).bucketExists(any(BucketExistsArgs.class));
+        verify(firstClient).close();
+        verify(secondClient).bucketExists(any(BucketExistsArgs.class));
+        verify(secondClient).close();
+        assertThat(supplied.get()).isEqualTo(2);
     }
 }

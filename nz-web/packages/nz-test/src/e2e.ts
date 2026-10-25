@@ -1,3 +1,5 @@
+import { setTimeout as delay } from 'node:timers/promises'
+
 import {
   expect,
   test as base,
@@ -34,7 +36,37 @@ export async function loginByUi(page: Page, options = loginOptions()) {
     await tenantInput.fill(options.tenantCode ?? 'default')
   await page.getByPlaceholder('请输入用户名').fill(options.username)
   await page.getByPlaceholder('请输入密码').fill(options.password)
-  await page.getByRole('button', { name: '登录', exact: true }).click()
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const loginResponse = page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname === '/api/auth/login' &&
+        response.request().method() === 'POST',
+    )
+    await page.getByRole('button', { name: '登录', exact: true }).click()
+    const response = await loginResponse
+    const result = (await response.json()) as { code: number; msg?: string }
+    const retryAfter = Number(response.headers()['retry-after'])
+    if (
+      attempt === 0 &&
+      result.code === 429 &&
+      Number.isFinite(retryAfter) &&
+      retryAfter > 0 &&
+      retryAfter <= 120
+    ) {
+      const waiting = retryAfter * 1000 + 100
+      // 同一个测试 IP 共用生产频控；只按服务端明确提示等待一次，不放宽保护。
+      try {
+        const info = base.info()
+        info.setTimeout(info.timeout + waiting + 5000)
+      } catch {
+        // Worker 夹具有独立超时，不属于单个用例。
+      }
+      await delay(waiting)
+      continue
+    }
+    expect(result.code, result.msg ?? '登录失败').toBe(200)
+    break
+  }
   await expect(page).not.toHaveURL(/\/login(?:[?#].*)?$/, { timeout: 15_000 })
 }
 
@@ -76,7 +108,7 @@ export const test = base.extend<
         await context.close()
       }
     },
-    { scope: 'worker' },
+    { scope: 'worker', timeout: 150_000 },
   ],
   authenticatedPage: async ({ page, authenticationState }, use) => {
     await page.context().addCookies(authenticationState.cookies)
