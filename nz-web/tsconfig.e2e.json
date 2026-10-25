@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "types": ["node"],
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true
+  },
+  "include": [
+    "tests/e2e/**/*.ts",
+    "packages/nz-test/src/e2e.ts",
+    "packages/nz-test/src/config.d.mts",
+    "playwright.config.ts"
+  ]
+}

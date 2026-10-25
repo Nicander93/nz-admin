@@ -1,20 +1,23 @@
 package com.nz.admin.modules.system.service.file;
 
-import java.util.Map;
-
-import com.baomidou.mybatisplus.core.MybatisConfiguration;
-import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
+import cn.hutool.json.JSONUtil;
+import com.baomidou.mybatisplus.core.conditions.Wrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.nz.admin.common.core.BusinessException;
 import com.nz.admin.framework.file.FileConfigSecretCodec;
 import com.nz.admin.framework.file.FileStorageProperties;
 import com.nz.admin.framework.file.FileStorageService;
 import com.nz.admin.framework.test.core.ut.BaseMockitoUnitTest;
+import com.nz.admin.framework.tenant.core.TenantContextHolder;
 import com.nz.admin.modules.system.entity.dataobject.file.FileConfigDO;
 import com.nz.admin.modules.system.entity.dto.file.FileConfigSaveRequest;
+import com.nz.admin.modules.system.entity.vo.file.FileConfigVO;
 import com.nz.admin.modules.system.mapper.file.FileConfigMapper;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.apache.ibatis.builder.MapperBuilderAssistant;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -22,6 +25,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -30,11 +35,7 @@ class FileConfigServiceImplTest extends BaseMockitoUnitTest {
     @Mock
     private FileConfigMapper mapper;
     @Mock
-    private FileStorageService localStorageService;
-    @Mock
-    private FileStorageService ossStorageService;
-    @Mock
-    private FileStorageService s3StorageService;
+    private FileStorageFactory storageFactory;
 
     private FileStorageProperties properties;
     private FileConfigSecretCodec codec;
@@ -42,16 +43,16 @@ class FileConfigServiceImplTest extends BaseMockitoUnitTest {
 
     @BeforeEach
     void setUpService() {
-        TableInfoHelper.initTableInfo(new MapperBuilderAssistant(new MybatisConfiguration(), ""), FileConfigDO.class);
         properties = new FileStorageProperties();
         properties.setConfigEncryptionKey("file-config-unit-test-key");
         codec = new FileConfigSecretCodec(properties);
-        service = new FileConfigServiceImpl(properties, codec, Map.of(
-                "localFileStorageService", localStorageService,
-                "ossFileStorageService", ossStorageService,
-                "s3FileStorageService", s3StorageService
-        ));
+        service = new FileConfigServiceImpl(codec, storageFactory);
         ReflectionTestUtils.setField(service, "baseMapper", mapper);
+    }
+
+    @AfterEach
+    void clearTenant() {
+        TenantContextHolder.clear();
     }
 
     @Test
@@ -72,91 +73,114 @@ class FileConfigServiceImplTest extends BaseMockitoUnitTest {
     }
 
     @Test
-    void getMasksCredentials() {
-        FileConfigDO config = ossConfig();
-        when(mapper.selectById(1L)).thenReturn(config);
+    void getMasksCredentialsAndFiltersByTenant() {
+        when(mapper.selectOne(any(Wrapper.class))).thenReturn(ossConfig());
 
-        var result = service.get(1L);
+        FileConfigVO result = TenantContextHolder.callWithTenantId(8L, () -> service.get(1L));
 
         assertThat(result.getAccessKeyIdMasked()).isEqualTo("abc***xyz");
         assertThat(result.isAccessKeySecretConfigured()).isTrue();
+        ArgumentCaptor<Wrapper<FileConfigDO>> captor = ArgumentCaptor.forClass(Wrapper.class);
+        verify(mapper).selectOne(captor.capture());
+        QueryWrapper<?> query = (QueryWrapper<?>) captor.getValue();
+        assertThat(query.getSqlSegment()).contains("tenant_id", "id");
+        assertThat(query.getParamNameValuePairs().values()).contains(8L, 1L);
     }
 
     @Test
-    void updateKeepsCredentialsWhenRequestLeavesThemBlank() {
+    void updateKeepsCredentialsWhenRequestLeavesThemBlankAndDoesNotMutateDefaults() {
         FileConfigDO current = ossConfig();
-        when(mapper.selectById(1L)).thenReturn(current);
+        when(mapper.selectOne(any(Wrapper.class))).thenReturn(current);
+        when(mapper.update(any(FileConfigDO.class), any(Wrapper.class))).thenReturn(1);
         FileConfigSaveRequest request = ossRequest();
         request.setId(1L);
         request.setAccessKeyId("");
         request.setAccessKeySecret("");
 
-        service.update(request);
+        TenantContextHolder.runWithTenantId(8L, () -> service.update(request));
 
-        ArgumentCaptor<FileConfigDO> captor = ArgumentCaptor.forClass(FileConfigDO.class);
-        verify(mapper).updateById(captor.capture());
-        assertThat(captor.getValue().getAccessKeyId()).isEqualTo("abcdefxyz");
-        assertThat(codec.decrypt(captor.getValue().getAccessKeySecret())).isEqualTo("plain-secret");
-    }
-    @Test
-    void activateAppliesLocalConfigImmediately() {
-        FileConfigDO config = new FileConfigDO()
-                .setId(2L).setConfigName("local").setStorageType("local")
-                .setBasePath("/data/nz").setLocalAccessUrlPrefix("/files/")
-                .setMaxFileSizeBytes(2048L).setStatus(1);
-        when(mapper.selectById(2L)).thenReturn(config);
-
-        service.activate(2L);
-
+        ArgumentCaptor<FileConfigDO> update = ArgumentCaptor.forClass(FileConfigDO.class);
+        ArgumentCaptor<Wrapper<FileConfigDO>> where = ArgumentCaptor.forClass(Wrapper.class);
+        verify(mapper).update(update.capture(), where.capture());
+        assertThat(update.getValue().getAccessKeyId()).isEqualTo("abcdefxyz");
+        assertThat(codec.decrypt(update.getValue().getAccessKeySecret())).isEqualTo("plain-secret");
+        assertThat(((UpdateWrapper<?>) where.getValue()).getSqlSegment()).contains("tenant_id");
         assertThat(properties.getStorageType()).isEqualTo("local");
-        assertThat(properties.getBasePath()).isEqualTo("/data/nz");
-        assertThat(properties.getMaxFileSizeBytes()).isEqualTo(2048L);
-        verify(mapper).updateById(any(FileConfigDO.class));
     }
 
     @Test
-    void deleteRejectsActiveConfig() {
-        when(mapper.selectById(3L)).thenReturn(new FileConfigDO().setId(3L).setStatus(0));
+    void updateRejectsWhenNoTenantOwnedRowWasChanged() {
+        when(mapper.selectOne(any(Wrapper.class))).thenReturn(ossConfig());
+        when(mapper.update(any(FileConfigDO.class), any(Wrapper.class))).thenReturn(0);
+        FileConfigSaveRequest request = ossRequest();
+        request.setId(1L);
+
+        assertThatThrownBy(() -> service.update(request))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("不存在");
+    }
+
+    @Test
+    void activateChangesOnlyTheCurrentTenantAndDoesNotMutateGlobalProperties() {
+        FileConfigDO target = new FileConfigDO().setId(2L).setConfigName("local")
+                .setStorageType("local").setBasePath("/tenant/8/files")
+                .setLocalAccessUrlPrefix("/files/").setMaxFileSizeBytes(2048L).setStatus(1);
+        when(mapper.selectOne(any(Wrapper.class))).thenReturn(target);
+        when(mapper.update(isNull(), any(Wrapper.class))).thenReturn(1);
+        when(mapper.update(any(FileConfigDO.class), any(Wrapper.class))).thenReturn(1);
+
+        TenantContextHolder.runWithTenantId(8L, () -> service.activate(2L));
+
+        ArgumentCaptor<Wrapper<FileConfigDO>> statusWhere = ArgumentCaptor.forClass(Wrapper.class);
+        verify(mapper).update(isNull(), statusWhere.capture());
+        assertThat(((UpdateWrapper<?>) statusWhere.getValue()).getSqlSegment())
+                .contains("tenant_id", "status");
+        assertThat(properties.getBasePath()).isNotEqualTo("/tenant/8/files");
+        assertThat(properties.getStorageType()).isEqualTo("local");
+    }
+
+    @Test
+    void deleteRejectsActiveConfigAndChecksAffectedRowsForInactiveConfig() {
+        when(mapper.selectOne(any(Wrapper.class)))
+                .thenReturn(new FileConfigDO().setId(3L).setStatus(0));
         assertThatThrownBy(() -> service.delete(3L))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("不能删除");
-    }
 
-
-    @Test
-    void activateAppliesS3ConfigImmediately() {
-        FileConfigDO config = new FileConfigDO()
-                .setId(4L).setConfigName("minio").setStorageType("s3")
-                .setEndpoint("http://minio:9000").setAccessKeyId("nzadmin")
-                .setAccessKeySecret(codec.encrypt("minio-secret")).setBucketName("nz-admin")
-                .setRegion("us-east-1").setMaxFileSizeBytes(4096L).setStatus(1);
-        when(mapper.selectById(4L)).thenReturn(config);
-
-        service.activate(4L);
-
-        assertThat(properties.getStorageType()).isEqualTo("s3");
-        assertThat(properties.getS3().getEndpoint()).isEqualTo("http://minio:9000");
-        assertThat(properties.getS3().getAccessKeySecret()).isEqualTo("minio-secret");
-        assertThat(properties.getS3().getBucketName()).isEqualTo("nz-admin");
+        when(mapper.selectOne(any(Wrapper.class)))
+                .thenReturn(new FileConfigDO().setId(4L).setStatus(1));
+        when(mapper.delete(any(Wrapper.class))).thenReturn(0);
+        assertThatThrownBy(() -> service.delete(4L))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("不存在");
     }
 
     @Test
-    void testConnectionUsesActiveStorageOnly() {
-        FileConfigDO config = new FileConfigDO()
-                .setId(5L).setConfigName("local").setStorageType("local")
-                .setBasePath("/data/nz").setMaxFileSizeBytes(1024L).setStatus(0);
-        when(mapper.selectById(5L)).thenReturn(config);
+    void connectionTestUsesAnInactiveTenantConfig() {
+        FileStorageService storage = mock(FileStorageService.class);
+        when(storageFactory.fromConfig(6L))
+                .thenReturn(new FileStorageFactory.Binding("local", "snapshot", storage));
 
-        service.testConnection(5L);
+        TenantContextHolder.runWithTenantId(8L, () -> service.testConnection(6L));
 
-        verify(localStorageService).checkAvailable();
+        verify(storageFactory).fromConfig(6L);
+        verify(storage).checkAvailable();
     }
 
     @Test
-    void testConnectionRejectsInactiveConfig() {
-        when(mapper.selectById(6L)).thenReturn(new FileConfigDO().setId(6L).setStatus(1));
-        assertThatThrownBy(() -> service.testConnection(6L)).isInstanceOf(BusinessException.class);
+    void pageAddsExplicitTenantFilter() {
+        when(mapper.selectPage(any(Page.class), any(Wrapper.class))).thenReturn(new Page<>(1, 10));
+
+        TenantContextHolder.runWithTenantId(12L,
+                () -> service.page(1, 10, null, null, null));
+
+        ArgumentCaptor<Wrapper<FileConfigDO>> where = ArgumentCaptor.forClass(Wrapper.class);
+        verify(mapper).selectPage(any(Page.class), where.capture());
+        QueryWrapper<?> query = (QueryWrapper<?>) where.getValue();
+        assertThat(query.getSqlSegment()).contains("tenant_id");
+        assertThat(query.getParamNameValuePairs().values()).contains(12L);
     }
+
     private FileConfigSaveRequest ossRequest() {
         FileConfigSaveRequest request = new FileConfigSaveRequest();
         request.setConfigName("oss");

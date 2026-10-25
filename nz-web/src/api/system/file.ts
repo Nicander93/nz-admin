@@ -1,5 +1,10 @@
 import request from '@/api/request'
-import type { PageQuery, PageResult } from '@/api/types'
+import type { PageQuery, PageResult, R } from '@/api/types'
+
+import type { AxiosResponse } from 'axios'
+
+export type FileStorageType = 'local' | 'oss' | 's3'
+export type FileLifecycleStatus = 'READY' | 'DELETE_PENDING'
 
 export type SysFile = {
   id: number
@@ -10,12 +15,30 @@ export type SysFile = {
   fileSize: number
   fileExt: string
   mimeType?: string
-  storageType?: string
+  storageType?: FileStorageType
+  storageBindingRequired: boolean
+  lifecycleStatus: FileLifecycleStatus
+  cleanupError?: string
+  cleanupAttempts?: number
   uploaderId?: number
   uploaderName?: string
   createTime?: string
   updateTime?: string
-  createdAt?: string
+}
+
+export interface FailedFileUpload {
+  /** Zero-based position in the submitted batch. */
+  index: number
+  fileName: string
+  reason: string
+}
+
+export interface BatchUploadResult {
+  totalCount: number
+  successCount: number
+  failCount: number
+  successFiles: SysFile[]
+  failedFiles: FailedFileUpload[]
 }
 
 export interface FileQuery extends PageQuery {
@@ -23,71 +46,44 @@ export interface FileQuery extends PageQuery {
   fileExt?: string
 }
 
-/**
- * 上传单个文件
- * @param file File 对象
- * @param storageType 存储类型（可选，默认使用后端配置）
- */
-export function uploadFile(file: File, storageType?: 'local' | 'oss') {
+export function uploadFile(file: File): Promise<R<SysFile>> {
   const formData = new FormData()
   formData.append('file', file)
-  if (storageType) {
-    formData.append('storageType', storageType)
-  }
-  return request.post('/api/system/file/upload', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
+  return request.post<SysFile>('/api/system/file/upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
   })
 }
 
-/**
- * 批量上传文件
- * @param files File 对象数组
- * @param storageType 存储类型（可选）
- */
-export function uploadFiles(files: File[], storageType?: 'local' | 'oss') {
+export function uploadFiles(files: File[]): Promise<R<BatchUploadResult>> {
   const formData = new FormData()
-  files.forEach((file) => {
-    formData.append('files', file)
-  })
-  if (storageType) {
-    formData.append('storageType', storageType)
-  }
-  return request.post('/api/system/file/uploads', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
+  files.forEach((file) => formData.append('files', file))
+  return request.post<BatchUploadResult>('/api/system/file/uploads', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
   })
 }
 
-/**
- * 分页查询文件列表
- * @param params 查询参数
- */
-export function pageFiles(params: FileQuery) {
+export function pageFiles(params: FileQuery): Promise<R<PageResult<SysFile>>> {
   return request.get<PageResult<SysFile>>('/api/system/file/page', { params })
 }
 
-export function listFiles(params: FileQuery) {
+export function listFiles(params: FileQuery): Promise<R<PageResult<SysFile>>> {
   return pageFiles(params)
 }
 
-/**
- * 删除文件
- * @param id 文件 ID
- */
-export function deleteFile(id: number) {
-  return request.delete(`/api/system/file/${id}`)
+export function deleteFile(id: number): Promise<R<void>> {
+  return request.delete<void>('/api/system/file/' + id)
 }
 
-/**
- * 下载文件（直接打开 URL）
- * @param id 文件 ID
- */
-export function downloadFileUrl(id: number) {
-  return `/api/system/file/download/${id}`
+export function bindFileStorage(id: number, configId: number): Promise<R<void>> {
+  return request.put<void>(
+    '/api/system/file/' + id + '/storage-binding/' + configId,
+  )
 }
 
-/**
- * 获取当前存储类型
- */
-export function getStorageType() {
-  return request.get('/api/system/file/storage-type')
+export function downloadFile(id: number): Promise<AxiosResponse<Blob>> {
+  return request.getBlob<Blob>('/api/system/file/download/' + id)
+}
+
+export function getStorageType(): Promise<R<FileStorageType>> {
+  return request.get<FileStorageType>('/api/system/file/storage-type')
 }

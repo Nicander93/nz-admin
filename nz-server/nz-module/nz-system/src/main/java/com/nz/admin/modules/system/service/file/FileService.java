@@ -25,6 +25,9 @@ public interface FileService {
 
     void removeById(Long id);
 
+    /** 明确绑定升级前文件的原存储配置。 */
+    void bindStorage(Long id, Long configId);
+
     void downloadById(Long id, HttpServletResponse response) throws IOException;
 
     /**
@@ -52,6 +55,10 @@ public interface FileService {
          * 批量上传失败项。
          */
         public static class FailedFile {
+            private Integer index;
+
+            public Integer getIndex() { return index; }
+            public void setIndex(Integer index) { this.index = index; }
             private String fileName;
             private String reason;
 

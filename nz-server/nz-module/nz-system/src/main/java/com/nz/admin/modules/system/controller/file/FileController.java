@@ -1,11 +1,10 @@
 package com.nz.admin.modules.system.controller.file;
 
-import cn.dev33.satoken.stp.StpUtil;
+import com.nz.admin.framework.auth.annotation.PermissionMode;
 import com.nz.admin.common.core.PageResult;
 import com.nz.admin.common.core.R;
 import com.nz.admin.framework.auth.annotation.SaCheckPermission;
 import com.nz.admin.framework.auth.core.LoginUserContext;
-import com.nz.admin.framework.file.FileSecurityValidator;
 import com.nz.admin.modules.system.entity.dataobject.file.FileDO;
 import com.nz.admin.modules.system.entity.query.file.FileQuery;
 import com.nz.admin.modules.system.service.file.FileService;
@@ -28,8 +27,6 @@ public class FileController {
 
     @Autowired
     private LoginUserContext loginUserContext;
-    @Autowired
-    private FileSecurityValidator fileSecurityValidator;
 
     /**
      * 单文件上传。
@@ -59,9 +56,6 @@ public class FileController {
             if (files == null || files.length == 0) {
                 return R.fail("文件不能为空");
             }
-            for (MultipartFile file : files) {
-                fileSecurityValidator.validateUpload(file);
-            }
             Long uploaderId = loginUserContext.getLoginUserIdOrNull();
             return R.ok(fileService.uploadBatch(files, uploaderId));
         } catch (IllegalArgumentException e) {
@@ -83,7 +77,7 @@ public class FileController {
     /**
      * 查看当前文件存储类型。
      */
-    @SaCheckPermission("system:file:storage-type")
+    @SaCheckPermission({"system:file:query", "system:file:storage-type"})
     @GetMapping("/storage-type")
     public R<String> getStorageType() {
         return R.ok(fileService.getStorageType());
@@ -92,16 +86,25 @@ public class FileController {
     /**
      * 下载文件。
      */
-    @SaCheckPermission("system:file:download")
+    @SaCheckPermission({"system:file:query", "system:file:download"})
     @GetMapping("/download/{id}")
     public void download(@PathVariable Long id, HttpServletResponse response) throws IOException {
         fileService.downloadById(id, response);
     }
 
+    /** 管理员确认历史文件原配置后绑定，后续修改配置不影响该文件。 */
+    @com.nz.admin.framework.log.annotation.Log(title = "历史文件存储绑定", businessType = com.nz.admin.framework.log.annotation.BusinessType.UPDATE)
+    @SaCheckPermission(value = {"system:fileconfig:edit", "system:file:upload"}, mode = PermissionMode.AND)
+    @PutMapping("/{id}/storage-binding/{configId}")
+    public R<Void> bindStorage(@PathVariable Long id, @PathVariable Long configId) {
+        fileService.bindStorage(id, configId);
+        return R.ok();
+    }
+
     /**
      * 删除文件。
      */
-    @SaCheckPermission("system:file:delete")
+    @SaCheckPermission({"system:file:remove", "system:file:delete"})
     @DeleteMapping("/{id}")
     public R<Void> delete(@PathVariable Long id) {
         fileService.removeById(id);

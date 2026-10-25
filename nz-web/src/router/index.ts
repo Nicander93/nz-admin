@@ -40,7 +40,7 @@ const router = createRouter({
         {
           path: '/file',
           name: 'File',
-          component: () => import('@/views/file/index.vue'),
+          redirect: '/system/file',
         },
         {
           path: '/system/post',

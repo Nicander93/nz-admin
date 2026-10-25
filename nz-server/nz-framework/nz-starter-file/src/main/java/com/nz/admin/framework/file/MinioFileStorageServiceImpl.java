@@ -4,16 +4,14 @@ import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
 import io.minio.BucketExistsArgs;
-import io.minio.GetPresignedObjectUrlArgs;
+import io.minio.GetObjectArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import io.minio.RemoveObjectArgs;
-import io.minio.http.Method;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 /**
@@ -43,32 +41,35 @@ public class MinioFileStorageServiceImpl implements FileStorageService {
 
     @Override
     public FileStorageObject upload(MultipartFile file, Long uploaderId) throws IOException {
+        FileStorageObject target = prepareUpload(file, uploaderId);
+        writeUpload(file, target);
+        return target;
+    }
+
+    @Override
+    public FileStorageObject prepareUpload(MultipartFile file, Long uploaderId) {
         fileSecurityValidator.validateUpload(file);
         String originalName = fileSecurityValidator.normalizeOriginalFilename(file.getOriginalFilename());
         String fileExt = FileUtil.extName(originalName);
-        String prefix = normalizePrefix(properties.getS3().getPathPrefix());
-        String fileName = prefix + IdUtil.fastSimpleUUID()
-                + (StrUtil.isNotBlank(fileExt) ? "." + fileExt : "");
+        String prefix = StrUtil.blankToDefault(properties.getS3().getPathPrefix(), "");
+        if (StrUtil.isNotBlank(prefix) && !prefix.endsWith("/")) prefix += "/";
+        String fileName = prefix + IdUtil.fastSimpleUUID() + (StrUtil.isNotBlank(fileExt) ? "." + fileExt : "");
+        String filePath = "s3://" + properties.getS3().getBucketName() + "/" + fileName;
+        return new FileStorageObject()
+                .setOriginalName(originalName).setFileName(fileName).setFilePath(filePath)
+                .setFileSize(file.getSize()).setFileExt(fileExt)
+                .setMimeType(file.getContentType()).setUploaderId(uploaderId);
+    }
 
-        try {
-            try (MinioClient client = clientSupplier.get()) {
-                client.putObject(PutObjectArgs.builder()
-                        .bucket(properties.getS3().getBucketName())
-                        .object(fileName)
-                        .contentType(file.getContentType())
-                        .stream(file.getInputStream(), file.getSize(), -1)
-                        .build());
-            }
-            return new FileStorageObject()
-                    .setOriginalName(originalName)
-                    .setFileName(fileName)
-                    .setFilePath("s3://" + properties.getS3().getBucketName() + "/" + fileName)
-                    .setFileSize(file.getSize())
-                    .setFileExt(fileExt)
-                    .setMimeType(file.getContentType())
-                    .setUploaderId(uploaderId);
-        } catch (Exception e) {
-            throw new IOException("上传到 S3 兼容存储失败", e);
+    @Override
+    public void writeUpload(MultipartFile file, FileStorageObject target) throws IOException {
+        fileSecurityValidator.validateUpload(file);
+        try (MinioClient client = clientSupplier.get(); var input = file.getInputStream()) {
+            client.putObject(PutObjectArgs.builder()
+                    .bucket(properties.getS3().getBucketName()).object(target.getFileName())
+                    .contentType(file.getContentType()).stream(input, file.getSize(), -1).build());
+        } catch (Exception exception) {
+            throw new IOException("上传到 S3 兼容存储失败", exception);
         }
     }
 
@@ -95,19 +96,13 @@ public class MinioFileStorageServiceImpl implements FileStorageService {
             response.setStatus(404);
             return;
         }
-        try {
-            String url;
-            try (MinioClient client = clientSupplier.get()) {
-                url = client.getPresignedObjectUrl(GetPresignedObjectUrlArgs.builder()
-                        .method(Method.GET)
-                        .bucket(properties.getS3().getBucketName())
-                        .object(file.getFileName())
-                        .expiry(5, TimeUnit.MINUTES)
-                        .build());
-            }
-            response.sendRedirect(url);
-        } catch (Exception e) {
-            throw new IOException("生成 S3 兼容存储下载地址失败", e);
+        try (MinioClient client = clientSupplier.get();
+             var object = client.getObject(GetObjectArgs.builder()
+                     .bucket(properties.getS3().getBucketName()).object(file.getFileName()).build())) {
+            FileDownloads.prepareResponse(response, file);
+            object.transferTo(response.getOutputStream());
+        } catch (Exception exception) {
+            throw new IOException("下载 S3 兼容存储文件失败", exception);
         }
     }
 

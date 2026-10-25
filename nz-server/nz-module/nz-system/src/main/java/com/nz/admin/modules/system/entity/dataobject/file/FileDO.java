@@ -1,6 +1,8 @@
 package com.nz.admin.modules.system.entity.dataobject.file;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.baomidou.mybatisplus.annotation.IdType;
+import java.time.LocalDateTime;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.nz.admin.common.core.BaseEntity;
@@ -19,6 +21,22 @@ public class FileDO extends BaseEntity {
 
     @TableId(type = IdType.AUTO)
     private Long id;
+
+    @JsonIgnore
+    private Long tenantId;
+
+    /** 上传时的位置与密文凭据快照，不随当前配置变更。 */
+    @JsonIgnore
+    private String storageConfigSnapshot;
+
+    private String lifecycleStatus;
+    private LocalDateTime cleanupAfter;
+    private Integer cleanupAttempts;
+    private String cleanupError;
+
+    public boolean isStorageBindingRequired() {
+        return storageConfigSnapshot == null || storageConfigSnapshot.isBlank();
+    }
 
     /**
      * 原始文件名。

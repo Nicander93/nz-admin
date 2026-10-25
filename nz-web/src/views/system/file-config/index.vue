@@ -36,7 +36,7 @@
     </div>
 
     <el-alert type="info" :closable="false" class="mb-4">
-      同一时间仅一个配置生效。密钥只可覆盖写入，接口不会返回原文。
+      每个租户同一时间仅一个配置生效。密钥只可覆盖写入，接口不会返回原文。
     </el-alert>
 
     <el-table :data="data" v-loading="loading" border>
@@ -100,7 +100,6 @@
             >编辑</el-button
           >
           <el-button
-            v-if="row.status === 0"
             v-permission="'system:fileconfig:test'"
             link
             type="success"

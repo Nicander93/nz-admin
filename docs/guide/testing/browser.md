@@ -46,3 +46,11 @@ pnpm docs:e2e
 `system/access-control.spec.ts` 使用专用随机命名的菜单、角色和用户，通过真实页面创建和授权；另开普通用户上下文，验证只有自身数据、无导航菜单时的个人中心落点，以及禁用/恢复角色和菜单后，同一令牌的真实接口拒绝与恢复。清理只针对本用例创建的精确记录，不停用共享系统菜单。
 
 浏览器和双节点脚本使用真实生产频控。`loginByUi` 与脚本的 `loginByHttp` 只有在登录返回 `429` 且存在有效 `Retry-After` 时才等待并重试一次；其他错误直接失败。不通过关闭防重、提高限额或清空共享状态让浏览器测试通过。
+
+## 浏览器测试的类型门禁
+
+`pnpm e2e:typecheck` 检查现有应用 E2E、通用测试夹具和 Playwright 配置，使用工作区直接声明的 Node 类型。CI 在启动浏览器前检查这些文件，避免只做转译而遗漏类型错误。
+
+文件管理回归位于 `tests/e2e/system/file-lifecycle.spec.ts`。它使用真实后端上传、校验下载内容、删除，并验证批量部分失败；数据只按本用例生成的唯一文件名清理。精准执行使用 `pnpm exec playwright test tests/e2e/system/file-lifecycle.spec.ts`，不要在文件路径前额外传入 `--`。
+
+应用 E2E 默认先执行生产构建，再启动 Vite preview，并代理后端 API 与实时连接。这样测试过程不会被开发依赖预构建或 HMR 自动刷新打断。调试开发模式时，可以通过通用测试包的 `serverCommand` 显式覆盖启动命令。

@@ -28,29 +28,32 @@ public class LocalFileStorageServiceImpl implements FileStorageService {
 
     @Override
     public FileStorageObject upload(MultipartFile file, Long uploaderId) throws IOException {
+        FileStorageObject target = prepareUpload(file, uploaderId);
+        writeUpload(file, target);
+        return target;
+    }
+
+    @Override
+    public FileStorageObject prepareUpload(MultipartFile file, Long uploaderId) {
         fileSecurityValidator.validateUpload(file);
         String originalName = fileSecurityValidator.normalizeOriginalFilename(file.getOriginalFilename());
         String fileExt = FileUtil.extName(originalName);
         String fileName = IdUtil.fastSimpleUUID() + (StrUtil.isNotBlank(fileExt) ? "." + fileExt : "");
-        String filePath = properties.getBasePath() + "/" + fileName;
-
-        File dest = new File(filePath);
-        FileUtil.mkParentDirs(dest);
-        String baseCanonicalPath = new File(properties.getBasePath()).getCanonicalPath();
-        String destCanonicalPath = dest.getCanonicalPath();
-        if (!StrUtil.startWith(destCanonicalPath, baseCanonicalPath + File.separator)) {
-            throw new IllegalArgumentException("非法文件路径");
-        }
-        file.transferTo(dest);
-
+        String filePath = Path.of(properties.getBasePath()).resolve(fileName).toAbsolutePath().toString();
         return new FileStorageObject()
-                .setOriginalName(originalName)
-                .setFileName(fileName)
-                .setFilePath(filePath)
-                .setFileSize(file.getSize())
-                .setFileExt(fileExt)
-                .setMimeType(file.getContentType())
-                .setUploaderId(uploaderId);
+                .setOriginalName(originalName).setFileName(fileName).setFilePath(filePath)
+                .setFileSize(file.getSize()).setFileExt(fileExt)
+                .setMimeType(file.getContentType()).setUploaderId(uploaderId);
+    }
+
+    @Override
+    public void writeUpload(MultipartFile file, FileStorageObject target) throws IOException {
+        fileSecurityValidator.validateUpload(file);
+        Path path = resolveCanonicalPathWithinBase(target.getFilePath(), false);
+        Files.createDirectories(path.getParent());
+        try (var input = file.getInputStream()) {
+            Files.copy(input, path);
+        }
     }
 
     @Override

@@ -1,7 +1,12 @@
 package com.nz.admin.framework.file;
 
 import io.minio.BucketExistsArgs;
-import io.minio.GetPresignedObjectUrlArgs;
+import io.minio.GetObjectArgs;
+import io.minio.GetObjectResponse;
+import okhttp3.Headers;
+import java.io.ByteArrayInputStream;
+import java.util.concurrent.atomic.AtomicBoolean;
+import org.springframework.mock.web.MockHttpServletResponse;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import io.minio.RemoveObjectArgs;
@@ -73,14 +78,30 @@ class MinioFileStorageServiceImplTest {
     }
 
     @Test
-    void downloadCreatesRedirectAndClosesClient() throws Exception {
-        when(client.getPresignedObjectUrl(any(GetPresignedObjectUrlArgs.class)))
-                .thenReturn("https://storage.example/avatar.png");
-        HttpServletResponse response = mock(HttpServletResponse.class);
+    void downloadStreamsAuthenticatedAttachmentAndClosesAllResources() throws Exception {
+        AtomicBoolean closed = new AtomicBoolean();
+        var input = new ByteArrayInputStream("content".getBytes()) {
+            @Override public void close() throws IOException { closed.set(true); super.close(); }
+        };
+        when(client.getObject(any(GetObjectArgs.class))).thenReturn(new GetObjectResponse(
+                new Headers.Builder().build(), "nz-admin", "", "uploads/avatar.png", input));
+        MockHttpServletResponse response = new MockHttpServletResponse();
 
-        storageService.download(new FileStorageObject().setFileName("uploads/avatar.png"), response);
+        storageService.download(new FileStorageObject().setFileName("uploads/avatar.png")
+                .setOriginalName("示例.png"), response);
 
-        verify(response).sendRedirect("https://storage.example/avatar.png");
+        assertThat(response.getContentAsByteArray()).isEqualTo("content".getBytes());
+        assertThat(response.getHeader("Content-Disposition")).contains("attachment; filename*=UTF-8''");
+        assertThat(response.getRedirectedUrl()).isNull();
+        assertThat(closed.get()).isTrue();
+        verify(client).close();
+    }
+
+    @Test
+    void failedDownloadStillClosesClient() throws Exception {
+        when(client.getObject(any(GetObjectArgs.class))).thenThrow(new IOException("unavailable"));
+        assertThatThrownBy(() -> storageService.download(new FileStorageObject().setFileName("x.txt"),
+                new MockHttpServletResponse())).isInstanceOf(IOException.class);
         verify(client).close();
     }
 

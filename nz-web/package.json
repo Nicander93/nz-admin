@@ -21,7 +21,8 @@
     "lint:check": "eslint . --max-warnings=0",
     "format": "prettier --write src/",
     "docs:e2e": "playwright test -c playwright.docs.config.ts",
-    "docs:typecheck": "vue-tsc --noEmit -p ../docs/tsconfig.json"
+    "docs:typecheck": "vue-tsc --noEmit -p ../docs/tsconfig.json",
+    "e2e:typecheck": "tsc --noEmit -p tsconfig.e2e.json"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.2",
@@ -34,7 +35,9 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@nz/test": "workspace:*",
     "@playwright/test": "^1.62.1",
+    "@types/node": "^22",
     "@typescript-eslint/eslint-plugin": "^8.67.0",
     "@typescript-eslint/parser": "^8.67.0",
     "@vitejs/plugin-vue": "^6.0.8",
@@ -54,7 +57,6 @@
     "vite": "8.0.8",
     "vitest": "4.1.4",
     "vue-eslint-parser": "^10",
-    "vue-tsc": "^3.3.11",
-    "@nz/test": "workspace:*"
+    "vue-tsc": "^3.3.11"
   }
 }

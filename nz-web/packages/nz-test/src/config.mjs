@@ -32,7 +32,9 @@ export function browserTestConfig(options = {}) {
     },
     projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
     webServer: {
-      command: options.serverCommand ?? 'pnpm dev --host 127.0.0.1 --port 4173',
+      command:
+        options.serverCommand ??
+        'pnpm build && pnpm preview --host 127.0.0.1 --port 4173 --strictPort',
       url: baseURL,
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,

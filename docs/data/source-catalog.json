@@ -35,6 +35,7 @@
         "nz-server/nz-app/src/test/java/com/nz/admin/ClusterStateRedisTest.java",
         "nz-server/nz-app/src/test/java/com/nz/admin/DataScopePostgresTest.java",
         "nz-server/nz-app/src/test/java/com/nz/admin/DemoItemExcelPostgresTest.java",
+        "nz-server/nz-app/src/test/java/com/nz/admin/FileLifecyclePostgresTest.java",
         "nz-server/nz-app/src/test/java/com/nz/admin/IdempotencyPostgresTest.java",
         "nz-server/nz-app/src/test/java/com/nz/admin/IdentityLifecyclePostgresTest.java",
         "nz-server/nz-app/src/test/java/com/nz/admin/JobReadinessPostgresTest.java",
@@ -686,6 +687,10 @@
       ],
       "contracts": [
         {
+          "name": "FileStorageAdapterFactory",
+          "source": "nz-server/nz-framework/nz-starter-file/src/main/java/com/nz/admin/framework/file/FileStorageAdapterFactory.java"
+        },
+        {
           "name": "FileStorageService",
           "source": "nz-server/nz-framework/nz-starter-file/src/main/java/com/nz/admin/framework/file/FileStorageService.java"
         }
@@ -695,6 +700,7 @@
         "nz-server/nz-framework/nz-starter-file/src/test/java/com/nz/admin/framework/file/FileSecurityValidatorTest.java",
         "nz-server/nz-framework/nz-starter-file/src/test/java/com/nz/admin/framework/file/LocalFileStorageServiceImplTest.java",
         "nz-server/nz-framework/nz-starter-file/src/test/java/com/nz/admin/framework/file/MinioFileStorageServiceImplTest.java",
+        "nz-server/nz-framework/nz-starter-file/src/test/java/com/nz/admin/framework/file/OssFileStorageServiceImplTest.java",
         "nz-server/nz-framework/nz-starter-file/src/test/java/com/nz/admin/framework/file/config/NzFileAutoConfigurationTest.java"
       ],
       "manifest": null,
@@ -1451,6 +1457,7 @@
         "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/service/auth/SmsVerificationServiceImplTest.java",
         "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/service/client/ClientServiceImplTest.java",
         "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/service/file/FileConfigServiceImplTest.java",
+        "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/service/file/FileStorageFactoryTest.java",
         "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/service/message/MessageServiceImplTest.java",
         "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/service/online/OnlineUserServiceImplTest.java",
         "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/service/online/SaTokenOnlineSessionAccessorTest.java",
@@ -1629,10 +1636,17 @@
       "guide": "/platform/security/data-scope"
     },
     {
+      "name": "FileStorageAdapterFactory",
+      "source": "nz-server/nz-framework/nz-starter-file/src/main/java/com/nz/admin/framework/file/FileStorageAdapterFactory.java",
+      "module": "nz-starter-file",
+      "purpose": "按独立历史配置创建文件存储策略",
+      "guide": "/file-configuration"
+    },
+    {
       "name": "FileStorageService",
       "source": "nz-server/nz-framework/nz-starter-file/src/main/java/com/nz/admin/framework/file/FileStorageService.java",
       "module": "nz-starter-file",
-      "purpose": "替换文件存储实现",
+      "purpose": "实现文件存储读写策略",
       "guide": "/file-configuration"
     },
     {
@@ -2031,11 +2045,15 @@
     },
     {
       "path": "nz-server/nz-framework/nz-starter-file/src/main/java/com/nz/admin/framework/file/config/NzFileAutoConfiguration.java",
-      "sha256": "2f5ea893da62f90572b5e078aa2b5e9b417869f866fd15a83a6cf348f16b2648"
+      "sha256": "13a1f73c94db3d37894c00ae63d7b4f2c8f2dd8e08f4b0e58a336558e0793583"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-file/src/main/java/com/nz/admin/framework/file/FileStorageAdapterFactory.java",
+      "sha256": "53281f314d3084e536d6bf520c1b70b11e704685711c4b2e93edfd9857783340"
     },
     {
       "path": "nz-server/nz-framework/nz-starter-file/src/main/java/com/nz/admin/framework/file/FileStorageService.java",
-      "sha256": "a48df503429812483459ba9253849faf83bc0297d4bb09bebc3cec084422b25d"
+      "sha256": "f13a4e4272cd59e6a8318ff9bb75a89f6a7c971cd303882572a8d16d017989d8"
     },
     {
       "path": "nz-server/nz-framework/nz-starter-file/src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports",
@@ -2379,7 +2397,7 @@
     },
     {
       "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/file/FileMapper.java",
-      "sha256": "34ec5157f583a16d5c3226109aae04cdbf8b79301737f56da01dc02522b8031d"
+      "sha256": "c3fe1c0c4cca398c917bdfac398372f155362247dd360d4a9bfb83edca158d2e"
     },
     {
       "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/mapper/log/LoginLogMapper.java",
@@ -2495,7 +2513,7 @@
     },
     {
       "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/file/FileService.java",
-      "sha256": "9368f10e550155febe81057c44645c7a729237d46d2552a5bb141bc84959b395"
+      "sha256": "d4ae2f3f9069b957546fc3460a07371967a340653c087dc6ec53abed1d85bba8"
     },
     {
       "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/log/LoginLogService.java",

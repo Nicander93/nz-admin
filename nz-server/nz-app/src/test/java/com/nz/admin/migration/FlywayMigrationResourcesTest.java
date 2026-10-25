@@ -42,7 +42,8 @@ class FlywayMigrationResourcesTest {
             "db/migration/V29__warm_flow_schema_alignment.sql",
             "db/migration/V30__workflow_business_integration.sql",
             "db/migration/V31__demo_item_excel_exchange.sql",
-            "db/migration/V32__identity_versions.sql"
+            "db/migration/V32__identity_versions.sql",
+            "db/migration/V33__file_storage_lifecycle.sql"
     );
 
     @Test
@@ -174,6 +175,7 @@ class FlywayMigrationResourcesTest {
                 "INSERT INTO sys_role_menu",
                 "INSERT INTO sys_tenant_package_menu"
         );
+        assertThat(read(MIGRATIONS.get(32))).contains("storage_config_snapshot", "DELETE_PENDING", "idx_sys_file_cleanup");
         assertThat(read(MIGRATIONS.get(31))).contains("sys_user", "sys_tenant", "auth_version");
         assertThat(read(MIGRATIONS.get(30))).contains("demo:item:import", "demo:item:export", "sys_role_menu", "sys_tenant_package_menu");
         assertThat(read(MIGRATIONS.get(24))).contains(

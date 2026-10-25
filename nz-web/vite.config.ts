@@ -1,10 +1,25 @@
-import { defineConfig } from 'vite'
+import { resolve } from 'path'
+
 import vue from '@vitejs/plugin-vue'
 import UnoCSS from 'unocss/vite'
-import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
-import { resolve } from 'path'
+import Components from 'unplugin-vue-components/vite'
+import { defineConfig } from 'vite'
+
+
 import autoImport from './vite/autoImport'
+
+const backendProxy = {
+  '/api': {
+    target: 'http://localhost:8080',
+    changeOrigin: true,
+  },
+  '/realtime': {
+    target: 'http://localhost:8080',
+    changeOrigin: true,
+    ws: true,
+  },
+}
 
 export default defineConfig({
   plugins: [
@@ -20,17 +35,8 @@ export default defineConfig({
       '@': resolve(import.meta.dirname, 'src'),
     },
   },
+  preview: { proxy: backendProxy },
   server: {
-    proxy: {
-      '/api': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-      },
-      '/realtime': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-        ws: true,
-      },
-    },
+    proxy: backendProxy,
   },
 })

@@ -164,7 +164,8 @@ public class DataInitializer implements CommandLineRunner {
         ensureCrudMenu(systemDir.getId(), "字典管理", "dict", "system/dict/index", "Collection", 6, "system:dict", true);
         ensureCrudMenu(systemDir.getId(), "参数管理", "config", "system/config/index", "Tools", 7, "system:config", true);
         ensureCrudMenu(systemDir.getId(), "通知公告", "notice", "system/notice/index", "Bell", 8, "system:notice", true);
-        ensureCrudMenu(systemDir.getId(), "文件管理", "file", "system/file/index", "Folder", 9, "system:file", false);
+        MenuDO fileMenu = ensureCrudMenu(systemDir.getId(), "文件管理", "file", "system/file/index", "Folder", 9, "system:file", false);
+        ensureMenu(fileMenu.getId(), "上传", null, null, null, 1912, "F", "system:file:upload", 0);
         ensureCrudMenu(systemDir.getId(), "\u5BA2\u6237\u7AEF\u7BA1\u7406", "client", "system/client/index", "Connection", 10, "system:client", true);
         MenuDO fileConfigMenu = ensureCrudMenu(systemDir.getId(), "文件配置", "file-config", "system/file-config/index", "SetUp", 11, "system:fileconfig", true);
         ensureMenu(fileConfigMenu.getId(), "测试存储连接", null, null, null, 1975, "F", "system:fileconfig:test", 0);
