@@ -11,6 +11,8 @@ import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.quartz.CronTrigger;
+import org.quartz.Trigger;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.sun.net.httpserver.HttpServer;
@@ -27,8 +29,11 @@ import java.nio.file.Path;
 import java.sql.ResultSet;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
@@ -105,6 +110,7 @@ class JobClusterProcessPostgresTest {
                     START_TIMEOUT, "Quartz did not register exactly two live scheduler instances", first, second);
 
             verifyCronOwnershipAndPause(jdbc, first, second, token);
+            verifyMisfirePolicies(jdbc, first, second, token);
             verifyCrossNodeManualIdempotency(jdbc, first, second, token);
             verifyHardCrashRecovery(jdbc, first, second, token, provider, logDirectory);
         } finally {
@@ -252,6 +258,163 @@ class JobClusterProcessPostgresTest {
         }
     }
 
+    private void verifyMisfirePolicies(JdbcTemplate jdbc, ChildProcess first, ChildProcess second,
+                                       String token) throws Exception {
+        successful(first, token, "POST", "/api/test/job-cluster/standby", null);
+        successful(second, token, "POST", "/api/test/job-cluster/standby", null);
+        await(() -> schedulerStandby(first, token) && schedulerStandby(second, token),
+                Duration.ofSeconds(10), "Both Quartz nodes did not enter standby", first, second);
+
+        ZonedDateTime firstFire = ZonedDateTime.now(ZoneOffset.UTC).plusSeconds(8).withNano(0);
+        if (firstFire.getSecond() > 56) firstFire = firstFire.plusMinutes(1).withSecond(0);
+        String cron = String.format(Locale.ROOT, "%d,%d,%d %d %d * * ?",
+                firstFire.getSecond(), firstFire.getSecond() + 1, firstFire.getSecond() + 2,
+                firstFire.getMinute(), firstFire.getHour());
+        long firstFireMillis = firstFire.toInstant().toEpochMilli();
+        long lastFireMillis = firstFireMillis + 2_000;
+        Map<Integer, Long> jobIds = Map.of(
+                1, createJob(first, token, JOB_PREFIX + "misfire-fill", "probeTask.record", cron, 0, 1)
+                        .path("jobId").asLong(),
+                2, createJob(first, token, JOB_PREFIX + "misfire-once", "probeTask.record", cron, 0, 2)
+                        .path("jobId").asLong(),
+                3, createJob(first, token, JOB_PREFIX + "misfire-skip", "probeTask.record", cron, 0, 3)
+                        .path("jobId").asLong());
+        for (long jobId : jobIds.values()) awaitSchedule(first, token, jobId, "SYNCED", START_TIMEOUT, second);
+
+        await(() -> jobIds.values().stream().allMatch(jobId -> count(jdbc,
+                        "SELECT COUNT(*) FROM sys_job_execution WHERE scheduler_name=? AND tenant_id=? AND job_id=? "
+                                + "AND state='RUNNING'", SCHEDULER_NAME, TENANT_ID, jobId) == 0),
+                Duration.ofSeconds(15), "An in-flight misfire probe did not drain before standby", first, second);
+
+        Map<Integer, TriggerSnapshot> originalTriggers = new java.util.HashMap<>();
+        Map<Integer, Long> baselineIds = new java.util.HashMap<>();
+        for (Map.Entry<Integer, Long> entry : jobIds.entrySet()) {
+            int policy = entry.getKey();
+            long jobId = entry.getValue();
+            JsonNode trigger = successful(first, token, "GET", "/api/test/job-cluster/trigger/" + jobId, null);
+            originalTriggers.put(policy, new TriggerSnapshot(trigger.path("nextFireTime").asLong(),
+                    trigger.path("misfireInstruction").asInt()));
+            assertThat(originalTriggers.get(policy).nextFireTime()).isEqualTo(firstFireMillis);
+            baselineIds.put(policy, maxExecutionId(jdbc, jobId));
+        }
+        assertThat(originalTriggers.get(1).misfireInstruction())
+                .isEqualTo(Trigger.MISFIRE_INSTRUCTION_IGNORE_MISFIRE_POLICY);
+        assertThat(originalTriggers.get(2).misfireInstruction()).isEqualTo(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
+        assertThat(originalTriggers.get(3).misfireInstruction()).isEqualTo(CronTrigger.MISFIRE_INSTRUCTION_DO_NOTHING);
+        assertThat(originalTriggers.values()).allSatisfy(trigger -> assertThat(trigger.nextFireTime()).isPositive());
+
+        for (Map.Entry<Integer, Long> entry : jobIds.entrySet()) {
+            assertThat(misfireRows(jdbc, entry.getValue(), baselineIds.get(entry.getKey()))).isEmpty();
+        }
+        Instant latestMissedSlot = Instant.ofEpochMilli(lastFireMillis);
+        await(() -> Instant.now().isAfter(latestMissedSlot.plusMillis(1_500)), Duration.ofSeconds(35),
+                "Quartz standby did not cover all three planned slots", first, second);
+        JsonNode startReceipt = successful(first, token, "POST", "/api/test/job-cluster/start", null);
+        assertThat(startReceipt.path("standby").asBoolean()).isFalse();
+
+        await(() -> {
+            List<MisfireExecutionRow> fill = misfireRows(jdbc, jobIds.get(1), baselineIds.get(1));
+            List<MisfireExecutionRow> once = misfireRows(jdbc, jobIds.get(2), baselineIds.get(2));
+            return fill.size() == 3 && fill.stream().allMatch(row -> row.state().equals("SUCCEEDED"))
+                    && once.size() == 1 && once.get(0).state().equals("SUCCEEDED");
+        }, Duration.ofSeconds(30), "Quartz did not apply the three Cron misfire policies", first, second);
+
+        long observedAt = System.currentTimeMillis();
+        List<MisfireExecutionRow> fill = misfireRows(jdbc, jobIds.get(1), baselineIds.get(1));
+        List<MisfireExecutionRow> once = misfireRows(jdbc, jobIds.get(2), baselineIds.get(2));
+        List<MisfireExecutionRow> skip = misfireRows(jdbc, jobIds.get(3), baselineIds.get(3));
+        assertThat(fill).extracting(MisfireExecutionRow::scheduledFireTime)
+                .containsExactlyInAnyOrder(firstFireMillis, firstFireMillis + 1_000, lastFireMillis);
+        assertThat(fill).allSatisfy(row -> assertThat(row.state()).isEqualTo("SUCCEEDED"));
+        assertThat(once).hasSize(1);
+        assertThat(once.get(0).state()).isEqualTo("SUCCEEDED");
+        assertThat(once.get(0).scheduledFireTime())
+                .as("FIRE_ONCE_NOW uses Quartz's misfire processing time")
+                .isGreaterThan(firstFireMillis).isLessThanOrEqualTo(observedAt);
+        assertThat(skip).as("DO_NOTHING must not create an execution for an expired slot").isEmpty();
+
+        // MisfireHandler 独立推进各触发器；等待跳过策略也完成，而非仅等待另外两项执行。
+        await(() -> {
+            for (long jobId : jobIds.values()) {
+                try {
+                    JsonNode trigger = successful(first, token, "GET", "/api/test/job-cluster/trigger/" + jobId, null);
+                    if (trigger.path("nextFireTime").asLong() <= lastFireMillis + Duration.ofHours(20).toMillis())
+                        return false;
+                } catch (InterruptedException error) {
+                    Thread.currentThread().interrupt();
+                    throw new AssertionError("Reading misfire trigger was interrupted", error);
+                } catch (Exception error) {
+                    throw new IllegalStateException("Could not read the actual misfire trigger", error);
+                }
+            }
+            return true;
+        }, Duration.ofSeconds(15), "All misfire policies did not advance to their next daily plan", first, second);
+        assertThat(misfireRows(jdbc, jobIds.get(3), baselineIds.get(3))).isEmpty();
+        assertThat(misfireRows(jdbc, jobIds.get(2), baselineIds.get(2))).hasSize(1);
+
+        // 检查下一次计划后暂停任务，避免影响后续集群场景。
+        successful(first, token, "PUT", "/api/system/job/pause/" + jobIds.get(2), null);
+        successful(first, token, "PUT", "/api/system/job/pause/" + jobIds.get(1), null);
+        successful(first, token, "PUT", "/api/system/job/pause/" + jobIds.get(3), null);
+        for (long jobId : jobIds.values()) awaitSchedule(first, token, jobId, "SYNCED", START_TIMEOUT, second);
+        await(() -> jobIds.values().stream().allMatch(jobId -> count(jdbc,
+                        "SELECT COUNT(*) FROM sys_job_execution WHERE scheduler_name=? AND tenant_id=? AND job_id=? "
+                                + "AND state='RUNNING'", SCHEDULER_NAME, TENANT_ID, jobId) == 0),
+                Duration.ofSeconds(10), "A misfire probe remained in flight after pause", first, second);
+
+        assertProbeMarkersAreUnique(jdbc, jobIds.get(1), fill);
+        assertProbeMarkersAreUnique(jdbc, jobIds.get(2), once);
+
+        successful(second, token, "POST", "/api/test/job-cluster/start", null);
+        await(() -> schedulerRunning(first, token) && schedulerRunning(second, token),
+                Duration.ofSeconds(10), "Both Quartz nodes did not resume after misfire verification", first, second);
+    }
+
+    private boolean schedulerRunning(ChildProcess node, String token) {
+        JsonNode scheduler = schedulerStatus(node, token);
+        return scheduler != null && scheduler.path("running").asBoolean();
+    }
+
+    private boolean schedulerStandby(ChildProcess node, String token) {
+        JsonNode scheduler = schedulerStatus(node, token);
+        return scheduler != null && !scheduler.path("running").asBoolean();
+    }
+
+    private JsonNode schedulerStatus(ChildProcess node, String token) {
+        try {
+            JsonNode response = request(node, token, "GET", "/api/system/job/scheduler", null, Map.of());
+            JsonNode data = response.path("data");
+            return response.path("code").asInt() == 200 && data.has("running") ? data : null;
+        } catch (Exception error) {
+            return null;
+        }
+    }
+
+    private long maxExecutionId(JdbcTemplate jdbc, long jobId) {
+        Long id = jdbc.queryForObject("SELECT COALESCE(MAX(id),0) FROM sys_job_execution "
+                + "WHERE scheduler_name=? AND tenant_id=? AND job_id=?", Long.class, SCHEDULER_NAME, TENANT_ID, jobId);
+        return id == null ? 0 : id;
+    }
+
+    private List<MisfireExecutionRow> misfireRows(JdbcTemplate jdbc, long jobId, long afterId) {
+        return jdbc.query("SELECT id,execution_key,state,scheduled_fire_time FROM sys_job_execution "
+                        + "WHERE scheduler_name=? AND tenant_id=? AND job_id=? AND id>? AND trigger_source='SCHEDULED' "
+                        + "ORDER BY id",
+                (rs, row) -> new MisfireExecutionRow(rs.getLong("id"), rs.getString("execution_key"),
+                        rs.getString("state"), rs.getLong("scheduled_fire_time")),
+                SCHEDULER_NAME, TENANT_ID, jobId, afterId);
+    }
+
+    private void assertProbeMarkersAreUnique(JdbcTemplate jdbc, long jobId, List<MisfireExecutionRow> executions) {
+        assertThat(executions).isNotEmpty().allSatisfy(execution -> {
+            assertThat(execution.executionKey()).startsWith("scheduled:" + TENANT_ID + ":" + jobId + ":");
+            assertThat(count(jdbc, "SELECT COUNT(*) FROM job_cluster_probe_marker WHERE execution_key=?",
+                    execution.executionKey())).isEqualTo(1);
+        });
+        assertThat(executions.stream().map(MisfireExecutionRow::executionKey).distinct().count())
+                .isEqualTo(executions.size());
+    }
+
     private JsonNode concurrentRun(ChildProcess node, String token, long jobId, String key,
                                    CountDownLatch ready, CountDownLatch start) {
         ready.countDown();
@@ -326,6 +489,11 @@ class JobClusterProcessPostgresTest {
 
     private JsonNode createJob(ChildProcess node, String token, String name, String target,
                                String cron, int status) throws Exception {
+        return createJob(node, token, name, target, cron, status, 3);
+    }
+
+    private JsonNode createJob(ChildProcess node, String token, String name, String target,
+                               String cron, int status, int misfirePolicy) throws Exception {
         Map<String, Object> body = Map.of(
                 "jobName", name,
                 "jobGroup", "DEFAULT",
@@ -333,7 +501,7 @@ class JobClusterProcessPostgresTest {
                 "cronExpression", cron,
                 "status", status,
                 "concurrent", 1,
-                "misfirePolicy", 3,
+                "misfirePolicy", misfirePolicy,
                 "remark", "private two-JVM cluster probe " + SUFFIX);
         JsonNode response = successful(node, token, "POST", "/api/system/job", body);
         assertThat(response.path("jobId").asLong()).isPositive();
@@ -476,6 +644,7 @@ class JobClusterProcessPostgresTest {
         List<String> command = new ArrayList<>(List.of(java,
                 "-Xms64m",
                 "-Xmx384m",
+                "-Duser.timezone=UTC",
                 "-Djob.cluster.ready-file=" + ready,
                 "-Djob.cluster.external-url=" + providerUri,
                 "-Djob.cluster.signals-dir=" + logDirectory.resolve("signals"),
@@ -489,6 +658,7 @@ class JobClusterProcessPostgresTest {
                 "--spring.datasource.hikari.schema=" + DATABASE.name(),
                 "--spring.datasource.hikari.maximum-pool-size=12",
                 "--spring.datasource.hikari.minimum-idle=1",
+                "--spring.quartz.properties.org.quartz.jobStore.misfireThreshold=1000",
                 "--spring.flyway.schemas=" + DATABASE.name(),
                 "--spring.flyway.default-schema=" + DATABASE.name(),
                 "--spring.flyway.clean-disabled=true",
@@ -649,4 +819,8 @@ class JobClusterProcessPostgresTest {
 
     private record ExecutionRow(String executionKey, String triggerSource, long scheduledFireTime,
                                 int attempt, boolean recovered, String nodeId) {}
+
+    private record TriggerSnapshot(long nextFireTime, int misfireInstruction) {}
+
+    private record MisfireExecutionRow(long id, String executionKey, String state, long scheduledFireTime) {}
 }

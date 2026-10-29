@@ -41,7 +41,7 @@ function newIdempotencyKey() {
 }
 
 export function canRetryExecution(execution: JobExecution) {
-  return execution.state === 'FAILED' && (execution.attempt === 0 || execution.recoverable)
+  return execution.state === 'FAILED' && execution.retryable === true
 }
 
 export function useJobPage() {

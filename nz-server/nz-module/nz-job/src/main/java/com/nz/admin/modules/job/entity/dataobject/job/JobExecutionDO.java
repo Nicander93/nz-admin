@@ -19,6 +19,8 @@ public class JobExecutionDO {
     private Long scheduledFireTime;
     @JsonIgnore private String snapshot;
     private Boolean recoverable;
+    /** 当前定义仍支持重试；调用方另需任务修改权限。 */
+    private boolean retryable;
     private String state;
     @JsonIgnore private Long dispatchVersion;
     @JsonIgnore private Boolean dispatched;

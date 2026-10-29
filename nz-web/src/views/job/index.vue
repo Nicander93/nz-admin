@@ -145,6 +145,12 @@
             <el-table-column prop="triggerSource" label="Source" width="110" />
             <el-table-column prop="nodeId" label="Node" min-width="130" />
             <el-table-column prop="attempt" label="Attempt" width="90" />
+            <el-table-column label="Recovery" width="110">
+              <template #default="{ row }">
+                <el-tag v-if="row.recovered" type="warning">Recovered</el-tag>
+                <span v-else>Initial</span>
+              </template>
+            </el-table-column>
             <el-table-column prop="lastError" label="Last error" min-width="180" show-overflow-tooltip />
             <el-table-column label="Action" width="100" fixed="right">
               <template #default="{ row }">

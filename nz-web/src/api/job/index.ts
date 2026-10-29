@@ -63,6 +63,7 @@ export interface JobExecution {
   nodeId?: string
   recovered: boolean
   recoverable: boolean
+  retryable: boolean
   attempt: number
   lastError?: string
   createTime: string

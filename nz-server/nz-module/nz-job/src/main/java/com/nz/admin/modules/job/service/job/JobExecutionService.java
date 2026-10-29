@@ -28,6 +28,15 @@ import java.util.Objects;
 public class JobExecutionService implements JobExecutionCoordinator {
     private static final BeanPropertyRowMapper<JobExecutionDO> ROW = BeanPropertyRowMapper.newInstance(JobExecutionDO.class);
     private static final BeanPropertyRowMapper<JobDO> JOB_ROW = BeanPropertyRowMapper.newInstance(JobDO.class);
+    private static final String EXECUTIONS_FROM = " FROM sys_job_execution execution";
+    // 读模型和重试命令共用资格判断，配置已更新或删除的旧执行不能重放。
+    private static final String EXECUTION_VIEW = """
+            SELECT execution.*, (execution.state='FAILED'
+                AND (execution.attempt=0 OR execution.recoverable)
+                AND EXISTS(SELECT 1 FROM sys_job definition
+                    WHERE definition.id=execution.job_id AND definition.tenant_id=execution.tenant_id
+                    AND definition.revision=execution.definition_revision)) AS retryable
+            """ + EXECUTIONS_FROM;
     private final JdbcTemplate jdbc;
     private final JobInvokeLogSink logs;
     private final JobTenantProvider tenants;
@@ -172,7 +181,7 @@ public class JobExecutionService implements JobExecutionCoordinator {
 
     public JobExecutionDO getCurrent(Long id) {
         requireSupported();
-        List<JobExecutionDO> rows = jdbc.query("SELECT * FROM sys_job_execution WHERE id=? AND tenant_id=? AND scheduler_name=?",
+        List<JobExecutionDO> rows = jdbc.query(EXECUTION_VIEW + " WHERE id=? AND tenant_id=? AND scheduler_name=?",
                 ROW, id, currentTenant(), options.getSchedulerName());
         if (rows.isEmpty()) throw new BusinessException("执行记录不存在或无权访问");
         return rows.get(0);
@@ -182,14 +191,14 @@ public class JobExecutionService implements JobExecutionCoordinator {
         requireSupported();
         if (page < 1 || size < 1 || size > 200) throw new BusinessException("分页参数不正确");
         Long tenant = currentTenant();
-        String filter = " FROM sys_job_execution WHERE scheduler_name=? AND tenant_id=?";
+        String filter = " WHERE scheduler_name=? AND tenant_id=?";
         var values = new java.util.ArrayList<Object>(List.of(options.getSchedulerName(), tenant));
         if (jobId != null) { filter += " AND job_id=?"; values.add(jobId); }
         if (StrUtil.isNotBlank(state)) { filter += " AND state=?"; values.add(state); }
         if (StrUtil.isNotBlank(key)) { filter += " AND execution_key=?"; values.add(key); }
-        Long total = jdbc.queryForObject("SELECT COUNT(*)" + filter, Long.class, values.toArray());
+        Long total = jdbc.queryForObject("SELECT COUNT(*)" + EXECUTIONS_FROM + filter, Long.class, values.toArray());
         values.add(size); values.add((page - 1L) * size);
-        List<JobExecutionDO> rows = jdbc.query("SELECT *" + filter + " ORDER BY id DESC LIMIT ? OFFSET ?", ROW, values.toArray());
+        List<JobExecutionDO> rows = jdbc.query(EXECUTION_VIEW + filter + " ORDER BY id DESC LIMIT ? OFFSET ?", ROW, values.toArray());
         return new Page<JobExecutionDO>(page, size, total == null ? 0 : total).setRecords(rows);
     }
 
@@ -197,14 +206,12 @@ public class JobExecutionService implements JobExecutionCoordinator {
         requireSupported();
         Long tenant = currentTenant();
         return transaction.execute(status -> {
-            List<JobExecutionDO> rows = jdbc.query("SELECT * FROM sys_job_execution WHERE id=? AND scheduler_name=? AND tenant_id=? FOR UPDATE",
+            List<JobExecutionDO> rows = jdbc.query(EXECUTION_VIEW + " WHERE id=? AND scheduler_name=? AND tenant_id=? FOR UPDATE",
                     ROW, id, options.getSchedulerName(), tenant);
             if (rows.isEmpty()) throw new BusinessException("执行记录不存在或无权访问");
             JobExecutionDO row = rows.get(0);
             if (!"FAILED".equals(row.getState())) return receipt(row);
-            JobDO definition = definition(tenant, row.getJobId());
-            if ((!Boolean.TRUE.equals(row.getRecoverable()) && row.getAttempt() > 0) || definition == null
-                    || !Objects.equals(definition.getRevision(), row.getDefinitionRevision()))
+            if (!row.isRetryable())
                 throw new BusinessException("仅允许重试当前配置下尚未执行业务或明确支持幂等恢复的失败执行");
             jdbc.update("UPDATE sys_job_execution SET state='PENDING',dispatched=FALSE,dispatch_version=dispatch_version+1,dispatch_attempts=0,next_attempt_time=CURRENT_TIMESTAMP,owner_token=NULL,lease_until=NULL,recovered=TRUE,last_error=NULL,update_time=CURRENT_TIMESTAMP WHERE id=?", id);
             return new JobExecutionReceipt(id, row.getExecutionKey(), "PENDING");

@@ -9,6 +9,7 @@ import com.nz.admin.framework.auth.annotation.SaCheckPermission;
 import com.nz.admin.framework.quartz.core.QuartzConstants;
 import com.nz.admin.framework.quartz.core.QuartzSchedulerManager;
 import com.nz.admin.modules.job.service.job.JobService;
+import org.quartz.CronTrigger;
 import org.quartz.Scheduler;
 import org.quartz.SimpleScheduleBuilder;
 import org.quartz.Trigger;
@@ -20,6 +21,7 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Profile;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -187,6 +189,35 @@ public final class JobClusterProcess {
             this.scheduler = scheduler;
             this.jobs = jobs;
             this.transactions = transactions;
+        }
+
+        @SaCheckPermission("system:job:edit")
+        @PostMapping("/standby")
+        public R<Map<String, Object>> standby() throws Exception {
+            scheduler.standby();
+            return R.ok(Map.of("standby", scheduler.isInStandbyMode()));
+        }
+
+        @SaCheckPermission("system:job:edit")
+        @PostMapping("/start")
+        public R<Map<String, Object>> start() throws Exception {
+            long startTime = System.currentTimeMillis();
+            scheduler.start();
+            return R.ok(Map.of("startTime", startTime, "standby", scheduler.isInStandbyMode()));
+        }
+
+        @SaCheckPermission("system:job:list")
+        @GetMapping("/trigger/{jobId}")
+        public R<Map<String, Object>> trigger(@PathVariable Long jobId) throws Exception {
+            Trigger trigger = scheduler.getTrigger(QuartzSchedulerManager.triggerKey(jobId));
+            if (!(trigger instanceof CronTrigger cron)) {
+                throw new IllegalStateException("Owned Cron trigger was not found for job " + jobId);
+            }
+            long nextFireTime = cron.getNextFireTime() == null ? -1 : cron.getNextFireTime().getTime();
+            return R.ok(Map.of("nextFireTime", nextFireTime,
+                    "misfireInstruction", cron.getMisfireInstruction(),
+                    "state", scheduler.getTriggerState(QuartzSchedulerManager.triggerKey(jobId)).name(),
+                    "standby", scheduler.isInStandbyMode()));
         }
 
         @SaCheckPermission("system:job:edit")

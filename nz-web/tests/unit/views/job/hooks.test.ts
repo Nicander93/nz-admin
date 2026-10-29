@@ -176,11 +176,11 @@ describe('job page hooks', () => {
     scope.stop()
   })
 
-  it('allows retries only before a business attempt or for recoverable work', () => {
-    expect(canRetryExecution({ state: 'FAILED', attempt: 0, recoverable: false } as never)).toBe(true)
-    expect(canRetryExecution({ state: 'FAILED', attempt: 2, recoverable: true } as never)).toBe(true)
-    expect(canRetryExecution({ state: 'FAILED', attempt: 2, recoverable: false } as never)).toBe(false)
-    expect(canRetryExecution({ state: 'SUCCEEDED', attempt: 1, recoverable: true } as never)).toBe(false)
+  it('uses server retry eligibility instead of inferring it from recoverable metadata', () => {
+    expect(canRetryExecution({ state: 'FAILED', retryable: true } as never)).toBe(true)
+    expect(canRetryExecution({ state: 'FAILED', attempt: 2, recoverable: true, retryable: false } as never)).toBe(false)
+    expect(canRetryExecution({ state: 'FAILED', attempt: 0, recoverable: false } as never)).toBe(false)
+    expect(canRetryExecution({ state: 'SUCCEEDED', retryable: true } as never)).toBe(false)
   })
 
   it('submits outbox retry as pending and does not present it as synchronized', async () => {

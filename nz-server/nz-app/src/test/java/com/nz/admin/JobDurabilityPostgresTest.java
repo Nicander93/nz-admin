@@ -308,6 +308,78 @@ class JobDurabilityPostgresTest {
     }
 
     @Test
+    void retriesRecoverableFailureWithOriginalKeyAndCommitsOnlyTheSuccessfulAttempt() {
+        long jobId = createJob(JOB_PREFIX + "retry_success", "durabilityTask.recordAndFailFirstAttempt");
+        JsonNode failed = runUntilFailure(jobId, "retry.success." + SUFFIX.substring(0, 12));
+        long id = failed.path("id").asLong();
+        String key = failed.path("executionKey").asText();
+        assertRetryEligibility(id, jobId, true);
+
+        JsonNode receipt = ownerApi.ok(HttpMethod.PUT, "/api/system/job/execution/" + id + "/retry", null);
+        assertThat(receipt.path("executionId").asLong()).isEqualTo(id);
+        assertThat(receipt.path("executionKey").asText()).isEqualTo(key);
+        JsonNode succeeded = awaitExecution(id, "SUCCEEDED");
+        assertThat(succeeded.path("attempt").asInt()).isEqualTo(2);
+        assertThat(succeeded.path("recovered").asBoolean()).isTrue();
+        assertRetryEligibility(id, jobId, false);
+        assertThat(jdbc.queryForObject("SELECT call_count FROM test_job_marker WHERE execution_key=?", Integer.class, key)).isEqualTo(1);
+        assertThat(jdbc.queryForList("SELECT status FROM sys_job_log WHERE execution_id=? ORDER BY attempt", Integer.class, id))
+                .containsExactly(1, 0);
+    }
+
+    @Test
+    void hidesAndRejectsRetriesForChangedOrDeletedDefinitions() {
+        String name = JOB_PREFIX + "retry_old_revision";
+        long jobId = createJob(name, "durabilityTask.recordThenFail");
+        JsonNode old = runUntilFailure(jobId, "retry.old." + SUFFIX.substring(0, 12));
+        long oldId = old.path("id").asLong();
+        assertRetryEligibility(oldId, jobId, true);
+
+        Map<String, Object> update = new java.util.HashMap<>(writeRequest(name, "durabilityTask.recordThenFail"));
+        update.put("id", jobId);
+        update.put("remark", "new definition revision");
+        JsonNode mutation = ownerApi.ok(HttpMethod.PUT, "/api/system/job", update);
+        awaitJobState(jobId, mutation.path("revision").asLong(), "SYNCED");
+        assertRetryEligibility(oldId, jobId, false);
+        assertDenied(ownerApi.exchange(HttpMethod.PUT, "/api/system/job/execution/" + oldId + "/retry", null));
+        assertThat(awaitExecution(oldId, "FAILED").path("attempt").asInt()).isEqualTo(1);
+
+        JsonNode current = runUntilFailure(jobId, "retry.deleted." + SUFFIX.substring(0, 12));
+        long currentId = current.path("id").asLong();
+        assertRetryEligibility(currentId, jobId, true);
+        ownerApi.ok(HttpMethod.DELETE, "/api/system/job/" + jobId, null);
+        assertRetryEligibility(currentId, jobId, false);
+        assertDenied(ownerApi.exchange(HttpMethod.PUT, "/api/system/job/execution/" + currentId + "/retry", null));
+        assertThat(awaitExecution(currentId, "FAILED").path("attempt").asInt()).isEqualTo(1);
+    }
+
+    @Test
+    void retriesAnUnstartedFailureButRefusesUnsafeWorkAfterItsFirstAttempt() throws Exception {
+        long jobId = createJob(JOB_PREFIX + "retry_unsafe", "durabilityTask.recordUnsafeThenFail");
+        long id;
+        scheduler.standby();
+        try {
+            JsonNode receipt = ownerApi.ok(HttpMethod.PUT, "/api/system/job/run/" + jobId, null);
+            id = receipt.path("executionId").asLong();
+            // 单独安排派发前失败状态；此处验证资格与重试命令，不冒充真实存储故障。
+            assertThat(jdbc.update("UPDATE sys_job_execution SET state='FAILED',last_error='test fixture: failed before business' "
+                    + "WHERE id=? AND attempt=0", id)).isEqualTo(1);
+            assertRetryEligibility(id, jobId, true);
+            JsonNode retry = ownerApi.ok(HttpMethod.PUT, "/api/system/job/execution/" + id + "/retry", null);
+            assertThat(retry.path("executionId").asLong()).isEqualTo(id);
+        } finally {
+            scheduler.start();
+        }
+        JsonNode failed = awaitExecution(id, "FAILED");
+        assertThat(failed.path("attempt").asInt()).isEqualTo(1);
+        assertThat(failed.path("recoverable").asBoolean()).isFalse();
+        assertRetryEligibility(id, jobId, false);
+        assertDenied(ownerApi.exchange(HttpMethod.PUT, "/api/system/job/execution/" + id + "/retry", null));
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM test_job_marker WHERE execution_key=?", Integer.class,
+                failed.path("executionKey").asText())).isZero();
+    }
+
+    @Test
     void pauseDoesNotCancelRunningAttemptAndRejectsLaterScheduledTrigger() throws Exception {
         String name = JOB_PREFIX + "pause_running";
         long jobId = createJob(name, "durabilityTask.recordAndBlock");
@@ -408,6 +480,19 @@ class JobDurabilityPostgresTest {
         public void recordThenFail() {
             recordMarker();
             throw new IllegalStateException("intentional durability failure");
+        }
+
+        @JobTask(recoverable = true)
+        public void recordAndFailFirstAttempt() {
+            recordMarker();
+            if (JobRunContextHolder.requireCurrent().attempt() == 1)
+                throw new IllegalStateException("intentional first attempt failure");
+        }
+
+        @JobTask
+        public void recordUnsafeThenFail() {
+            recordMarker();
+            throw new IllegalStateException("intentional unsafe failure");
         }
 
         @JobTask(recoverable = true)
@@ -580,6 +665,26 @@ class JobDurabilityPostgresTest {
             return false;
         }, Duration.ofSeconds(20), "任务 outbox 状态未收敛");
         return found[0];
+    }
+
+    private JsonNode runUntilFailure(long jobId, String requestKey) {
+        JsonNode receipt = ownerApi.exchange(HttpMethod.PUT, "/api/system/job/run/" + jobId, null,
+                Map.of("Idempotency-Key", requestKey));
+        assertThat(receipt.path("code").asInt()).isEqualTo(200);
+        return awaitExecution(receipt.path("data").path("executionId").asLong(), "FAILED");
+    }
+
+    private void assertRetryEligibility(long id, long jobId, boolean expected) {
+        JsonNode detail = ownerApi.ok(HttpMethod.GET, "/api/system/job/execution/" + id, null);
+        assertThat(detail.path("retryable").isBoolean()).isTrue();
+        assertThat(detail.path("retryable").asBoolean()).isEqualTo(expected);
+        JsonNode page = ownerApi.ok(HttpMethod.GET,
+                "/api/system/job/execution/page?pageNum=1&pageSize=100&jobId=" + jobId, null);
+        JsonNode record = null;
+        for (JsonNode row : page.path("records")) if (row.path("id").asLong() == id) record = row;
+        assertThat(record).isNotNull();
+        assertThat(record.path("retryable").isBoolean()).isTrue();
+        assertThat(record.path("retryable").asBoolean()).isEqualTo(expected);
     }
 
     private JsonNode awaitExecution(long id, String state) {

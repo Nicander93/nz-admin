@@ -152,6 +152,10 @@ jobs:
       NZ_FILE_CONFIG_KEY: integration-test-key-at-least-32-characters
       NZ_INITIALIZE_DATA: "false"
       E2E_WARM_FLOW_ENABLED: "true"
+      E2E_JOB_FAULTS_ENABLED: "true"
+      E2E_PG_URL: postgresql://localhost:5432/nz_test
+      PGUSER: postgres
+      PGPASSWORD: postgres
       E2E_USERNAME: admin
       E2E_PASSWORD: admin123
     steps:
@@ -172,6 +176,13 @@ jobs:
       - name: Verify real PostgreSQL migrations and HTTP permissions
         working-directory: nz-server
         run: ./mvnw -q -pl nz-app -am install -Dtest=DataScopePostgresTest,IdempotencyPostgresTest,ClusterStateRedisTest,RedisAtomicStateStoreTest,WarmFlowPostgresTest,DemoItemExcelPostgresTest,PermissionRevocationPostgresTest,JobReadinessPostgresTest,JobRestartPostgresTest,JobDurabilityPostgresTest,JobClusterProcessPostgresTest,IdentityLifecyclePostgresTest,MessageLifecyclePostgresTest,FileLifecyclePostgresTest,RealtimeAuthorizationPostgresTest -Dsurefire.failIfNoSpecifiedTests=false
+      - name: Ensure PostgreSQL client for failure recovery E2E
+        run: |
+          if ! command -v psql >/dev/null; then
+            sudo apt-get update
+            sudo apt-get install --yes postgresql-client
+          fi
+          psql --version
       - name: Install browser dependencies
         working-directory: nz-web
         run: |

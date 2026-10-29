@@ -54,3 +54,12 @@ pnpm docs:e2e
 文件管理回归位于 `tests/e2e/system/file-lifecycle.spec.ts`。它使用真实后端上传、校验下载内容、删除，并验证批量部分失败；数据只按本用例生成的唯一文件名清理。精准执行使用 `pnpm exec playwright test tests/e2e/system/file-lifecycle.spec.ts`，不要在文件路径前额外传入 `--`。
 
 应用 E2E 默认先执行生产构建，再启动 Vite preview，并代理后端 API 与实时连接。这样测试过程不会被开发依赖预构建或 HMR 自动刷新打断。调试开发模式时，可以通过通用测试包的 `serverCommand` 显式覆盖启动命令。
+
+
+## 任务失败与重试
+
+`system/job-retry.spec.ts` 使用真实 PostgreSQL 成功日志触发器制造一次受控存储故障。任务仍由 Quartz 实际执行，失败账本与失败日志保留；移除故障后通过页面重试，核对同一执行键的第二次尝试、成功状态与两条尝试日志。更新任务配置后，旧失败记录必须隐藏重试，直接调用旧回执也会被拒绝。
+
+启用该项需要 `E2E_JOB_FAULTS_ENABLED=true`、`E2E_PG_URL`（也可使用 `NZ_DATASOURCE_URL`）和 `PGUSER/PGPASSWORD`，并提供可创建触发器的独立测试数据库。客户端默认使用 `psql`，可用 `E2E_PSQL_BIN` 指定路径。CI 的 PostgreSQL 服务显式启用此项；缺少凭据时启用测试会失败，关闭开关时明确跳过，不计为已验收。
+
+故障仅匹配本次随机任务的 ID 与名称，安装前会与 API 返回核对；清理先移除本次触发器/函数，再删除该任务和日志。SQL 通过 stdin 交给 psql，凭据通过环境变量传递，连接 URL 不保留密码。
