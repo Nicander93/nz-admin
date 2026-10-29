@@ -39,9 +39,8 @@ public class QuartzJobService {
 
     public void scheduleAllJobs(List<JobDO> jobs) {
         try {
-            scheduler.clear();
             for (JobDO job : jobs) {
-                if (quartzSchedulerManager.isSchedulable(toDescriptor(job))) scheduleJob(job);
+                scheduleJobIfActive(job);
             }
             scheduler.start();
         } catch (SchedulerException error) { throw schedulingFailure(error); }
@@ -57,8 +56,13 @@ public class QuartzJobService {
         var descriptor = new QuartzJobDescriptor();
         descriptor.setJobId(job.getId());
         descriptor.setTenantId(job.getTenantId());
+        descriptor.setRevision(job.getRevision());
+        try { descriptor.setRecoverable(jobExecuteService.supportsRecovery(job.getInvokeTarget())); }
+        catch (org.springframework.beans.BeansException | IllegalArgumentException error) {
+            if (Integer.valueOf(0).equals(job.getStatus())) throw error;
+        }
         descriptor.setJobName(job.getJobName());
-        descriptor.setJobGroup(job.getJobGroup());
+        descriptor.setJobGroup(cn.hutool.core.util.StrUtil.blankToDefault(job.getJobGroup(), "DEFAULT"));
         descriptor.setInvokeTarget(job.getInvokeTarget());
         descriptor.setCronExpression(job.getCronExpression());
         descriptor.setStatus(job.getStatus());

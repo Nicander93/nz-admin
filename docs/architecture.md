@@ -266,7 +266,7 @@ V30 增加业务绑定、事件投递与请假表，扩展官方坐标与用途�
 
 任务写入通过 DTO 白名单，由服务端固定租户；调度恢复不再依赖 `DataInitializer`。`nz-common-job` 定义 `JobTask` 显式执行标记与 `JobTenantProvider` 租户协议，system 实现租户有效性，job 的独立 Runner 分页恢复任务，Quartz 负责执行与关闭。任务每次触发再次核对租户状态。
 
-Quartz 注册失败会让写入失败，数据库回滚时补偿原调度；重启以数据库为准恢复。它不是跨系统事务，也不承诺多个节点全局只执行一次，具体使用和升级步骤见[任务与日志](/platform/system/jobs-logs)。
+任务定义与调度意图在同一 PostgreSQL 事务提交，后台通过 outbox 版本与行锁幂等同步 Quartz；保存回执与实际同步状态分开。多节点使用共享 JDBC JobStore，并只对账 NZ_ADMIN 命名空间，不清空其他任务。JobExecutionCoordinator 公共协议由 nz-job 实现持久账本、稳定执行键、持有者与租约；当前数据源的受控业务写入、成功日志和执行终态同事务提交。失联恢复只向明确声明可安全重试的任务开放，外部副作用仍需下游幂等或业务 outbox。部署与本轮验收边界见[任务与日志](/platform/system/jobs-logs)和[集群部署](/operations/job-cluster)。
 
 角色、功能权限和导航统一从启用角色及启用菜单解析。禁用立即影响既有会话的后续鉴权；`visible` 只控制展示，隐藏但启用的功能仍可授权，目录项不授予功能权限。
 

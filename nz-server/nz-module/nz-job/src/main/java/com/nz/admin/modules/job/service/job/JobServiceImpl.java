@@ -6,110 +6,120 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.nz.admin.common.core.BusinessException;
 import com.nz.admin.common.job.JobExecuteService;
-import com.nz.admin.common.job.JobInvocation;
 import com.nz.admin.common.job.JobTenantProvider;
 import com.nz.admin.framework.quartz.core.QuartzCronUtils;
 import com.nz.admin.framework.tenant.core.TenantContextHolder;
 import com.nz.admin.modules.job.entity.dataobject.job.JobDO;
 import com.nz.admin.modules.job.mapper.job.JobMapper;
+import com.nz.admin.modules.job.entity.vo.job.JobMutationResult;
+import com.nz.admin.modules.job.entity.vo.job.JobExecutionReceipt;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.List;
 
-/** 任务定义以数据库为准，调度失败回滚写入并恢复原调度配置。 */
+/** 任务定义和调度意图原子提交，API 不把排队结果当成实际执行成功。 */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class JobServiceImpl implements JobService {
     private final JobMapper jobMapper;
     private final JobExecuteService jobExecuteService;
-    private final QuartzJobService quartzJobService;
+    private final JobDispatchService dispatch;
+    private final JobExecutionService executions;
     private final JobTenantProvider jobTenantProvider;
 
     @Override
     public Page<JobDO> listPage(Integer pageNum, Integer pageSize, String jobName, String jobGroup, Integer status) {
         if (pageNum == null || pageNum < 1 || pageSize == null || pageSize < 1 || pageSize > 10000)
             throw new BusinessException("分页参数不正确");
-        return jobMapper.selectPageByCondition(new Page<>(pageNum, pageSize), jobName, jobGroup, status);
+        Page<JobDO> page = jobMapper.selectPageByCondition(new Page<>(pageNum, pageSize), jobName, jobGroup, status);
+        dispatch.fillStates(page.getRecords());
+        return page;
     }
 
     @Override
     public JobDO getById(Long id) {
+        trustedTenantId();
         JobDO job = jobMapper.selectById(id);
         if (job == null) throw new BusinessException("任务不存在或无权访问");
+        dispatch.fillStates(List.of(job));
         return job;
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void save(JobDO input) {
+    public JobMutationResult save(JobDO input) {
         JobDO job = writableFields(input);
         job.setId(null);
         job.setTenantId(trustedTenantId());
+        job.setRevision(1L);
         normalizeAndValidate(job);
         if (jobMapper.insert(job) != 1) throw new BusinessException("任务创建失败");
         input.setId(job.getId());
-        synchronize(job, null);
+        input.setRevision(job.getRevision());
+        return dispatch.enqueue(job, false);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void updateById(JobDO input) {
+    public JobMutationResult updateById(JobDO input) {
         JobDO previous = lockJob(input.getId());
         JobDO job = writableFields(input);
         job.setTenantId(null);
+        job.setRevision(previous.getRevision() + 1);
         normalizeAndValidate(job);
         if (jobMapper.updateById(job) != 1) throw new BusinessException("任务不存在或无权修改");
         job.setTenantId(previous.getTenantId());
-        synchronize(job, previous);
+        return dispatch.enqueue(job, false);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void removeById(Long id) {
+    public JobMutationResult removeById(Long id) {
         JobDO previous = lockJob(id);
         if (jobMapper.deleteById(id) != 1) throw new BusinessException("任务不存在或无权删除");
-        synchronize(null, previous);
-    }
-
-    @Override
-    public void runOnce(Long id) {
-        trustedTenantId();
-        JobDO job = getById(id);
-        try { jobExecuteService.executeOrThrow(new JobInvocation(job.getId(), job.getJobName(), job.getJobGroup(), job.getInvokeTarget())); }
-        catch (RuntimeException error) {
-            var failure = new BusinessException("任务执行失败，请查看任务日志");
-            failure.initCause(error);
-            throw failure;
-        }
+        previous.setRevision(previous.getRevision() + 1);
+        return dispatch.enqueue(previous, true);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void pauseJob(Long id) { changeStatus(id, 1); }
+    public JobExecutionReceipt runOnce(Long id) { return runOnce(id, null); }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void resumeJob(Long id) { changeStatus(id, 0); }
+    public JobExecutionReceipt runOnce(Long id, String requestKey) {
+        JobDO job = lockJob(id);
+        jobExecuteService.validateTarget(job.getInvokeTarget());
+        dispatch.enqueue(job, false);
+        return executions.enqueue(job, requestKey, jobExecuteService.supportsRecovery(job.getInvokeTarget()));
+    }
 
-    private void changeStatus(Long id, int status) {
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public JobMutationResult pauseJob(Long id) { return changeStatus(id, 1); }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public JobMutationResult resumeJob(Long id) { return changeStatus(id, 0); }
+
+    private JobMutationResult changeStatus(Long id, int status) {
         JobDO previous = lockJob(id);
         JobDO job = BeanUtil.copyProperties(previous, JobDO.class);
         job.setStatus(status);
+        job.setRevision(previous.getRevision() + 1);
         if (status == 0) normalizeAndValidate(job);
-        if (jobMapper.updateById(new JobDO().setId(id).setStatus(status)) != 1)
+        if (jobMapper.updateById(new JobDO().setId(id).setStatus(status).setRevision(job.getRevision())) != 1)
             throw new BusinessException("任务不存在或无权修改");
-        synchronize(job, previous);
+        return dispatch.enqueue(job, false);
     }
 
     @Override
     public void initializeScheduler(List<JobDO> jobs) {
-        quartzJobService.scheduleAllJobs(jobs);
+        dispatch.initialize(jobs);
     }
 
     private JobDO lockJob(Long id) {
@@ -148,22 +158,4 @@ public class JobServiceImpl implements JobService {
         catch (RuntimeException error) { throw new BusinessException("调用目标必须是已注册且带 @JobTask 的 public 无参方法"); }
     }
 
-    private void synchronize(JobDO desired, JobDO previous) {
-        Long id = desired == null ? previous.getId() : desired.getId();
-        // Quartz 与业务库不是同一个事务；回滚时补偿，重启时再按库中状态恢复。
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCompletion(int status) {
-                if (status != STATUS_ROLLED_BACK) return;
-                try {
-                    if (previous == null) quartzJobService.removeById(id);
-                    else quartzJobService.scheduleJobIfActive(previous);
-                } catch (RuntimeException error) {
-                    log.error("回滚后恢复 Quartz 失败，需恢复调度器并重启同步 id={}", id, error);
-                }
-            }
-        });
-        if (desired == null) quartzJobService.removeById(id);
-        else quartzJobService.scheduleJobIfActive(desired);
-    }
 }

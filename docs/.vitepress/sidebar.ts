@@ -114,7 +114,13 @@ export const sidebar: DefaultTheme.SidebarItem[] = [
           { text: '用户与角色', link: '/platform/system/users-roles' },
           { text: '菜单与按钮', link: '/platform/system/menus' },
           { text: '字典、参数与公告', link: '/platform/system/dictionaries' },
-          { text: '任务与日志', link: '/platform/system/jobs-logs' },
+          {
+            text: '任务与日志', link: '/platform/system/jobs-logs', collapsed: true,
+            items: [
+              { text: '执行键、事务与安全重试', link: '/platform/system/jobs/execution' },
+              { text: '集群部署与恢复', link: '/operations/job-cluster' },
+            ],
+          },
           { text: '在线用户', link: '/online-user-management' },
           { text: '个人中心', link: '/user-profile' },
         ],

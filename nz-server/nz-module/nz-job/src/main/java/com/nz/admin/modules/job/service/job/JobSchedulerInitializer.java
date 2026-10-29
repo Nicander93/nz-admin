@@ -27,7 +27,7 @@ public class JobSchedulerInitializer implements ApplicationRunner {
             while (true) {
                 int page = pageNumber++;
                 var records = TenantContextHolder.callWithTenantId(tenantId,
-                        () -> jobService.listPage(page, 200, null, null, 0).getRecords());
+                        () -> jobService.listPage(page, 200, null, null, null).getRecords());
                 jobs.addAll(records);
                 if (records.size() < 200) break;
             }

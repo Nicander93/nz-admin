@@ -43,7 +43,8 @@ class FlywayMigrationResourcesTest {
             "db/migration/V30__workflow_business_integration.sql",
             "db/migration/V31__demo_item_excel_exchange.sql",
             "db/migration/V32__identity_versions.sql",
-            "db/migration/V33__file_storage_lifecycle.sql"
+            "db/migration/V33__file_storage_lifecycle.sql",
+            "db/migration/V34__quartz_jdbc_cluster.sql"
     );
 
     @Test

@@ -34,6 +34,12 @@ class QuartzJobTest {
     @Mock
     private JobExecutionContext jobExecutionContext;
 
+    private void schedulerIdentity() throws Exception {
+        org.quartz.Scheduler scheduler = org.mockito.Mockito.mock(org.quartz.Scheduler.class);
+        when(jobExecutionContext.getScheduler()).thenReturn(scheduler);
+        when(scheduler.getSchedulerInstanceId()).thenReturn("unit-node");
+    }
+
     @Test
     void shouldSkipExecutionWhenInvokeTargetIsBlank() {
         JobDataMap jobDataMap = new JobDataMap();
@@ -48,6 +54,7 @@ class QuartzJobTest {
 
     @Test
     void shouldDelegateExecutionToJobExecuteService() throws Exception {
+        schedulerIdentity();
         JobDataMap jobDataMap = new JobDataMap();
         jobDataMap.put("jobId", 101L);
         jobDataMap.put("jobName", "unit job");
@@ -70,6 +77,7 @@ class QuartzJobTest {
 
     @Test
     void shouldRestoreTenantContextForExecution() throws Exception {
+        schedulerIdentity();
         JobDataMap jobDataMap = new JobDataMap();
         jobDataMap.put("jobId", 103L);
         jobDataMap.put("jobName", "context job");
@@ -90,7 +98,8 @@ class QuartzJobTest {
     }
 
     @Test
-    void shouldWrapExecutionFailureAsJobExecutionException() {
+    void shouldWrapExecutionFailureAsJobExecutionException() throws Exception {
+        schedulerIdentity();
         JobDataMap jobDataMap = new JobDataMap();
         jobDataMap.put("jobId", 102L);
         jobDataMap.put("jobName", "failure job");
@@ -132,5 +141,24 @@ class QuartzJobTest {
     void shouldMarkDisallowConcurrentAnnotation() {
         assertNotNull(DisallowConcurrentQuartzJob.class
                 .getDeclaredAnnotation(org.quartz.DisallowConcurrentExecution.class));
+    }
+
+    @Test void recoveryKeepsOriginalScheduledKeyAndTime() throws Exception {
+        schedulerIdentity();
+        var data = new JobDataMap();
+        data.put("jobId", "12"); data.put("tenantId", "2"); data.put("invokeTarget", "demoTask.run");
+        data.put("definitionRevision", "7"); data.put("recoverable", "true");
+        data.put(org.quartz.Scheduler.FAILED_JOB_ORIGINAL_TRIGGER_SCHEDULED_FIRETIME_IN_MILLISECONDS, "123456");
+        when(jobExecutionContext.getMergedJobDataMap()).thenReturn(data);
+        when(jobExecutionContext.isRecovering()).thenReturn(true);
+        when(jobTenantProvider.isEnabledTenant(2L)).thenReturn(true);
+        new QuartzJob(jobExecuteService, jobTenantProvider).execute(jobExecutionContext);
+        var captured = org.mockito.ArgumentCaptor.forClass(JobInvocation.class);
+        verify(jobExecuteService).executeOrThrow(captured.capture());
+        assertEquals("scheduled:2:12:123456", captured.getValue().context().executionKey());
+        assertEquals(123456L, captured.getValue().context().scheduledFireTime());
+        assertEquals(7L, captured.getValue().context().definitionRevision());
+        assertEquals("unit-node", captured.getValue().context().nodeId());
+        assertEquals(true, captured.getValue().context().recovered());
     }
 }

@@ -18,15 +18,9 @@ public class JobInvokeLogSinkImpl implements JobInvokeLogSink {
 
     @Override
     public void save(JobInvokeLogEvent event) {
-        JobLogDO jobLog = new JobLogDO();
-        jobLog.setJobId(event.getJobId());
-        jobLog.setJobName(event.getJobName());
-        jobLog.setJobGroup(event.getJobGroup());
-        jobLog.setInvokeTarget(event.getInvokeTarget());
-        jobLog.setStatus(event.getStatus());
-        jobLog.setJobMessage(event.getJobMessage());
-        jobLog.setExceptionInfo(event.getExceptionInfo());
-        jobLog.setCreateTime(event.getCreateTime());
+        JobLogDO jobLog = cn.hutool.core.bean.BeanUtil.copyProperties(event, JobLogDO.class);
+        if (jobLog.getRecovered() == null) jobLog.setRecovered(false);
+        if (jobLog.getAttempt() == null) jobLog.setAttempt(1);
         jobLogService.save(jobLog);
     }
 }

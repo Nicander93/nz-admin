@@ -19,6 +19,13 @@ public class JobLogDO {
     @TableId(type = IdType.AUTO)
     private Long id;
     private Long jobId;
+    private Long executionId;
+    private String executionKey;
+    private String triggerSource;
+    private String nodeId;
+    private Boolean recovered;
+    private Integer attempt;
+    private Long scheduledFireTime;
     /**
      * 任务名称。
      */

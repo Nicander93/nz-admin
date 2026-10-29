@@ -1,55 +1,68 @@
 # 定时任务与日志排查
 
-定时任务模块提供 Cron 校验、暂停、恢复和立即执行；日志记录操作与执行结果。任务创建成功后，还要确认调度器实际注册并执行。
+任务页面提供新增、编辑、删除、暂停、恢复、立即执行，以及调度同步记录、执行账本和任务日志。保存配置、同步到 Quartz、任务执行完成是三个不同阶段。
 
-## 配置与验证任务
+本轮已加入 PostgreSQL JDBC 调度、事务性同步队列与持久执行账本。本地已验证两个独立 JVM 的 Cron 争用、手动请求去重，以及执行中强杀节点后的原键接管；下游效果采用受控 HTTP 幂等服务验证。全部验收范围与生产部署边界见[测试矩阵](/guide/testing/coverage-matrix)。
 
-1. 确认 job 模块启用，当前用户拥有任务菜单及操作权限。
-2. 在业务 Bean 的 public 无参方法上添加 `@JobTask`，再用 `beanName.methodName` 配置调用目标。新增、修改和实际执行时都会核对标记，不开放任意 Bean 方法。
-3. 保存后查看任务状态，再使用“立即执行”验证实际业务结果。
-4. 检查任务执行日志和后端日志，随后确认定时触发。
-5. 暂停或修改后重新核对下一次触发，避免仅以页面状态判断。
+## 从创建到执行
 
-任务 API 前缀为 `/api/system/job`。Cron 校验使用 query 权限，立即执行、暂停、恢复使用 edit 权限。新增操作仍要按功能单独判断是否应授予用户。
+1. 启用 job 模块，在业务 Bean 的 public 无参方法上添加 `@JobTask`，调用目标使用 `beanName.methodName`。
+2. 在页面填写名称、分组、Cron、调用目标和错过触发策略。保存返回 `jobId`、`revision` 和 `scheduleState`。
+3. 等待同步状态变为 `SYNCED`；`PENDING` 表示定义已持久保存，`ERROR` 表示同步达到重试上限，均不代表已注册成功。
+4. 点击“立即执行”获得持久回执，再在执行记录中查看终态。`PENDING` 仅表示已排队。
+5. 查看与 `executionId`、`executionKey` 关联的任务日志，并核对实际业务结果。
 
-## 生产启动与租户边界
+暂停会停止后续定时执行，已进入 `RUNNING` 的尝试仍可按原事务完成。暂停中的任务允许有权限的用户手动执行。编辑、删除和租户失效会使尚未执行业务的旧配置尝试跳过；不会强制中断已经运行的业务方法。
 
-每次启动由独立的 `JobSchedulerInitializer` 恢复调度，与 `NZ_INITIALIZE_DATA` 无关。`initialize-data=false` 不会再跳过任务恢复；基础初始化仍只负责新环境的管理员和示例数据。
+## 状态与排障入口
 
-租户业务通过 `JobTenantProvider` 提供启用且未过期的租户；job 模块按可信租户上下文分页加载启用任务。每次触发还会再次检查租户状态，停用或过期租户的旧触发器不再执行业务。
+| 状态来源 | 状态 | 含义与处理 |
+| --- | --- | --- |
+| 任务定义 | 启用、暂停 | 管理员期望的后续调度状态 |
+| 调度同步 | `PENDING`、`SYNCED`、`ERROR` | 同一事务保存定义和同步意图；失败退避重试，修复原因后可人工重试 |
+| 执行账本 | `PENDING`、`RUNNING` | 等待调度或已获得当前尝试执行权 |
+| 执行账本 | `SUCCEEDED`、`FAILED`、`SKIPPED` | 业务与成功日志提交、尝试失败、定义/租户已失效 |
 
-任务写入请求不包含租户与审计列。创建时使用当前可信租户，更新不允许迁移归属；操作不存在或其他租户的任务返回失败。不能把前端隐藏 tenantId 当成隔离边界。
+删除任务后，同步记录仍可保留 `DELETE` 意图。应从“调度同步记录”检查清除状态；不能仅因任务列表已消失就认为 Quartz 已清除。
+
+`GET /api/system/job/scheduler` 返回当前节点是否运行、是否持久化/集群、逻辑 scheduler 名称和实例 ID。多个节点应共享逻辑名称，同时有不同实例 ID。
+
+## 方法声明与业务幂等
 
 ```java
 @Component("billingTask")
 public class BillingTask {
     @JobTask
     public void refreshSummary() {
-        // 当前线程已恢复该任务的可信租户；业务写入仍需幂等。
+        // 在当前可信租户下执行业务。
     }
 }
 ```
 
-已有自定义任务升级时，给允许执行的方法补上 `com.nz.admin.common.job.JobTask` 标记。基线 `demoTask.run` 已提供无副作用的带标记实现；未标记的活跃任务会导致恢复失败，应先补标记或暂停该任务再升级。暂停记录不会在启动时执行。
+`@JobTask` 默认不允许失联后自动恢复。只有业务已能承受同一逻辑键重复尝试时，才声明 `@JobTask(recoverable = true)`。标记本身不会使邮件、HTTP、文件等外部效果自动去重。
 
-任务执行扩展统一传入 `JobInvocation`（任务 ID、名称、分组和调用目标）给 `JobExecuteService.executeOrThrow`。任务 ID 必须为正数；旧的字符串执行入口已移除，避免任务执行后因日志缺少任务 ID 而失败。
+业务可通过 `JobRunContextHolder.requireCurrent()` 获取租户、定义版本、执行键、计划时刻、节点、尝试次数和恢复标记。当前数据源中参与同一事务的业务写入、成功日志与执行成功状态一起提交；主动使用其他数据源或独立事务的写入不在此原子边界内。
 
-## 三类日志
+详细规则见[执行键、事务与安全重试](/platform/system/jobs/execution)。
 
-| 类型 | 用来回答 |
-| --- | --- |
-| 登录日志 | 谁在什么时间尝试登录，结果如何 |
-| 操作日志 | 哪个用户调用了被记录的业务操作 |
-| 任务日志与后端运行日志 | 调度是否执行，执行失败在哪里 |
+## 权限与租户
 
-新业务关键操作使用 `@Log(title = "业务名称", businessType = ...)`，不要记录密码、令牌或原始密钥。接口异常日志可以帮助定位系统错误，但不能替代业务审计表和审批轨迹。
+API 前缀为 `/api/system/job`。列表及调度状态使用 `system:job:list`，详情与 Cron 校验使用 `system:job:query`；新增、修改、删除分别使用 add/edit/remove。立即执行、暂停、恢复及受控重试使用 edit。
 
-## 创建成功却没有执行
+执行记录和日志列表使用 `system:joblog:list`，详情使用 query，删除日志使用 remove。V34 将这三个按钮加入任务菜单；只有已包含任务菜单的套餐获得相应功能范围，普通角色仍需显式授权。
 
-先确认启用状态、Cron、调用目标以及后端调度注册日志，再查看任务表中的租户归属。任务写入会校验 Cron、执行目标与状态；注册失败会返回失败并回滚数据库写入。Quartz 与数据库不属于同一事务，回滚时会补偿原调度；若调度器本身不可用，需恢复服务并重启，从数据库重新装配。外部业务副作用仍需幂等保护。
+创建使用当前可信租户，更新不允许改变归属。定义、同步记录、执行账本和日志均按当前租户查询；对其他租户的详情、重试和删除请求会拒绝。任务线程通过 `JobTenantProvider` 重验租户有效性，不能沿用工作线程中残留的租户。
 
-当前默认使用 Quartz RAM 存储，启动时从业务表重建各进程自己的调度。多节点共享 Redis 和登录态，不会协调这些内存触发器，因此同一业务任务可能被多个节点分别执行。
+## 生产启动
 
-PostgreSQL JDBC 调度集群、任务变更 outbox、执行账本和稳定幂等键仍待实施。现有双节点验收覆盖会话、审批与实时状态，不能作为分布式调度保证；单节点重启恢复也不能证明节点崩溃接管或业务副作用只发生一次。
+`JobSchedulerInitializer` 独立于基础数据初始化，`NZ_INITIALIZE_DATA=false` 不会跳过任务恢复。初始化和周期对账只管理 `NZ_ADMIN` 命名空间，不清空共享调度器。
 
-参考：[JobController](https://github.com/Nicander93/nz-admin/blob/master/nz-server/nz-module/nz-job/src/main/java/com/nz/admin/modules/job/controller/job/JobController.java)、[JobServiceImpl](https://github.com/Nicander93/nz-admin/blob/master/nz-server/nz-module/nz-job/src/main/java/com/nz/admin/modules/job/service/job/JobServiceImpl.java)。
+多副本启用 `NZ_JOB_CLUSTER_ENABLED=true`，所有节点使用同一 PostgreSQL schema 和 scheduler name。单机可显式采用 RAM 调度；RAM 与 JDBC 节点不能同时执行同一组业务任务。共享 Redis 会话不承担任务抢占。
+
+升级、健康检查和故障恢复见[任务集群部署](/operations/job-cluster)。
+
+## 日志各自回答什么
+
+登录日志记录登录尝试；操作日志记录管理员调用的接口；执行账本记录一次逻辑执行的状态；任务日志记录每次尝试及节点。它们不能互相替代。
+
+排查“保存成功却没执行”时，依次检查定义状态、同步记录错误、节点调度元数据、执行账本、尝试日志和真实业务结果。不要手工修改 `QRTZ_*` 表来绕过状态机。

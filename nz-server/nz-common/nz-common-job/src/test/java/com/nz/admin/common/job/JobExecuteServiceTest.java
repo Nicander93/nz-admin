@@ -3,7 +3,6 @@ package com.nz.admin.common.job;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationContext;
@@ -25,8 +24,12 @@ class JobExecuteServiceTest {
     @Mock
     private JobInvokeLogSink jobInvokeLogSink;
 
-    @InjectMocks
     private JobExecuteService jobExecuteService;
+
+    @org.junit.jupiter.api.BeforeEach
+    void useCompatibleStandaloneConstructor() {
+        jobExecuteService = new JobExecuteService(applicationContext, jobInvokeLogSink);
+    }
 
     @Test
     void shouldRejectBlankInvokeTarget() {

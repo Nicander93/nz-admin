@@ -38,7 +38,7 @@ management:
         liveness:
           include: livenessState
         readiness:
-          include: readinessState,db,redis
+          include: readinessState,db,redis,jobScheduler
   health:
     redis:
       enabled: ${NZ_REDIS_ENABLED:false}
@@ -58,6 +58,14 @@ warm-flow:
 nz:
   cluster:
     enabled: ${NZ_CLUSTER_ENABLED:false}
+  job:
+    cluster-enabled: ${NZ_JOB_CLUSTER_ENABLED:${nz.cluster.enabled:false}}
+    scheduler-name: ${NZ_JOB_SCHEDULER_NAME:nz-admin}
+    thread-count: ${NZ_JOB_THREAD_COUNT:4}
+    cluster-checkin-interval: ${NZ_JOB_CLUSTER_CHECKIN_INTERVAL:5s}
+    reconcile-interval: ${NZ_JOB_RECONCILE_INTERVAL:30s}
+    execution-lease: ${NZ_JOB_EXECUTION_LEASE:60s}
+    max-dispatch-attempts: ${NZ_JOB_MAX_DISPATCH_ATTEMPTS:6}
   cache:
     key-prefix: ${NZ_CACHE_KEY_PREFIX:nz-admin}
   realtime:

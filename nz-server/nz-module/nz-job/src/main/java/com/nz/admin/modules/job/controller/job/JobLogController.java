@@ -28,8 +28,10 @@ public class JobLogController {
                                         @RequestParam(defaultValue = "10") Integer pageSize,
                                         @RequestParam(required = false) String jobName,
                                         @RequestParam(required = false) String jobGroup,
-                                        @RequestParam(required = false) Integer status) {
-        return R.ok(PageResult.of(jobLogService.listPage(pageNum, pageSize, jobName, jobGroup, status)));
+                                        @RequestParam(required = false) Integer status,
+                                        @RequestParam(required = false) Long jobId,
+                                        @RequestParam(required = false) String executionKey) {
+        return R.ok(PageResult.of(jobLogService.listPage(pageNum, pageSize, jobName, jobGroup, status, jobId, executionKey)));
     }
 
     @SaCheckPermission("system:joblog:query")

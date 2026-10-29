@@ -9,4 +9,6 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface JobTask {
+    /** 仅对已确保数据库事务或下游幂等的任务开放崩溃后重试。 */
+    boolean recoverable() default false;
 }

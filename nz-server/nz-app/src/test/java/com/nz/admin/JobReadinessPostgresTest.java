@@ -4,6 +4,9 @@ import cn.hutool.crypto.digest.BCrypt;
 import com.nz.admin.common.job.JobTask;
 import com.nz.admin.framework.test.core.http.ApiTestClient;
 import com.nz.admin.modules.job.service.job.JobSchedulerInitializer;
+import com.nz.admin.modules.job.service.job.JobDispatchService;
+import com.nz.admin.framework.quartz.core.QuartzSchedulerManager;
+import com.nz.admin.support.PostgresTestSchema;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -37,12 +40,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /** PostgreSQL HTTP 与真实 Quartz 调度回归；NZ_TEST_PG_URL 必须指向隔离测试库。 */
 @EnabledIfEnvironmentVariable(named = "NZ_TEST_PG_URL", matches = ".+")
-@SpringBootTest(classes = NzAdminApplication.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = NzAdminApplication.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        properties = {"nz.job.cluster-enabled=false", "nz.job.max-dispatch-attempts=1"})
+@org.springframework.test.annotation.DirtiesContext(classMode = org.springframework.test.annotation.DirtiesContext.ClassMode.AFTER_CLASS)
+@org.springframework.test.context.TestExecutionListeners(listeners = JobReadinessPostgresTest.SchemaCleanup.class,
+        mergeMode = org.springframework.test.context.TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS)
 @ActiveProfiles("pg-test")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @Import(JobReadinessPostgresTest.ReadinessTaskConfiguration.class)
 class JobReadinessPostgresTest {
+    private static final PostgresTestSchema DATABASE = new PostgresTestSchema("job_readiness");
     private static final String PREFIX = "job-readiness-";
     private static final String CACHE_KEY_PREFIX = "job-readiness-test-" + UUID.randomUUID();
     private static final long OWNER_TENANT_ID = 990001L;
@@ -63,6 +71,7 @@ class JobReadinessPostgresTest {
     @Autowired JdbcTemplate jdbc;
     @Autowired Scheduler scheduler;
     @Autowired JobSchedulerInitializer schedulerInitializer;
+    @Autowired JobDispatchService dispatch;
 
     private ApiTestClient ownerApi;
     private ApiTestClient otherApi;
@@ -70,6 +79,7 @@ class JobReadinessPostgresTest {
 
     @DynamicPropertySource
     static void isolateRedisKeys(DynamicPropertyRegistry registry) {
+        DATABASE.configure(registry);
         registry.add("nz.cache.key-prefix", () -> CACHE_KEY_PREFIX);
     }
 
@@ -128,22 +138,21 @@ class JobReadinessPostgresTest {
     @Test
     @Order(2)
     void productionStartupRunnerRecoversPersistedJobsAndSkipsExpiredTenant() throws Exception {
-        jdbc.update("INSERT INTO sys_job(id,tenant_id,job_name,job_group,invoke_target,cron_expression,status,concurrent,misfire_policy) VALUES(?,1,?,?,?,'0 0/5 * * * ?',0,1,3)", RECOVERY_JOB_ID, PREFIX + "recovery", "DEFAULT", "demoTask.run");
+        jdbc.update("INSERT INTO sys_job(id,tenant_id,job_name,job_group,invoke_target,cron_expression,status,concurrent,misfire_policy) VALUES(?,1,?,?,?,'0 0 0 1 1 ? 2099',0,1,3)", RECOVERY_JOB_ID, PREFIX + "recovery", "DEFAULT", "demoTask.run");
         jdbc.update("INSERT INTO sys_tenant(id,tenant_code,tenant_name,package_id,account_count,status,expire_time) VALUES(?,'job-readiness-expired','Job expired',1,10,0,CURRENT_TIMESTAMP - INTERVAL '1 day') ON CONFLICT(id) DO NOTHING", EXPIRED_TENANT_ID);
-        jdbc.update("INSERT INTO sys_job(id,tenant_id,job_name,job_group,invoke_target,cron_expression,status,concurrent,misfire_policy) VALUES(?,?,?,?,'demoTask.run','0 0/5 * * * ?',0,1,3)", EXPIRED_JOB_ID, EXPIRED_TENANT_ID, PREFIX + "expired", "DEFAULT");
-        scheduler.clear();
+        jdbc.update("INSERT INTO sys_job(id,tenant_id,job_name,job_group,invoke_target,cron_expression,status,concurrent,misfire_policy) VALUES(?,?,?,?,'demoTask.run','0 0 0 1 1 ? 2099',0,1,3)", EXPIRED_JOB_ID, EXPIRED_TENANT_ID, PREFIX + "expired", "DEFAULT");
         schedulerInitializer.run(new DefaultApplicationArguments(new String[0]));
-        assertThat(scheduler.checkExists(new JobKey(String.valueOf(RECOVERY_JOB_ID)))).isTrue();
-        assertThat(scheduler.checkExists(new JobKey(String.valueOf(EXPIRED_JOB_ID)))).isFalse();
-        scheduler.clear();
+        assertThat(scheduler.checkExists(QuartzSchedulerManager.jobKey(RECOVERY_JOB_ID))).isTrue();
+        assertThat(scheduler.getTrigger(QuartzSchedulerManager.triggerKey(EXPIRED_JOB_ID))).isNull();
+        var nextFire = scheduler.getTrigger(QuartzSchedulerManager.triggerKey(RECOVERY_JOB_ID)).getNextFireTime();
         schedulerInitializer.run(new DefaultApplicationArguments(new String[0]));
-        assertThat(scheduler.checkExists(new JobKey(String.valueOf(RECOVERY_JOB_ID)))).isTrue();
+        assertThat(scheduler.getTrigger(QuartzSchedulerManager.triggerKey(RECOVERY_JOB_ID)).getNextFireTime()).isEqualTo(nextFire);
     }
 
     @Test
     @Order(3)
     void rejectsCrossTenantReadExecutionUpdatePauseResumeAndDelete() {
-        jdbc.update("INSERT INTO sys_job(id,tenant_id,job_name,job_group,invoke_target,cron_expression,status,concurrent,misfire_policy) VALUES(?,?,?,'DEFAULT','demoTask.run','0 0/5 * * * ?',1,1,3)", OTHER_JOB_ID, OTHER_TENANT_ID, PREFIX + "foreign");
+        jdbc.update("INSERT INTO sys_job(id,tenant_id,job_name,job_group,invoke_target,cron_expression,status,concurrent,misfire_policy) VALUES(?,?,?,'DEFAULT','demoTask.run','0 0 0 1 1 ? 2099',1,1,3)", OTHER_JOB_ID, OTHER_TENANT_ID, PREFIX + "foreign");
         assertDenied(ownerApi.exchange(HttpMethod.GET, "/api/system/job/" + OTHER_JOB_ID, null));
         assertDenied(ownerApi.exchange(HttpMethod.PUT, "/api/system/job/run/" + OTHER_JOB_ID, null));
         assertDenied(ownerApi.exchange(HttpMethod.DELETE, "/api/system/job/" + OTHER_JOB_ID, null));
@@ -172,11 +181,13 @@ class JobReadinessPostgresTest {
 
     @Test
     @Order(5)
-    void failedExecutionPersistsCorrelatedFailureLog() {
+    void failedExecutionPersistsCorrelatedFailureLog() throws Exception {
         String name = PREFIX + "failure";
         ownerApi.ok(HttpMethod.POST, "/api/system/job", request(name, "readinessFailTask.fail"));
         Long id = jobId(name);
-        assertDenied(ownerApi.exchange(HttpMethod.PUT, "/api/system/job/run/" + id, null));
+        var receipt = ownerApi.ok(HttpMethod.PUT, "/api/system/job/run/" + id, null);
+        assertThat(receipt.path("executionId").asLong()).isPositive();
+        awaitLog(id);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM sys_job_log WHERE job_id=? AND tenant_id=? AND job_name=? AND job_group='DEFAULT' AND invoke_target='readinessFailTask.fail' AND status=1 AND exception_info LIKE '%intentional failure%'", Integer.class, id, OWNER_TENANT_ID, name)).isEqualTo(1);
     }
 
@@ -203,12 +214,17 @@ class JobReadinessPostgresTest {
 
     @Test
     @Order(99)
-    void schedulerFailureReturnsHttpErrorAndRollsBackTheJobInsert() throws Exception {
+    void schedulerFailureKeepsCommittedConfigurationAndReportsSyncError() throws Exception {
         scheduler.shutdown();
         Map<String, Object> request = request(PREFIX + "scheduler-failure", "demoTask.run");
         request.put("status", 0);
-        assertDenied(ownerApi.exchange(HttpMethod.POST, "/api/system/job", request));
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM sys_job WHERE job_name=?", Integer.class, PREFIX + "scheduler-failure")).isZero();
+        var result = ownerApi.ok(HttpMethod.POST, "/api/system/job", request);
+        long id = result.path("jobId").asLong();
+        assertThat(id).isPositive();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM sys_job WHERE id=?", Integer.class, id)).isEqualTo(1);
+        dispatch.synchronizePending();
+        assertThat(jdbc.queryForObject("SELECT state FROM sys_job_schedule_outbox WHERE job_id=?", String.class, id)).isEqualTo("ERROR");
+        assertThat(jdbc.queryForObject("SELECT last_error FROM sys_job_schedule_outbox WHERE job_id=?", String.class, id)).isNotBlank();
     }
 
     @TestConfiguration
@@ -244,7 +260,7 @@ class JobReadinessPostgresTest {
 
     private Map<String, Object> request(String name, String target) {
         return new HashMap<>(Map.of("jobName", name, "jobGroup", "DEFAULT", "invokeTarget", target,
-                "cronExpression", "0 0/5 * * * ?", "status", 1, "concurrent", 1, "misfirePolicy", 3));
+                "cronExpression", "0 0 0 1 1 ? 2099", "status", 1, "concurrent", 1, "misfirePolicy", 3));
     }
 
     private Long jobId(String name) {
@@ -257,6 +273,12 @@ class JobReadinessPostgresTest {
 
     private int countLogs(long jobId) {
         return jdbc.queryForObject("SELECT COUNT(*) FROM sys_job_log WHERE job_id=?", Integer.class, jobId);
+    }
+
+    private void awaitLog(long jobId) throws InterruptedException {
+        long deadline = System.currentTimeMillis() + 8000;
+        while (System.currentTimeMillis() < deadline && countLogs(jobId) == 0) Thread.sleep(50);
+        assertThat(countLogs(jobId)).isPositive();
     }
 
     private void awaitSuccessfulLog(long jobId) throws InterruptedException {
@@ -274,6 +296,8 @@ class JobReadinessPostgresTest {
     }
 
     private void cleanupJobs() {
+        jdbc.update("DELETE FROM sys_job_schedule_outbox WHERE job_id IN (SELECT id FROM sys_job WHERE job_name LIKE ?) OR job_id IN (?,?,?)", PREFIX + "%", OTHER_JOB_ID, RECOVERY_JOB_ID, EXPIRED_JOB_ID);
+        jdbc.update("DELETE FROM sys_job_execution WHERE job_id IN (SELECT id FROM sys_job WHERE job_name LIKE ?) OR job_id IN (?,?,?)", PREFIX + "%", OTHER_JOB_ID, RECOVERY_JOB_ID, EXPIRED_JOB_ID);
         jdbc.update("DELETE FROM sys_job_log WHERE job_id IN (SELECT id FROM sys_job WHERE job_name LIKE ?) OR job_id IN (?,?,?)",
                 PREFIX + "%", OTHER_JOB_ID, RECOVERY_JOB_ID, EXPIRED_JOB_ID);
         jdbc.update("DELETE FROM sys_job WHERE job_name LIKE ? OR id IN (?,?,?)",
@@ -291,5 +315,10 @@ class JobReadinessPostgresTest {
         jdbc.update("DELETE FROM sys_role WHERE id IN (?,?,?)", OWNER_ROLE_ID, OTHER_ROLE_ID, STALE_ROLE_ID);
         jdbc.update("DELETE FROM sys_tenant WHERE id IN (?,?,?) OR tenant_code IN ('job-readiness-owner','job-readiness-other','job-readiness-stale')",
                 OWNER_TENANT_ID, OTHER_TENANT_ID, STALE_TENANT_ID);
+    }
+
+    public static class SchemaCleanup extends org.springframework.test.context.support.AbstractTestExecutionListener {
+        @Override public int getOrder() { return 0; }
+        @Override public void afterTestClass(org.springframework.test.context.TestContext context) { DATABASE.drop(); }
     }
 }

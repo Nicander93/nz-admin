@@ -1,4 +1,9 @@
 package com.nz.admin.common.job;
 
-/** 每次执行的可信任务身份；日志必须能关联回具体任务。 */
-public record JobInvocation(Long jobId, String jobName, String jobGroup, String invokeTarget) {}
+/** 可信任务定义和可选执行上下文；旧四参调用继续可用。 */
+public record JobInvocation(Long jobId, String jobName, String jobGroup, String invokeTarget,
+                            JobRunContext context) {
+    public JobInvocation(Long jobId, String jobName, String jobGroup, String invokeTarget) {
+        this(jobId, jobName, jobGroup, invokeTarget, null);
+    }
+}

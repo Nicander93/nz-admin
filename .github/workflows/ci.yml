@@ -171,7 +171,7 @@ jobs:
           cache-dependency-path: nz-web/pnpm-lock.yaml
       - name: Verify real PostgreSQL migrations and HTTP permissions
         working-directory: nz-server
-        run: ./mvnw -q -pl nz-app -am install -Dtest=DataScopePostgresTest,IdempotencyPostgresTest,ClusterStateRedisTest,RedisAtomicStateStoreTest,WarmFlowPostgresTest,DemoItemExcelPostgresTest,PermissionRevocationPostgresTest,JobReadinessPostgresTest,JobRestartPostgresTest,IdentityLifecyclePostgresTest,MessageLifecyclePostgresTest,FileLifecyclePostgresTest,RealtimeAuthorizationPostgresTest -Dsurefire.failIfNoSpecifiedTests=false
+        run: ./mvnw -q -pl nz-app -am install -Dtest=DataScopePostgresTest,IdempotencyPostgresTest,ClusterStateRedisTest,RedisAtomicStateStoreTest,WarmFlowPostgresTest,DemoItemExcelPostgresTest,PermissionRevocationPostgresTest,JobReadinessPostgresTest,JobRestartPostgresTest,JobDurabilityPostgresTest,JobClusterProcessPostgresTest,IdentityLifecyclePostgresTest,MessageLifecyclePostgresTest,FileLifecyclePostgresTest,RealtimeAuthorizationPostgresTest -Dsurefire.failIfNoSpecifiedTests=false
       - name: Install browser dependencies
         working-directory: nz-web
         run: |

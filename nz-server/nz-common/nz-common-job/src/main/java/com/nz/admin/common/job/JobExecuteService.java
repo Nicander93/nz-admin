@@ -14,15 +14,29 @@ import java.time.LocalDateTime;
 public class JobExecuteService {
     private final ApplicationContext applicationContext;
     private final JobInvokeLogSink jobInvokeLogSink;
+    private final JobExecutionCoordinator executionCoordinator;
 
     public JobExecuteService(ApplicationContext applicationContext, JobInvokeLogSink jobInvokeLogSink) {
+        this(applicationContext, jobInvokeLogSink, (invocation, action) -> {
+            JobRunContextHolder.runWith(invocation.context(), action);
+            return true;
+        });
+    }
+
+    public JobExecuteService(ApplicationContext applicationContext, JobInvokeLogSink jobInvokeLogSink,
+                             JobExecutionCoordinator executionCoordinator) {
         this.applicationContext = applicationContext;
         this.jobInvokeLogSink = jobInvokeLogSink;
+        this.executionCoordinator = java.util.Objects.requireNonNull(executionCoordinator, "Job execution coordinator is required");
     }
 
     /** 保存任务之前检查白名单，执行时还会重新检查。 */
     public void validateTarget(String invokeTarget) {
         resolve(invokeTarget);
+    }
+
+    public boolean supportsRecovery(String invokeTarget) {
+        return AnnotatedElementUtils.findMergedAnnotation(resolve(invokeTarget).method(), JobTask.class).recoverable();
     }
 
     /** 执行带有持久化任务身份的任务，让调用方看见执行错误。 */
@@ -34,26 +48,27 @@ public class JobExecuteService {
     }
 
     private void invoke(JobInvocation invocation) {
-        String target = invocation.invokeTarget();
-        var event = new JobInvokeLogEvent().setJobId(invocation.jobId()).setJobName(invocation.jobName())
-                .setJobGroup(invocation.jobGroup()).setInvokeTarget(target).setCreateTime(LocalDateTime.now());
-        RuntimeException failure = null;
+        var context = new java.util.concurrent.atomic.AtomicReference<>(invocation.context());
         try {
-            var call = resolve(target);
-            ReflectionUtils.invokeMethod(call.method(), call.bean());
-            event.setStatus(0);
-            event.setJobMessage("执行成功");
-        } catch (RuntimeException error) {
-            failure = error;
-            String message = error.getMessage() == null ? error.getClass().getSimpleName() : error.getMessage();
+            executionCoordinator.execute(invocation, () -> {
+                context.set(JobRunContextHolder.currentOrNull());
+                var call = resolve(invocation.invokeTarget());
+                ReflectionUtils.invokeMethod(call.method(), call.bean());
+                // 成功日志随业务写入和执行账本一起提交，日志失败也不能伪装成功。
+                jobInvokeLogSink.save(JobInvokeLogEvent.from(invocation, context.get()).setStatus(0).setJobMessage("执行成功"));
+            });
+        } catch (RuntimeException failure) {
+            String message = failure.getMessage() == null ? failure.getClass().getSimpleName() : failure.getMessage();
             message = message.substring(0, Math.min(message.length(), 1800));
-            event.setStatus(1);
             String summary = "执行失败：" + message;
-            event.setJobMessage(summary.substring(0, Math.min(summary.length(), 500)));
-            event.setExceptionInfo(message);
+            if (!executionCoordinator.recordsFailures()) {
+                try {
+                    jobInvokeLogSink.save(JobInvokeLogEvent.from(invocation, context.get()).setStatus(1)
+                            .setJobMessage(summary.substring(0, Math.min(summary.length(), 500))).setExceptionInfo(message));
+                } catch (RuntimeException loggingFailure) { failure.addSuppressed(loggingFailure); }
+            }
+            throw new IllegalStateException("任务执行失败，请查看任务日志", failure);
         }
-        jobInvokeLogSink.save(event);
-        if (failure != null) throw new IllegalStateException("任务执行失败，请查看任务日志", failure);
     }
 
     private Invocation resolve(String target) {

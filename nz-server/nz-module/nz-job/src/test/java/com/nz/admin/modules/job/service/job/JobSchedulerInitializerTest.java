@@ -23,7 +23,7 @@ class JobSchedulerInitializerTest {
     @Test
     void loadsEveryPageForEnabledTenantsAndRestoresTenantContext() {
         when(tenantProvider.enabledTenantIds()).thenReturn(List.of(11L, 22L));
-        when(jobService.listPage(anyInt(), anyInt(), isNull(), isNull(), eq(0))).thenAnswer(invocation -> {
+        when(jobService.listPage(anyInt(), anyInt(), isNull(), isNull(), isNull())).thenAnswer(invocation -> {
             int pageNumber = invocation.getArgument(0);
             Long tenantId = TenantContextHolder.getTenantIdOrNull();
             Page<JobDO> page = new Page<>(pageNumber, 200);
@@ -42,7 +42,7 @@ class JobSchedulerInitializerTest {
         } finally {
             TenantContextHolder.clear();
         }
-        verify(jobService, times(2)).listPage(1, 200, null, null, 0);
-        verify(jobService, times(2)).listPage(2, 200, null, null, 0);
+        verify(jobService, times(2)).listPage(1, 200, null, null, null);
+        verify(jobService, times(2)).listPage(2, 200, null, null, null);
     }
 }

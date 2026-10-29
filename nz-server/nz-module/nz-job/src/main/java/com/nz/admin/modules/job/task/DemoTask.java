@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component("demoTask")
 public class DemoTask {
-    @JobTask
+    @JobTask(recoverable = true)
     public void run() {
         log.info("演示任务执行完成");
     }

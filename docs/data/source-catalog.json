@@ -38,6 +38,8 @@
         "nz-server/nz-app/src/test/java/com/nz/admin/FileLifecyclePostgresTest.java",
         "nz-server/nz-app/src/test/java/com/nz/admin/IdempotencyPostgresTest.java",
         "nz-server/nz-app/src/test/java/com/nz/admin/IdentityLifecyclePostgresTest.java",
+        "nz-server/nz-app/src/test/java/com/nz/admin/JobClusterProcessPostgresTest.java",
+        "nz-server/nz-app/src/test/java/com/nz/admin/JobDurabilityPostgresTest.java",
         "nz-server/nz-app/src/test/java/com/nz/admin/JobReadinessPostgresTest.java",
         "nz-server/nz-app/src/test/java/com/nz/admin/JobRestartPostgresTest.java",
         "nz-server/nz-app/src/test/java/com/nz/admin/MessageLifecyclePostgresTest.java",
@@ -131,6 +133,10 @@
       ],
       "autoConfigurations": [],
       "contracts": [
+        {
+          "name": "JobExecutionCoordinator",
+          "source": "nz-server/nz-common/nz-common-job/src/main/java/com/nz/admin/common/job/JobExecutionCoordinator.java"
+        },
         {
           "name": "JobInvokeLogSink",
           "source": "nz-server/nz-common/nz-common-job/src/main/java/com/nz/admin/common/job/JobInvokeLogSink.java"
@@ -1449,6 +1455,7 @@
         "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/config/SystemDataScopeResolverTest.java",
         "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/config/SystemJobTenantProviderTest.java",
         "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/config/SystemRealtimeAccessPolicyTest.java",
+        "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/config/SystemRealtimeOptionalAssemblyTest.java",
         "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/controller/auth/LoginControllerTest.java",
         "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/service/DeptServiceImplTest.java",
         "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/service/DictTypeServiceImplTest.java",
@@ -1662,6 +1669,13 @@
       "module": "nz-common-core",
       "purpose": "统一核对会话与实时连接的身份状态和版本",
       "guide": "/platform/security/session-lifecycle"
+    },
+    {
+      "name": "JobExecutionCoordinator",
+      "source": "nz-server/nz-common/nz-common-job/src/main/java/com/nz/admin/common/job/JobExecutionCoordinator.java",
+      "module": "nz-common-job",
+      "purpose": "协调持久执行、业务事务与安全恢复",
+      "guide": "/platform/system/jobs/execution"
     },
     {
       "name": "JobTenantProvider",
@@ -1908,6 +1922,10 @@
     {
       "path": "nz-server/nz-common/nz-common-job/pom.xml",
       "sha256": "73add2cc86869c3155b2fdb2b41fe889ae14f99fd53505cdb93668e6777d130e"
+    },
+    {
+      "path": "nz-server/nz-common/nz-common-job/src/main/java/com/nz/admin/common/job/JobExecutionCoordinator.java",
+      "sha256": "482bc0398b3f8f951d589dc19c6557cef78dd273055e66da4dbb95962292b7e5"
     },
     {
       "path": "nz-server/nz-common/nz-common-job/src/main/java/com/nz/admin/common/job/JobInvokeLogSink.java",
@@ -2167,7 +2185,7 @@
     },
     {
       "path": "nz-server/nz-framework/nz-starter-quartz/src/main/java/com/nz/admin/framework/quartz/config/QuartzAutoConfiguration.java",
-      "sha256": "408969ebe5e14c03163de130c60d30e6b2416eb6c1b329660f4d62907757dac3"
+      "sha256": "3f9e0b013c60d2f6c56135dc3fd7e95218227814739175182d170e477afc4fec"
     },
     {
       "path": "nz-server/nz-framework/nz-starter-quartz/src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports",
@@ -2343,15 +2361,15 @@
     },
     {
       "path": "nz-server/nz-module/nz-job/pom.xml",
-      "sha256": "35cc3b6a180963fcf6870f368df7bb52127bced9120a90ad8e65a69152331bb1"
+      "sha256": "58e5f16341bb687351e17b29a88f032d40ae884f502cd61ea548cd7e86155e6a"
     },
     {
       "path": "nz-server/nz-module/nz-job/src/main/java/com/nz/admin/modules/job/config/NzJobModuleAutoConfiguration.java",
-      "sha256": "ac0bafa766a34cc43ff0a76a1afc5308bdef6ea0249091b09104a13981dc2db5"
+      "sha256": "5de05c2bc006d7e482a646dfc058f3b6bab1e9603b12fed9f460c664466d6360"
     },
     {
       "path": "nz-server/nz-module/nz-job/src/main/java/com/nz/admin/modules/job/mapper/job/JobLogMapper.java",
-      "sha256": "7150f14ecbac169dec0bcd0ca6a27a13299b18c9f93710041fb78fa06c9e2b48"
+      "sha256": "a1aea760104d4d5366a54953999147435f636818d99ae420f19e6450db6e2f94"
     },
     {
       "path": "nz-server/nz-module/nz-job/src/main/java/com/nz/admin/modules/job/mapper/job/JobMapper.java",
@@ -2359,11 +2377,11 @@
     },
     {
       "path": "nz-server/nz-module/nz-job/src/main/java/com/nz/admin/modules/job/service/job/JobLogService.java",
-      "sha256": "e1017f485addfa013c54403b123f06de310d91f89b89379278749271b1a30c99"
+      "sha256": "f30e8663130fba6e58a8d5f5b1cd20eddd061a37154d420e167a725d58a9b822"
     },
     {
       "path": "nz-server/nz-module/nz-job/src/main/java/com/nz/admin/modules/job/service/job/JobService.java",
-      "sha256": "281c1f4e2ff558333d17d4b0e08e732ad2f16dbc66ba17f7fde94d0ea03a365a"
+      "sha256": "fa3732a8c2dd616b4d8b5f560a3f954baaed56f2741596582107f677a28f47d1"
     },
     {
       "path": "nz-server/nz-module/nz-job/src/main/resources/META-INF/nz/module.yaml",

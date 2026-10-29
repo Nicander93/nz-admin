@@ -5,7 +5,11 @@ import com.nz.admin.modules.job.entity.dataobject.job.JobLogDO;
 
 public interface JobLogService {
 
-    Page<JobLogDO> listPage(Integer pageNum, Integer pageSize, String jobName, String jobGroup, Integer status);
+    default Page<JobLogDO> listPage(Integer pageNum, Integer pageSize, String jobName, String jobGroup, Integer status) {
+        return listPage(pageNum, pageSize, jobName, jobGroup, status, null, null);
+    }
+    Page<JobLogDO> listPage(Integer pageNum, Integer pageSize, String jobName, String jobGroup, Integer status,
+                            Long jobId, String executionKey);
 
     JobLogDO getById(Long id);
 

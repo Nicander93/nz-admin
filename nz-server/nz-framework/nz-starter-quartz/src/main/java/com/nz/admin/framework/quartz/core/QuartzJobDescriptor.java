@@ -10,6 +10,8 @@ public class QuartzJobDescriptor {
 
     private Long jobId;
     private Long tenantId;
+    private Long revision = 1L;
+    private boolean recoverable;
     private String jobName;
     private String jobGroup;
     private String invokeTarget;

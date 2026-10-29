@@ -17,6 +17,14 @@ class QuartzAutoConfigurationTest {
         contextRunner.run(context -> {
             assertThat(context).hasSingleBean(Scheduler.class);
             assertThat(context.getBean(Scheduler.class).getSchedulerName()).isNotBlank();
+            assertThat(context.getBean(Scheduler.class).isStarted()).isFalse();
+        });
+    }
+
+    @Test void clusteredModeRequiresAnActualDataSource() {
+        contextRunner.withPropertyValues("nz.job.cluster-enabled=true").run(context -> {
+            assertThat(context).hasFailed();
+            assertThat(context.getStartupFailure()).hasStackTraceContaining("JDBC Quartz requires the application DataSource");
         });
     }
 }

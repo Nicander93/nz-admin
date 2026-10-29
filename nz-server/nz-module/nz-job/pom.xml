@@ -13,6 +13,7 @@
     <name>nz-job</name>
     <description>Independent scheduled-job module: job definitions, Quartz scheduling and execution logs.</description>
     <dependencies>
+        <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-actuator</artifactId></dependency>
         <dependency><groupId>org.projectlombok</groupId><artifactId>lombok</artifactId><optional>true</optional></dependency>
         <dependency><groupId>com.nz</groupId><artifactId>nz-common-core</artifactId></dependency>
         <dependency><groupId>com.nz</groupId><artifactId>nz-common-job</artifactId></dependency>

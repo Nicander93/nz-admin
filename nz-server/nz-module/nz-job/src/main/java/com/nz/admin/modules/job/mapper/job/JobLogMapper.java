@@ -10,11 +10,13 @@ import org.apache.ibatis.annotations.Mapper;
 @Mapper
 public interface JobLogMapper extends BaseMapper<JobLogDO> {
 
-    default Page<JobLogDO> selectPageByCondition(Page<JobLogDO> page, String jobName, String jobGroup, Integer status) {
+    default Page<JobLogDO> selectPageByCondition(Page<JobLogDO> page, String jobName, String jobGroup, Integer status, Long jobId, String executionKey) {
         LambdaQueryWrapper<JobLogDO> wrapper = new LambdaQueryWrapper<>();
         wrapper.like(StrUtil.isNotBlank(jobName), JobLogDO::getJobName, jobName)
                .like(StrUtil.isNotBlank(jobGroup), JobLogDO::getJobGroup, jobGroup)
                .eq(status != null, JobLogDO::getStatus, status)
+               .eq(jobId != null, JobLogDO::getJobId, jobId)
+               .eq(StrUtil.isNotBlank(executionKey), JobLogDO::getExecutionKey, executionKey)
                .orderByDesc(JobLogDO::getCreateTime);
         return selectPage(page, wrapper);
     }

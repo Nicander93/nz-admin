@@ -2,6 +2,7 @@ package com.nz.admin.modules.job.entity.dataobject.job;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.nz.admin.common.core.BaseEntity;
 import lombok.Data;
@@ -20,6 +21,11 @@ public class JobDO extends BaseEntity {
     @TableId(type = IdType.AUTO)
     private Long id;
     private Long tenantId;
+    private Long revision;
+    @TableField(exist = false)
+    private String scheduleState;
+    @TableField(exist = false)
+    private String scheduleError;
     /**
      * 任务名称。
      */
@@ -45,7 +51,7 @@ public class JobDO extends BaseEntity {
      */
     private Integer concurrent;
     /**
-     * 错过执行策略：1=立即执行，2=执行一次，3=放弃执行。
+     * 错过执行策略：1=按原计划补齐，2=补执行一次，3=跳过。
      */
     private Integer misfirePolicy;
     /**

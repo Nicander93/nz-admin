@@ -1,6 +1,8 @@
 package com.nz.admin;
 
 import org.junit.jupiter.api.Test;
+import com.nz.admin.support.PostgresTestSchema;
+import com.nz.admin.framework.quartz.core.QuartzSchedulerManager;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
@@ -14,11 +16,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 /** Boots the production application twice against isolated PostgreSQL with demo initialization disabled. */
 @EnabledIfEnvironmentVariable(named = "NZ_TEST_PG_URL", matches = ".+")
 class JobRestartPostgresTest {
+    private static final PostgresTestSchema DATABASE = new PostgresTestSchema("job_restart");
     private static final long JOB_ID = 990021L;
 
     @Test
     void persistedActiveJobIsRecoveredAndRunsAfterApplicationRestart() throws Exception {
-        DataSource dataSource = new DriverManagerDataSource(System.getenv("NZ_TEST_PG_URL"),
+        DataSource dataSource = new DriverManagerDataSource(DATABASE.url(),
                 System.getenv().getOrDefault("NZ_TEST_PG_USERNAME", "nztest"),
                 System.getenv().getOrDefault("NZ_TEST_PG_PASSWORD", "test"));
         JdbcTemplate jdbc = new JdbcTemplate(dataSource);
@@ -26,26 +29,26 @@ class JobRestartPostgresTest {
         try {
             context = startApplication();
             cleanup(jdbc);
-            jdbc.update("INSERT INTO sys_job(id,tenant_id,job_name,job_group,invoke_target,cron_expression,status,concurrent,misfire_policy) VALUES(?,1,'restart-readiness','DEFAULT','demoTask.run','0 0/5 * * * ?',0,1,3)", JOB_ID);
+            jdbc.update("INSERT INTO sys_job(id,tenant_id,job_name,job_group,invoke_target,cron_expression,status,concurrent,misfire_policy) VALUES(?,1,'restart-readiness','DEFAULT','demoTask.run','0 0 0 1 1 ? 2099',0,1,3)", JOB_ID);
             context.close();
             context = null;
 
             context = startApplication();
             Scheduler scheduler = context.getBean(Scheduler.class);
-            assertThat(scheduler.checkExists(new JobKey(String.valueOf(JOB_ID)))).isTrue();
-            scheduler.triggerJob(new JobKey(String.valueOf(JOB_ID)));
+            assertThat(scheduler.checkExists(QuartzSchedulerManager.jobKey(JOB_ID))).isTrue();
+            scheduler.triggerJob(QuartzSchedulerManager.jobKey(JOB_ID));
             awaitLogCount(jdbc, 1);
             context.close();
             context = null;
 
             context = startApplication();
             scheduler = context.getBean(Scheduler.class);
-            assertThat(scheduler.checkExists(new JobKey(String.valueOf(JOB_ID)))).isTrue();
-            scheduler.triggerJob(new JobKey(String.valueOf(JOB_ID)));
+            assertThat(scheduler.checkExists(QuartzSchedulerManager.jobKey(JOB_ID))).isTrue();
+            scheduler.triggerJob(QuartzSchedulerManager.jobKey(JOB_ID));
             awaitLogCount(jdbc, 2);
         } finally {
             if (context != null) context.close();
-            cleanup(jdbc);
+            DATABASE.drop();
         }
     }
 
@@ -58,7 +61,11 @@ class JobRestartPostgresTest {
         return new SpringApplicationBuilder(NzAdminApplication.class).run(
                 "--spring.profiles.active=pg-test",
                 "--spring.main.web-application-type=servlet",
-                "--spring.datasource.url=" + System.getenv("NZ_TEST_PG_URL"),
+                "--spring.datasource.url=" + DATABASE.url(),
+                "--spring.flyway.schemas=" + DATABASE.name(),
+                "--spring.flyway.default-schema=" + DATABASE.name(),
+                "--nz.job.scheduler-name=" + DATABASE.name(),
+                "--nz.job.cluster-enabled=true",
                 "--spring.datasource.username=" + System.getenv().getOrDefault("NZ_TEST_PG_USERNAME", "nztest"),
                 "--spring.datasource.password=" + System.getenv().getOrDefault("NZ_TEST_PG_PASSWORD", "test"),
                 "--spring.data.redis.host=127.0.0.1",
