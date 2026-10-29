@@ -10,8 +10,9 @@ import com.nz.admin.modules.system.entity.dto.realtime.RealtimeTestRequest;
 import com.nz.admin.modules.system.entity.vo.realtime.RealtimeTicketVO;
 import com.nz.admin.modules.system.service.realtime.RealtimeService;
 import jakarta.validation.Valid;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/system/realtime")
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
+@ConditionalOnProperty(prefix = "nz.realtime", name = "enabled", havingValue = "true", matchIfMissing = true)
 @ConditionalOnBean(RealtimeService.class)
 public class RealtimeController {
 

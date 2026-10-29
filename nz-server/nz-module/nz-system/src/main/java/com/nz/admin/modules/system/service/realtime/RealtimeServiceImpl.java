@@ -14,11 +14,13 @@ import com.nz.admin.framework.realtime.web.RealtimeEndpoints;
 import com.nz.admin.framework.tenant.core.TenantContextHolder;
 import com.nz.admin.modules.system.entity.vo.realtime.RealtimeTicketVO;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
 
 @Service
+@ConditionalOnProperty(prefix = "nz.realtime", name = "enabled", havingValue = "true", matchIfMissing = true)
 @ConditionalOnBean({RealtimeTicketService.class, RealtimePublisher.class})
 public class RealtimeServiceImpl implements RealtimeService {
 
