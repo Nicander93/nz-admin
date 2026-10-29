@@ -63,6 +63,7 @@ jobs:
           pnpm install --frozen-lockfile
           pnpm test
           pnpm e2e:typecheck
+          pnpm exec vue-tsc -b --force
           pnpm build
 
   delivery:
