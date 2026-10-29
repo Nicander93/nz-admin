@@ -97,6 +97,7 @@ export const sidebar: DefaultTheme.SidebarItem[] = [
         items: [
           { text: '后端与真实数据库测试', link: '/guide/testing/backend' },
           { text: '浏览器验收', link: '/guide/testing/browser' },
+          { text: '能力测试矩阵', link: '/guide/testing/coverage-matrix' },
           { text: '通用测试支持', link: '/testing' },
         ],
       },

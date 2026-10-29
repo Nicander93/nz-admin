@@ -1,4 +1,5 @@
 import request from '@/api/request'
+import type { RequestOptions } from '@/api/request'
 import type { PageQuery, PageResult } from '@/api/types'
 
 export type MessageCategory = 'system' | 'notice' | 'workflow'
@@ -37,30 +38,30 @@ export interface MessageSendRequest {
   userIds: number[]
 }
 
-export function pageMessages(params: MessageQuery) {
-  return request.get<PageResult<SystemMessage>>('/api/system/message/page', { params })
+export function pageMessages(params: MessageQuery, config?: RequestOptions) {
+  return request.get<PageResult<SystemMessage>>('/api/system/message/page', { ...config, params })
 }
 
-export function getMessage(id: number) {
-  return request.get<SystemMessage>(`/api/system/message/${id}`)
+export function getMessage(id: number, config?: RequestOptions) {
+  return request.get<SystemMessage>(`/api/system/message/${id}`, config)
 }
 
-export function getUnreadMessageCount() {
-  return request.get<number>('/api/system/message/unread-count')
+export function getUnreadMessageCount(config?: RequestOptions) {
+  return request.get<number>('/api/system/message/unread-count', config)
 }
 
-export function markMessageRead(id: number) {
-  return request.put<void>(`/api/system/message/${id}/read`)
+export function markMessageRead(id: number, config?: RequestOptions) {
+  return request.put<void>(`/api/system/message/${id}/read`, undefined, config)
 }
 
-export function markAllMessagesRead() {
-  return request.put<number>('/api/system/message/read-all')
+export function markAllMessagesRead(config?: RequestOptions) {
+  return request.put<number>('/api/system/message/read-all', undefined, config)
 }
 
-export function deleteMessage(id: number) {
-  return request.delete<void>(`/api/system/message/${id}`)
+export function deleteMessage(id: number, config?: RequestOptions) {
+  return request.delete<void>(`/api/system/message/${id}`, config)
 }
 
-export function sendMessage(data: MessageSendRequest) {
-  return request.post<number>('/api/system/message/send', data)
+export function sendMessage(data: MessageSendRequest, config?: RequestOptions) {
+  return request.post<number>('/api/system/message/send', data, config)
 }

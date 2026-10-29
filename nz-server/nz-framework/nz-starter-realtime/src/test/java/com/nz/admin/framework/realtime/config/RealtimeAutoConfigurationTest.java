@@ -1,5 +1,6 @@
 package com.nz.admin.framework.realtime.config;
 
+import com.nz.admin.framework.realtime.core.RealtimeAccessPolicy;
 import com.nz.admin.framework.realtime.core.RealtimeConnectionRegistry;
 import com.nz.admin.framework.realtime.core.RealtimePublisher;
 import com.nz.admin.framework.realtime.core.RealtimeTicketService;
@@ -52,8 +53,21 @@ class RealtimeAutoConfigurationTest {
     }
 
     @Test
-    void usesTheProvidedValidatorForTicketIssuanceAndConsumption() {
+    void deniesTicketsWhenNoBusinessAccessPolicyIsConfigured() {
         contextRunner.withBean(IdentityValidator.class, () -> identity -> identity.isComplete()).run(context -> {
+            var tickets = context.getBean(RealtimeTicketService.class);
+            var principal = new RealtimePrincipal(7L, 3L, 0L, 0L);
+            assertThatThrownBy(() -> tickets.issue(principal, RealtimeTransport.SSE))
+                    .isInstanceOf(IllegalArgumentException.class);
+        });
+    }
+
+    @Test
+    void usesTheProvidedValidatorForTicketIssuanceAndConsumption() {
+        contextRunner
+                .withBean(IdentityValidator.class, () -> identity -> identity.isComplete())
+                .withBean(RealtimeAccessPolicy.class, RealtimeAccessPolicy::generalOnly)
+                .run(context -> {
             var tickets = context.getBean(RealtimeTicketService.class);
             assertThatThrownBy(() -> tickets.issue(new RealtimePrincipal(7L, 3L), RealtimeTransport.SSE))
                     .isInstanceOf(IllegalArgumentException.class);

@@ -5,6 +5,16 @@ import router from '@/router'
 
 import type { R } from './types'
 
+export interface RequestOptions extends AxiosRequestConfig {
+  silentError?: boolean
+}
+
+declare module 'axios' {
+  interface AxiosRequestConfig {
+    silentError?: boolean
+  }
+}
+
 const instance = axios.create({
   timeout: 10000,
 })
@@ -58,7 +68,7 @@ instance.interceptors.response.use(
       ) {
         const res = JSON.parse(await response.data.text()) as R
         if (res.code !== 200) {
-          ElMessage.error(res.msg || '请求失败')
+          if (!response.config.silentError) ElMessage.error(res.msg || '请求失败')
           if (res.code === 401) {
             await expireSession(getRequestToken(response.config))
           }
@@ -69,7 +79,7 @@ instance.interceptors.response.use(
     }
     const res = response.data
     if (res.code !== 200) {
-      ElMessage.error(res.msg || '请求失败')
+      if (!response.config.silentError) ElMessage.error(res.msg || '请求失败')
       if (res.code === 401) {
         await expireSession(getRequestToken(response.config))
       }
@@ -79,10 +89,10 @@ instance.interceptors.response.use(
   },
   async (error) => {
     if (error.response?.status === 401) {
-      ElMessage.error(error.response.data?.msg || '登录状态已失效')
+      if (!error.config?.silentError) ElMessage.error(error.response.data?.msg || '登录状态已失效')
       await expireSession(getRequestToken(error.config))
     } else {
-      ElMessage.error(error.message || '网络错误')
+      if (!error.config?.silentError) ElMessage.error(error.message || '网络错误')
     }
     return Promise.reject(error)
   },

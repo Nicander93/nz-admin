@@ -282,6 +282,72 @@ class MessageLifecyclePostgresTest {
         }
     }
 
+    @Test
+    void stateChangesPublishAfterCommitAndRollbackRestoresReadAndDeletedRows() throws Exception {
+        try (RedisProbe probe = new RedisProbe()) {
+            probe.startAndAwaitReadiness();
+            sendDirect(TENANT_ID, SENDER_ID, messageRequest(source + "-state", "first", List.of(RECIPIENT_ONE_ID)));
+            sendDirect(TENANT_ID, SENDER_ID, messageRequest(source + "-state", "second", List.of(RECIPIENT_ONE_ID)));
+            probe.awaitUserMessages(2);
+            probe.events.clear();
+            List<Long> ids = jdbc.queryForList("SELECT id FROM sys_message WHERE source=? ORDER BY id", Long.class, source + "-state");
+            transactions.executeWithoutResult(status -> TenantContextHolder.runWithTenantId(TENANT_ID, () ->
+                    DataScopeContext.withoutFilter(() -> {
+                        messageService.markRead(RECIPIENT_ONE_ID, ids.get(0));
+                        messageService.markRead(RECIPIENT_ONE_ID, ids.get(0));
+                        assertThat(messageService.markAllRead(RECIPIENT_ONE_ID)).isEqualTo(1);
+                        messageService.removeCurrent(RECIPIENT_ONE_ID, ids.get(0));
+                        pause(Duration.ofMillis(200));
+                        assertThat(probe.events).isEmpty();
+                        return null;
+                    })));
+            probe.awaitUserMessages(3);
+            assertThat(probe.events).extracting(event -> event.message().type()).containsOnly("system-message-state");
+            assertThat(probe.events).extracting(event -> String.valueOf(((Map<?, ?>) event.message().payload()).get("action")))
+                    .containsExactlyInAnyOrder("READ", "READ_ALL", "DELETE");
+            assertThat(probe.events).extracting(RedisRealtimePublisher.Envelope::tenant).containsOnly(TENANT_ID);
+            assertThat(probe.events).extracting(RedisRealtimePublisher.Envelope::user).containsOnly(RECIPIENT_ONE_ID);
+            assertThat(messageExists(ids.get(0))).isFalse();
+            assertThat(messageReadStatus(ids.get(1))).isEqualTo(1);
+            assertThat(unreadCount(recipientTwo)).isZero();
+
+            probe.events.clear();
+            sendDirect(TENANT_ID, SENDER_ID, messageRequest(source + "-sr", "rollback", List.of(RECIPIENT_ONE_ID)));
+            probe.awaitUserMessages(1);
+            probe.events.clear();
+            long unreadId = jdbc.queryForObject("SELECT id FROM sys_message WHERE source=?", Long.class, source + "-sr");
+            transactions.executeWithoutResult(status -> TenantContextHolder.runWithTenantId(TENANT_ID, () ->
+                    DataScopeContext.withoutFilter(() -> {
+                        messageService.markRead(RECIPIENT_ONE_ID, unreadId);
+                        messageService.removeCurrent(RECIPIENT_ONE_ID, ids.get(1));
+                        status.setRollbackOnly();
+                        return null;
+                    })));
+            assertThat(messageReadStatus(unreadId)).isZero();
+            assertThat(messageExists(ids.get(1))).isTrue();
+            pause(Duration.ofMillis(300));
+            assertThat(probe.events).isEmpty();
+        }
+    }
+
+    @Test
+    void zeroRowInsertRollsBackWholeBatchWithoutPublishing() throws Exception {
+        String failedSource = source + "-zero-row";
+        try (RedisProbe probe = new RedisProbe()) {
+            probe.startAndAwaitReadiness();
+            try {
+                createInsertFailureTrigger(failedSource, true);
+                assertRejected(sender.post("/api/system/message/send", sendBody(
+                        failedSource, "zero-row-batch", List.of(RECIPIENT_ONE_ID, RECIPIENT_TWO_ID))));
+                assertThat(messageCount(failedSource)).isZero();
+                pause(Duration.ofMillis(300));
+                assertThat(probe.events).isEmpty();
+            } finally {
+                dropInsertFailureTrigger();
+            }
+        }
+    }
+
     private void seedFixtures() {
         jdbc.update("INSERT INTO sys_tenant_package(id,package_name,status,remark) VALUES(?,?,0,?)",
                 PACKAGE_ID, "message-package-" + suffix, "message lifecycle fixture");
@@ -416,11 +482,15 @@ class MessageLifecyclePostgresTest {
     }
 
     private void createInsertFailureTrigger(String messageSource) {
+        createInsertFailureTrigger(messageSource, false);
+    }
+
+    private void createInsertFailureTrigger(String messageSource, boolean returnZero) {
         String functionName = "test_message_insert_failure_" + suffix.substring(0, 12);
         String triggerName = "test_message_insert_failure_trigger_" + suffix.substring(0, 12);
         jdbc.execute("CREATE OR REPLACE FUNCTION " + functionName + "() RETURNS trigger LANGUAGE plpgsql AS $$ "
                 + "BEGIN IF NEW.source = '" + messageSource + "' AND NEW.user_id = " + RECIPIENT_TWO_ID
-                + " THEN RAISE EXCEPTION 'message lifecycle injected insert failure'; END IF; "
+                + (returnZero ? " THEN RETURN NULL; END IF; " : " THEN RAISE EXCEPTION 'message lifecycle injected insert failure'; END IF; ")
                 + "RETURN NEW; END; $$");
         jdbc.execute("CREATE TRIGGER " + triggerName + " BEFORE INSERT ON sys_message "
                 + "FOR EACH ROW EXECUTE FUNCTION " + functionName + "()");

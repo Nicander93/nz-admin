@@ -57,6 +57,7 @@ export const extensionSpecs = [
   ['FileStorageService', '实现文件存储读写策略', '/file-configuration'],
   ['FileStorageAdapterFactory', '按独立历史配置创建文件存储策略', '/file-configuration'],
   ['RealtimePublisher', '向用户或租户发布在线消息', '/realtime-communication'],
+  ['RealtimeAccessPolicy', '按当前权限与连接用途约束实时投递', '/realtime-communication'],
   ['AtomicStateStore', '复用 TTL、一次消费与原子状态', '/operations/cluster'],
   ['NzUserNotificationPublisher', '跨模块发送逐用户通知', '/message-center'],
   [

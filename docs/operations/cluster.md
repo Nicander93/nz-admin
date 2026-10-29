@@ -11,9 +11,13 @@ NZ_CLUSTER_ENABLED=true
 NZ_REDIS_ENABLED=true
 NZ_WARM_FLOW_ENABLED=true
 NZ_CACHE_KEY_PREFIX=nz-admin-cluster
+SPRING_DATA_REDIS_HOST=127.0.0.1
+SPRING_DATA_REDIS_PORT=6379
 ```
 
-同机测试可分别监听 8080 和 8081；生产由网关转发。不同环境使用不同前缀。共享数据库完成 V30；文件使用 OSS/S3 或共享文件系统。
+Redis 地址和端口应改为实际服务地址；本地隔离测试使用的映射端口也要显式传给 Spring，`NZ_REDIS_ENABLED` 只控制是否启用相关能力。
+
+同机测试可分别监听 8080 和 8081；生产由网关转发。不同环境使用不同前缀。共享数据库升级到 V33；本地文件需要节点使用一致的存储路径和共享文件系统，也可按部署环境配置 OSS/S3。真实对象存储仍需单独验收。
 
 ## 已共享的状态
 
@@ -27,11 +31,15 @@ NZ_CACHE_KEY_PREFIX=nz-admin-cluster
 
 ```bash
 E2E_USERNAME=admin E2E_PASSWORD=admin123 node tools/tests/workflow-cluster.mjs
+E2E_USERNAME=admin E2E_PASSWORD=admin123 node tools/tests/identity-cluster.mjs
+E2E_USERNAME=admin E2E_PASSWORD=admin123 node tools/tests/message-cluster.mjs
 ```
 
 脚本检查：A 登录、B 识别会话；并发建版本和发布只有一个当前发布版；不同键重复提交只启动一次；同键跨节点审批只保留一次成功轨迹；票据在另一节点消费且不能重放；消息跨节点到达；退出关闭连接并撤销会话。
 
-使用独立测试库和账号。后端故障注入另用一个库，避免真实节点提前消费故障事件。脚本默认端口及变量以源码为准，自定义端口时先核对脚本参数。
+身份脚本还验证账号停用/重新启用、改密和重新登录后旧令牌不会复活，跨节点 SSE/WebSocket 与待消费票据正确失效。通知脚本创建仅有消息权限的普通用户，验证通知范围经 Redis 保留、SSE/WebSocket 私人事件和已读状态跨节点同步、撤权关闭与重授后的新连接、离线历史恢复。它不会把普通消息权限扩成诊断台权限。
+
+使用独立测试库和账号。三份脚本应顺序执行；它们包含真实退出操作，不应与使用同一账号的浏览器验收并行。后端故障注入另用一个库，避免真实节点提前消费故障事件。脚本默认端口及变量以源码为准，自定义端口时先核对脚本参数。
 
 ## 不在该验收中的能力
 

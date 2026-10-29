@@ -49,13 +49,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { ArrowDown, Bell, Menu as DefaultMenuIcon } from '@element-plus/icons-vue'
 import * as Icons from '@element-plus/icons-vue'
-import { useUserStore } from '@/stores/user'
-import { logout as apiLogout } from '@/api/system/user'
-import { getUnreadMessageCount } from '@/api/system/message'
+import { computed, onBeforeUnmount, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+
+import { logout as apiLogout } from '@/api/system/user'
+import { useMessageRealtimeStore } from '@/stores/messageRealtime'
+import { useUserStore } from '@/stores/user'
 import type { MenuRouteItem } from '@/utils/routeHelper'
 import { buildPath, resolveFirstRoutePath } from '@/utils/routeHelper'
 
@@ -63,9 +64,14 @@ const userStore = useUserStore()
 const route = useRoute()
 const router = useRouter()
 const topMenus = computed(() => userStore.menus as MenuRouteItem[])
-const unreadCount = ref(0)
+const messageRealtime = useMessageRealtimeStore()
+const unreadCount = computed(() => messageRealtime.unreadCount)
 const canViewMessages = computed(() => userStore.hasPermission('system:message:list'))
-let unreadTimer: ReturnType<typeof setInterval> | undefined
+const notificationIdentity = computed(() => {
+  const token = userStore.token || localStorage.getItem('token') || ''
+  if (!token || !canViewMessages.value) return ''
+  return `${token}:${userStore.userInfo?.id ?? ''}:${userStore.tenant?.id ?? ''}`
+})
 const activeTopIndex = computed(() => {
   const active = topMenus.value.find((menu) => isActiveTopMenu(menu))
   return active ? buildPath(active.path, '') : ''
@@ -105,29 +111,26 @@ async function handleCommand(command: string) {
   }
 }
 
-async function refreshUnreadCount() {
-  if (!canViewMessages.value) return
-  try {
-    const response = await getUnreadMessageCount()
-    unreadCount.value = response.data ?? 0
-  } catch {
-    // 全局请求层负责错误提示，角标刷新失败不影响页面操作。
-  }
+function refreshUnreadCount() {
+  messageRealtime.refreshFromLocalMutation()
 }
+
+watch(notificationIdentity, (identity) => {
+  if (identity) messageRealtime.start(identity)
+  else messageRealtime.stop()
+}, { immediate: true })
 
 function openMessages() {
   void router.push('/system/message')
 }
 
 onMounted(() => {
-  void refreshUnreadCount()
-  unreadTimer = setInterval(refreshUnreadCount, 60_000)
   window.addEventListener('message-unread-changed', refreshUnreadCount)
 })
 
 onBeforeUnmount(() => {
-  if (unreadTimer) clearInterval(unreadTimer)
   window.removeEventListener('message-unread-changed', refreshUnreadCount)
+  messageRealtime.stop()
 })
 </script>
 

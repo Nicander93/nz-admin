@@ -1,5 +1,6 @@
-import { computed, ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import { computed, getCurrentScope, onScopeDispose, ref, watch } from 'vue'
+
 import {
   getRealtimeStats,
   getRealtimeTicket,
@@ -8,6 +9,7 @@ import {
   type RealtimeEnvelope,
   type RealtimeTransport,
 } from '@/api/system/realtime'
+import { createRealtimeConnection, parseRealtimeEnvelope, type RealtimeConnectionHandle } from '@/core/realtime/client'
 
 export type RealtimeStatus = 'disconnected' | 'connecting' | 'connected' | 'error'
 
@@ -21,16 +23,24 @@ export function useRealtimeConsole() {
     totalConnections: 0,
   })
   const testMessage = ref('nz-admin 实时消息测试')
-  let connection: EventSource | WebSocket | null = null
+  let connection: RealtimeConnectionHandle | null = null
+  let connectionAttempt = 0
+  let connectionController: AbortController | null = null
 
   const connected = computed(() => status.value === 'connected')
 
+  function isCurrentAttempt(attempt: number, controller: AbortController, selectedTransport: RealtimeTransport) {
+    return connectionAttempt === attempt
+      && connectionController === controller
+      && !controller.signal.aborted
+      && transport.value === selectedTransport
+  }
+
   function appendEvent(raw: string) {
-    try {
-      const event = JSON.parse(raw) as RealtimeEnvelope
+    const event = parseRealtimeEnvelope(raw)
+    if (event) {
       events.value.unshift(event)
-      events.value = events.value.slice(0, 100)
-    } catch {
+    } else {
       events.value.unshift({
         id: crypto.randomUUID(),
         type: 'unknown',
@@ -38,9 +48,13 @@ export function useRealtimeConsole() {
         payload: raw,
       })
     }
+    events.value = events.value.slice(0, 100)
   }
 
   function disconnect() {
+    connectionAttempt += 1
+    connectionController?.abort()
+    connectionController = null
     connection?.close()
     connection = null
     status.value = 'disconnected'
@@ -48,43 +62,51 @@ export function useRealtimeConsole() {
 
   async function connect() {
     disconnect()
+    const attempt = ++connectionAttempt
+    const controller = new AbortController()
+    const selectedTransport = transport.value
+    connectionController = controller
     status.value = 'connecting'
-    try {
-      const response = await getRealtimeTicket(transport.value)
-      const url = new URL(response.data.path, window.location.origin)
-      url.searchParams.set('ticket', response.data.ticket)
 
-      if (transport.value === 'SSE') {
-        const source = new EventSource(url.toString())
-        source.onopen = () => { status.value = 'connected' }
-        source.onmessage = (event) => appendEvent(event.data)
-        source.onerror = () => {
-          source.close()
-          if (connection === source) {
-            connection = null
-            status.value = 'error'
-          }
-        }
-        connection = source
+    try {
+      const response = await getRealtimeTicket(selectedTransport, { signal: controller.signal })
+      if (!isCurrentAttempt(attempt, controller, selectedTransport)) return
+
+      const handle = createRealtimeConnection(response.data, selectedTransport, {
+        onOpen: () => {
+          if (isCurrentAttempt(attempt, controller, selectedTransport)) status.value = 'connected'
+        },
+        onMessage: (raw) => {
+          if (isCurrentAttempt(attempt, controller, selectedTransport)) appendEvent(raw)
+        },
+        onError: () => {
+          if (!isCurrentAttempt(attempt, controller, selectedTransport)) return
+          if (connection === handle) connection = null
+          connectionAttempt += 1
+          controller.abort()
+          connectionController = null
+          status.value = 'error'
+        },
+      })
+
+      if (!isCurrentAttempt(attempt, controller, selectedTransport)) {
+        handle.close()
         return
       }
-
-      url.protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-      const socket = new WebSocket(url.toString())
-      socket.onopen = () => { status.value = 'connected' }
-      socket.onmessage = (event) => appendEvent(String(event.data))
-      socket.onerror = () => { status.value = 'error' }
-      socket.onclose = () => {
-        if (connection === socket) {
-          connection = null
-          status.value = 'disconnected'
-        }
-      }
-      connection = socket
+      connection = handle
     } catch (error) {
+      if (!isCurrentAttempt(attempt, controller, selectedTransport)) return
+      connectionAttempt += 1
+      controller.abort()
+      connectionController = null
       status.value = 'error'
       throw error
     }
+  }
+
+  if (getCurrentScope()) {
+    watch(transport, disconnect)
+    onScopeDispose(disconnect)
   }
 
   async function refreshStats() {

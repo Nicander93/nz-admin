@@ -109,6 +109,24 @@ class ClusterStateRedisTest {
             assertThat(versionedB.consume(staleTicket, RealtimeTransport.SSE)).isEmpty();
             identityValid.set(true);
             assertThat(versionedA.consume(staleTicket, RealtimeTransport.SSE)).isEmpty();
+            RealtimeAccessPolicy scopedPolicy = new RealtimeAccessPolicy() {
+                public boolean isAuthorized(RealtimePrincipal identity) { return identity.identity().isComplete(); }
+                public boolean canReceive(RealtimePrincipal identity, RealtimeDeliveryKind kind, RealtimeMessage event) { return true; }
+            };
+            var scopedA = new SharedRealtimeTicketService(stateA, mapper, ttl, identity -> identity.isComplete(), scopedPolicy);
+            var scopedB = new SharedRealtimeTicketService(stateB, mapper, ttl, identity -> identity.isComplete(), scopedPolicy);
+            var notification = new RealtimePrincipal(7L, 1L, 2L, 3L, RealtimeScope.USER_NOTIFICATIONS);
+            String scopedTicket = scopedA.issue(notification, RealtimeTransport.SSE);
+            assertThat(stateB.get("realtime:ticket:" + scopedTicket)).as("old binaries cannot find scoped tickets").isNull();
+            assertThat(stateB.get(SharedRealtimeTicketService.TICKET_PREFIX + scopedTicket)).contains("USER_NOTIFICATIONS");
+            assertThat(scopedB.consume(scopedTicket, RealtimeTransport.SSE)).contains(notification);
+            String generalOnlyTicket = scopedA.issue(notification, RealtimeTransport.SSE);
+            assertThat(ticketB.consume(generalOnlyTicket, RealtimeTransport.SSE)).as("standalone legacy overload cannot upgrade scope").isEmpty();
+            String legacyKey = "realtime:ticket:legacy-namespace";
+            stateA.put(legacyKey, mapper.writeValueAsString(new SharedRealtimeTicketService.Entry(
+                    notification, RealtimeTransport.SSE, stateA.get("realtime:epoch:1:7"))), ttl);
+            assertThat(scopedB.consume("legacy-namespace", RealtimeTransport.SSE)).as("new nodes never consume legacy keys").isEmpty();
+            assertThat(stateA.take(legacyKey)).isNotNull();
             var protectA = new SharedProtectionStore(stateA);
             var protectB = new SharedProtectionStore(stateB);
             assertThat(protectA.isRepeatSubmit("submit", 60)).isFalse();

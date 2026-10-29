@@ -130,6 +130,18 @@ describe('request session lifecycle', () => {
     expect(mocks.replace).toHaveBeenCalledOnce()
   })
 
+  it('suppresses an opted-in background error toast while preserving 401 expiry handling', async () => {
+    const error = {
+      config: { silentError: true, headers: { Authorization: 'active-token' } },
+      response: { status: 401, data: { msg: 'expired' } },
+    }
+    await expect(errorHandler()(error)).rejects.toBe(error)
+
+    expect(mocks.errorMessage).not.toHaveBeenCalled()
+    expect(mocks.logout).toHaveBeenCalledOnce()
+    expect(mocks.replace).toHaveBeenCalledWith('/login')
+  })
+
   it('preserves the session on an HTTP 503', async () => {
     const error = {
       config: { headers: { Authorization: 'active-token' } },

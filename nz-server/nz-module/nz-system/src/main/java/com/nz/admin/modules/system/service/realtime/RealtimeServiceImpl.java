@@ -6,6 +6,7 @@ import com.nz.admin.framework.realtime.config.RealtimeProperties;
 import com.nz.admin.framework.realtime.core.RealtimeConnectionStats;
 import com.nz.admin.framework.realtime.core.RealtimeMessage;
 import com.nz.admin.framework.realtime.core.RealtimePrincipal;
+import com.nz.admin.framework.realtime.core.RealtimeScope;
 import com.nz.admin.framework.realtime.core.RealtimePublisher;
 import com.nz.admin.framework.realtime.core.RealtimeTicketService;
 import com.nz.admin.framework.realtime.core.RealtimeTransport;
@@ -38,7 +39,16 @@ public class RealtimeServiceImpl implements RealtimeService {
 
     @Override
     public RealtimeTicketVO issueTicket(RealtimeTransport transport) {
-        RealtimePrincipal principal = currentPrincipal();
+        return issueTicket(transport, RealtimeScope.GENERAL);
+    }
+
+    @Override
+    public RealtimeTicketVO issueNotificationTicket(RealtimeTransport transport) {
+        return issueTicket(transport, RealtimeScope.USER_NOTIFICATIONS);
+    }
+
+    private RealtimeTicketVO issueTicket(RealtimeTransport transport, RealtimeScope scope) {
+        RealtimePrincipal principal = currentPrincipal(scope);
         RealtimeTicketVO result = new RealtimeTicketVO();
         result.setTicket(ticketService.issue(principal, transport));
         result.setTransport(transport);
@@ -56,7 +66,7 @@ public class RealtimeServiceImpl implements RealtimeService {
 
     @Override
     public int sendTestMessage(String message) {
-        RealtimePrincipal principal = currentPrincipal();
+        RealtimePrincipal principal = currentPrincipal(RealtimeScope.GENERAL);
         return publisher.publishToUser(
                 principal.tenantId(),
                 principal.userId(),
@@ -64,12 +74,12 @@ public class RealtimeServiceImpl implements RealtimeService {
         );
     }
 
-    private RealtimePrincipal currentPrincipal() {
+    private RealtimePrincipal currentPrincipal(RealtimeScope scope) {
         var identity = loginUserContext.getIdentityOrNull();
         Long tenantId = TenantContextHolder.getTenantIdOrNull();
         if (identity == null || !identity.isComplete() || tenantId == null || !tenantId.equals(identity.tenantId())) {
             throw new BusinessException("当前登录身份或租户上下文无效");
         }
-        return new RealtimePrincipal(identity.userId(), tenantId, identity.userVersion(), identity.tenantVersion());
+        return new RealtimePrincipal(identity.userId(), tenantId, identity.userVersion(), identity.tenantVersion(), scope);
     }
 }

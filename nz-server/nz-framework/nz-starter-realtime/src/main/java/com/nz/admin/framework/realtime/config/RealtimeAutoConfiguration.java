@@ -5,6 +5,7 @@ import com.nz.admin.common.core.identity.IdentityValidator;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import com.nz.admin.framework.realtime.core.InMemoryRealtimeTicketService;
+import com.nz.admin.framework.realtime.core.RealtimeAccessPolicy;
 import com.nz.admin.framework.realtime.core.RealtimeConnectionRegistry;
 import com.nz.admin.framework.realtime.core.RealtimePublisher;
 import com.nz.admin.framework.realtime.core.RealtimeTicketService;
@@ -36,18 +37,29 @@ public class RealtimeAutoConfiguration {
     @ConditionalOnMissingBean
     RealtimeTicketService realtimeTicketService(RealtimeProperties properties,
             org.springframework.beans.factory.ObjectProvider<com.nz.admin.framework.cache.core.AtomicStateStore> states,
-            ObjectMapper mapper, ObjectProvider<IdentityValidator> validators) {
-        var store=states.getIfAvailable();
-        return store==null ? new InMemoryRealtimeTicketService(properties.getTicketTtl(),Clock.systemUTC(),validators.getIfAvailable(() -> identity -> false))
-                : new com.nz.admin.framework.realtime.core.SharedRealtimeTicketService(store,mapper,properties.getTicketTtl(),validators.getIfAvailable(() -> identity -> false));
+            ObjectMapper mapper,
+            ObjectProvider<IdentityValidator> validators,
+            ObjectProvider<RealtimeAccessPolicy> policies) {
+        var store = states.getIfAvailable();
+        var validator = validators.getIfAvailable(() -> identity -> false);
+        var policy = policies.getIfAvailable(RealtimeAccessPolicy::denyAll);
+        return store == null
+                ? new InMemoryRealtimeTicketService(properties.getTicketTtl(), Clock.systemUTC(), validator, policy)
+                : new com.nz.admin.framework.realtime.core.SharedRealtimeTicketService(
+                        store, mapper, properties.getTicketTtl(), validator, policy);
     }
 
     @Bean
     @ConditionalOnMissingBean
     RealtimeConnectionRegistry realtimeConnectionRegistry(
             ObjectMapper objectMapper,
-            RealtimeProperties properties, ObjectProvider<IdentityValidator> validators) {
-        return new RealtimeConnectionRegistry(objectMapper, properties.getSseTimeout(), validators.getIfAvailable(() -> identity -> false));
+            RealtimeProperties properties,
+            ObjectProvider<IdentityValidator> validators,
+            ObjectProvider<RealtimeAccessPolicy> policies) {
+        var validator = validators.getIfAvailable(() -> identity -> false);
+        var policy = policies.getIfAvailable(RealtimeAccessPolicy::denyAll);
+        return new RealtimeConnectionRegistry(
+                objectMapper, properties.getSseTimeout(), validator, policy);
     }
 
     @Bean

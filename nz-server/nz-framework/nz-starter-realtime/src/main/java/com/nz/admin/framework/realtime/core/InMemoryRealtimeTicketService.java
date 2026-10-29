@@ -6,8 +6,8 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -20,21 +20,32 @@ public class InMemoryRealtimeTicketService implements RealtimeTicketService {
     private final Duration ttl;
     private final Clock clock;
     private final IdentityValidator validator;
+    private final RealtimeAccessPolicy accessPolicy;
 
     public InMemoryRealtimeTicketService(Duration ttl, Clock clock) {
-        this(ttl, clock, null);
+        this(ttl, clock, null, RealtimeAccessPolicy.generalOnly());
     }
 
     public InMemoryRealtimeTicketService(Duration ttl, Clock clock, IdentityValidator validator) {
+        this(ttl, clock, validator, RealtimeAccessPolicy.generalOnly());
+    }
+
+    public InMemoryRealtimeTicketService(
+            Duration ttl,
+            Clock clock,
+            IdentityValidator validator,
+            RealtimeAccessPolicy accessPolicy) {
         this.ttl = ttl;
         this.clock = clock;
         this.validator = validator;
+        this.accessPolicy = Objects.requireNonNull(accessPolicy, "accessPolicy");
     }
 
     @Override
     public String issue(RealtimePrincipal principal, RealtimeTransport transport) {
-        if (validator != null && !validator.isValid(principal.identity()))
-            throw new IllegalArgumentException("实时连接身份已失效");
+        if (!isAuthorized(principal)) {
+            throw new IllegalArgumentException("实时连接身份或权限已失效");
+        }
         Instant now = clock.instant();
         tickets.entrySet().removeIf(entry -> !entry.getValue().expiresAt().isAfter(now));
         String ticket = UUID.randomUUID().toString().replace("-", "");
@@ -53,8 +64,14 @@ public class InMemoryRealtimeTicketService implements RealtimeTicketService {
                 || !entry.expiresAt().isAfter(clock.instant())) {
             return Optional.empty();
         }
-        if (validator != null && !validator.isValid(entry.principal().identity())) return Optional.empty();
+        if (!isAuthorized(entry.principal())) return Optional.empty();
         return Optional.of(entry.principal());
+    }
+
+    private boolean isAuthorized(RealtimePrincipal principal) {
+        return principal != null
+                && (validator == null || validator.isValid(principal.identity()))
+                && accessPolicy.isAuthorized(principal);
     }
 
     @Override

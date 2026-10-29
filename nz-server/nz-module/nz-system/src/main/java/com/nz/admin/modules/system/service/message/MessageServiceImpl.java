@@ -63,36 +63,46 @@ public class MessageServiceImpl extends ServiceImpl<MessageMapper, MessageDO>
     }
 
     @Override
+    @Transactional
     public void markRead(Long userId, Long messageId) {
         MessageDO message = requireCurrent(userId, messageId);
         if (Integer.valueOf(1).equals(message.getReadStatus())) {
             return;
         }
-        update(new LambdaUpdateWrapper<MessageDO>()
+        int changed = baseMapper.update(null, new LambdaUpdateWrapper<MessageDO>()
                 .set(MessageDO::getReadStatus, 1)
                 .set(MessageDO::getReadTime, LocalDateTime.now())
                 .eq(MessageDO::getId, messageId)
                 .eq(MessageDO::getUserId, userId)
+                .eq(MessageDO::getTenantId, currentTenant())
                 .eq(MessageDO::getReadStatus, 0));
+        if (changed > 0) publishStateAfterCommit(userId, messageId, "READ");
     }
 
     @Override
+    @Transactional
     public int markAllRead(Long userId) {
-        return baseMapper.update(null, new LambdaUpdateWrapper<MessageDO>()
+        int changed = baseMapper.update(null, new LambdaUpdateWrapper<MessageDO>()
                 .set(MessageDO::getReadStatus, 1)
                 .set(MessageDO::getReadTime, LocalDateTime.now())
                 .eq(MessageDO::getUserId, userId)
+                .eq(MessageDO::getTenantId, currentTenant())
                 .eq(MessageDO::getReadStatus, 0));
+        if (changed > 0) publishStateAfterCommit(userId, null, "READ_ALL");
+        return changed;
     }
 
     @Override
+    @Transactional
     public void removeCurrent(Long userId, Long messageId) {
         int removed = baseMapper.delete(new LambdaQueryWrapper<MessageDO>()
                 .eq(MessageDO::getId, messageId)
-                .eq(MessageDO::getUserId, userId));
+                .eq(MessageDO::getUserId, userId)
+                .eq(MessageDO::getTenantId, currentTenant()));
         if (removed == 0) {
             throw new BusinessException("消息不存在");
         }
+        publishStateAfterCommit(userId, messageId, "DELETE");
     }
 
     @Override
@@ -125,7 +135,11 @@ public class MessageServiceImpl extends ServiceImpl<MessageMapper, MessageDO>
                         .setPath(request.path())
                         .setReadStatus(0))
                 .toList();
-        messages.forEach(baseMapper::insert);
+        for (MessageDO message : messages) {
+            if (baseMapper.insert(message) != 1 || message.getId() == null) {
+                throw new BusinessException("消息写入失败，请稍后重试");
+            }
+        }
         publishAfterCommit(tenantId, messages);
         return messages.size();
     }
@@ -158,7 +172,9 @@ public class MessageServiceImpl extends ServiceImpl<MessageMapper, MessageDO>
 
     private MessageDO requireCurrent(Long userId, Long messageId) {
         MessageDO message = getById(messageId);
-        if (message == null || !userId.equals(message.getUserId())) {
+        Long tenantId = TenantContextHolder.getTenantIdOrNull();
+        if (message == null || !userId.equals(message.getUserId())
+                || tenantId == null || !tenantId.equals(message.getTenantId())) {
             throw new BusinessException("消息不存在");
         }
         return message;
@@ -175,19 +191,38 @@ public class MessageServiceImpl extends ServiceImpl<MessageMapper, MessageDO>
                 message.getReadStatus(), message.getReadTime(), message.getCreateTime());
     }
 
+    private Long currentTenant() {
+        Long tenantId = TenantContextHolder.getTenantIdOrNull();
+        if (tenantId == null) throw new BusinessException("当前租户上下文不存在");
+        return tenantId;
+    }
+
     private void publishAfterCommit(Long tenantId, List<MessageDO> messages) {
-        if (realtimePublisher.isEmpty()) {
-            return;
-        }
-        Runnable publish = () -> messages.forEach(message -> publishOne(tenantId, message));
+        afterCommit(() -> messages.forEach(message -> publishOne(tenantId, message)));
+    }
+
+    private void publishStateAfterCommit(Long userId, Long messageId, String action) {
+        Long tenantId = currentTenant();
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("action", action);
+        if (messageId != null) payload.put("id", messageId);
+        afterCommit(() -> {
+            try {
+                realtimePublisher.orElseThrow().publishToUser(tenantId, userId,
+                        RealtimeMessage.of("system-message-state", payload));
+            } catch (RuntimeException error) {
+                log.warn("用户 {} 消息状态推送失败，历史状态已提交", userId, error);
+            }
+        });
+    }
+
+    private void afterCommit(Runnable publish) {
+        if (realtimePublisher.isEmpty()) return;
         if (TransactionSynchronizationManager.isSynchronizationActive()) {
-            TransactionSynchronizationManager.registerSynchronization(
-                    new TransactionSynchronization() {
-                        @Override
-                        public void afterCommit() {
-                            publish.run();
-                        }
-                    });
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() { publish.run(); }
+            });
         } else {
             publish.run();
         }

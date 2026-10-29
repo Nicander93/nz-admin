@@ -3,6 +3,7 @@ package com.nz.admin.framework.realtime.web;
 import com.nz.admin.framework.realtime.core.RealtimePrincipal;
 import com.nz.admin.framework.realtime.core.RealtimeTicketService;
 import com.nz.admin.framework.realtime.core.RealtimeTransport;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.web.socket.WebSocketHandler;
@@ -37,6 +38,7 @@ public class RealtimeHandshakeInterceptor implements HandshakeInterceptor {
                 .getFirst("ticket");
         Optional<RealtimePrincipal> principal =
                 ticketService.consume(ticket, RealtimeTransport.WEBSOCKET);
+        if (principal.isEmpty()) response.setStatusCode(HttpStatus.UNAUTHORIZED);
         principal.ifPresent(value -> attributes.put(PRINCIPAL_ATTRIBUTE, value));
         return principal.isPresent();
     }

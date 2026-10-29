@@ -24,6 +24,7 @@ SSE 连接异常后，前端会关闭浏览器自带的自动重连。重新连�
 | 方法 | 路径 | 权限 | 说明 |
 | --- | --- | --- | --- |
 | GET | `/api/system/realtime/ticket` | `system:realtime:view` | 签发 SSE 或 WebSocket 票据 |
+| GET | `/api/system/realtime/notifications/ticket` | `system:message:list` | 签发仅接收个人消息事件的通知票据 |
 | GET | `/api/system/realtime/stats` | `system:realtime:view` | 返回当前节点连接数 |
 | POST | `/api/system/realtime/test` | `system:realtime:send` | 向当前用户在当前租户下的连接发送测试消息 |
 
@@ -67,9 +68,9 @@ SSE 连接异常后，前端会关闭浏览器自带的自动重连。重新连�
 
 ## 部署
 
-Vite 开发服务器代理 `/realtime`。容器 Nginx 对 SSE 关闭响应缓冲，并为 WebSocket
-转发 `Upgrade` 和 `Connection` 请求头。自定义网关时需要保留这两类配置，否则页面
-可能能领取票据，但连接无法建立。
+Vite 开发服务器与生产预览只代理 `/realtime/sse` 和 `/realtime/ws`，避免截获诊断台 `/realtime` 页面的文档请求。实时代理保留浏览器的 `Host`（`changeOrigin: false`），让后端按默认同源策略核对 WebSocket 的 `Origin`。若改写成后端 Host 而保留原 Origin，取票可以成功，握手却会返回 403。
+
+容器 Nginx 对 SSE 关闭响应缓冲，并为 WebSocket 转发原 Host、`Upgrade` 和 `Connection` 请求头。自定义网关也应保留这些配置。确有跨域需求时明确配置允许来源，不应为修复代理问题放开所有来源。
 
 V13 Flyway 迁移注册“实时通信”菜单和 `system:realtime:send` 按钮权限。旧库可以执行：
 
@@ -91,3 +92,13 @@ V13 Flyway 迁移注册“实时通信”菜单和 `system:realtime:send` 按钮
     cd ../nz-web
     pnpm test
     pnpm build
+
+## 业务授权与作用域
+
+`RealtimeAccessPolicy` 与 `IdentityValidator` 共同约束票据和长连接。前者核对用途与当前权限，后者核对账号、租户状态及身份版本。Spring 集成缺少策略时拒绝授权，不能把可选注入变成默认放行。
+
+连接 principal 包含固定 scope。系统实现中 `GENERAL` 用于实时测试台；`USER_NOTIFICATIONS` 用于个人消息。投递时同时传入 `USER/TENANT/BROADCAST` 类型，策略可以丢弃当前通道不允许的事件。过滤一个事件不会关闭合法连接；权限撤销或验证失败会关闭。Redis 转发保留投递类型，远端节点执行同样的策略。
+
+实现自定义策略时，应从 principal 恢复接收人的租户上下文，复用业务权限服务，不借用发布线程的登录态。安全读取需要隔离业务事务，避免未提交的修改造成误撤销。策略不会改变数据库收件箱作为消息事实来源的规则。
+
+带 scope 的共享票据已切换到 v2 Redis 键；节点升级要求与通知客户端行为见[站内消息中心](/message-center)。

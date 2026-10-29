@@ -48,6 +48,8 @@ public class BillingTask {
 
 先确认启用状态、Cron、调用目标以及后端调度注册日志，再查看任务表中的租户归属。任务写入会校验 Cron、执行目标与状态；注册失败会返回失败并回滚数据库写入。Quartz 与数据库不属于同一事务，回滚时会补偿原调度；若调度器本身不可用，需恢复服务并重启，从数据库重新装配。外部业务副作用仍需幂等保护。
 
-多节点共享 Redis 和登录态，不自动等于定时任务全局只执行一次。当前双节点验收覆盖会话、审批与实时状态，未把分布式调度验收包含其中；关键任务应另行验证调度存储、竞争和业务幂等。
+当前默认使用 Quartz RAM 存储，启动时从业务表重建各进程自己的调度。多节点共享 Redis 和登录态，不会协调这些内存触发器，因此同一业务任务可能被多个节点分别执行。
+
+PostgreSQL JDBC 调度集群、任务变更 outbox、执行账本和稳定幂等键仍待实施。现有双节点验收覆盖会话、审批与实时状态，不能作为分布式调度保证；单节点重启恢复也不能证明节点崩溃接管或业务副作用只发生一次。
 
 参考：[JobController](https://github.com/Nicander93/nz-admin/blob/master/nz-server/nz-module/nz-job/src/main/java/com/nz/admin/modules/job/controller/job/JobController.java)、[JobServiceImpl](https://github.com/Nicander93/nz-admin/blob/master/nz-server/nz-module/nz-job/src/main/java/com/nz/admin/modules/job/service/job/JobServiceImpl.java)。

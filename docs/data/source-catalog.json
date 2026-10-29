@@ -44,6 +44,7 @@
         "nz-server/nz-app/src/test/java/com/nz/admin/NzAdminApplicationTest.java",
         "nz-server/nz-app/src/test/java/com/nz/admin/NzAdminE2eProfileTest.java",
         "nz-server/nz-app/src/test/java/com/nz/admin/PermissionRevocationPostgresTest.java",
+        "nz-server/nz-app/src/test/java/com/nz/admin/RealtimeAuthorizationPostgresTest.java",
         "nz-server/nz-app/src/test/java/com/nz/admin/WarmFlowPostgresTest.java",
         "nz-server/nz-app/src/test/java/com/nz/admin/config/ModulePropertiesBindingTest.java",
         "nz-server/nz-app/src/test/java/com/nz/admin/migration/FlywayMigrationResourcesTest.java",
@@ -960,6 +961,10 @@
       ],
       "contracts": [
         {
+          "name": "RealtimeAccessPolicy",
+          "source": "nz-server/nz-framework/nz-starter-realtime/src/main/java/com/nz/admin/framework/realtime/core/RealtimeAccessPolicy.java"
+        },
+        {
           "name": "RealtimeConnectionManager",
           "source": "nz-server/nz-framework/nz-starter-realtime/src/main/java/com/nz/admin/framework/realtime/core/RealtimeConnectionManager.java"
         },
@@ -975,7 +980,8 @@
       "tests": [
         "nz-server/nz-framework/nz-starter-realtime/src/test/java/com/nz/admin/framework/realtime/config/RealtimeAutoConfigurationTest.java",
         "nz-server/nz-framework/nz-starter-realtime/src/test/java/com/nz/admin/framework/realtime/core/InMemoryRealtimeTicketServiceTest.java",
-        "nz-server/nz-framework/nz-starter-realtime/src/test/java/com/nz/admin/framework/realtime/core/RealtimeConnectionRegistryTest.java"
+        "nz-server/nz-framework/nz-starter-realtime/src/test/java/com/nz/admin/framework/realtime/core/RealtimeConnectionRegistryTest.java",
+        "nz-server/nz-framework/nz-starter-realtime/src/test/java/com/nz/admin/framework/realtime/web/RealtimeHandshakeInterceptorTest.java"
       ],
       "manifest": null,
       "frontend": null
@@ -1442,6 +1448,7 @@
         "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/config/DataInitializerTest.java",
         "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/config/SystemDataScopeResolverTest.java",
         "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/config/SystemJobTenantProviderTest.java",
+        "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/config/SystemRealtimeAccessPolicyTest.java",
         "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/controller/auth/LoginControllerTest.java",
         "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/service/DeptServiceImplTest.java",
         "nz-server/nz-module/nz-system/src/test/java/com/nz/admin/modules/system/service/DictTypeServiceImplTest.java",
@@ -1711,6 +1718,13 @@
       "module": "nz-starter-log",
       "purpose": "将框架日志落入业务存储",
       "guide": "/developer/extensions"
+    },
+    {
+      "name": "RealtimeAccessPolicy",
+      "source": "nz-server/nz-framework/nz-starter-realtime/src/main/java/com/nz/admin/framework/realtime/core/RealtimeAccessPolicy.java",
+      "module": "nz-starter-realtime",
+      "purpose": "按当前权限与连接用途约束实时投递",
+      "guide": "/realtime-communication"
     },
     {
       "name": "RealtimePublisher",
@@ -2165,7 +2179,11 @@
     },
     {
       "path": "nz-server/nz-framework/nz-starter-realtime/src/main/java/com/nz/admin/framework/realtime/config/RealtimeAutoConfiguration.java",
-      "sha256": "72a4f03d46c6e5dd483a1e865d019964c2881904a3be2df2c3d8bd2b5e25b7d0"
+      "sha256": "5445a57e601e218030aff4abe591752c9645427ac45defe0ecb883e5c42a18ac"
+    },
+    {
+      "path": "nz-server/nz-framework/nz-starter-realtime/src/main/java/com/nz/admin/framework/realtime/core/RealtimeAccessPolicy.java",
+      "sha256": "72fe1d26e00725bace10a51bebfbcc5a6538fdfb68aaa77bb93bcc2bc16b0439"
     },
     {
       "path": "nz-server/nz-framework/nz-starter-realtime/src/main/java/com/nz/admin/framework/realtime/core/RealtimeConnectionManager.java",
@@ -2557,7 +2575,7 @@
     },
     {
       "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/realtime/RealtimeService.java",
-      "sha256": "c975e1f0bcde3645b8c7958fda1be8446e371a4514a14bad2861429ceb53fa91"
+      "sha256": "b343cdfe781e483340d856c3aaef93a4c8316670c478b1308cf59cd3722889b5"
     },
     {
       "path": "nz-server/nz-module/nz-system/src/main/java/com/nz/admin/modules/system/service/role/RoleService.java",

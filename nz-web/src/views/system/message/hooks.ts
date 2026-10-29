@@ -1,5 +1,6 @@
-import { reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { getCurrentInstance, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+
 import {
   deleteMessage,
   getMessage,
@@ -12,6 +13,7 @@ import {
   type SystemMessage,
 } from '@/api/system/message'
 import { pageUsers, type SysUser } from '@/api/system/user'
+import { useUserStore } from '@/stores/user'
 
 export const messageCategoryLabels = {
   system: '系统',
@@ -50,6 +52,7 @@ function newSendForm(): MessageSendRequest {
 
 /** 消息收件箱、已读处理和管理员发送。 */
 export function useMessageCenter() {
+  const userStore = useUserStore()
   const loading = ref(false)
   const rows = ref<SystemMessage[]>([])
   const total = ref(0)
@@ -67,15 +70,64 @@ export function useMessageCenter() {
   const sendDialog = reactive({ visible: false, loading: false })
   const sendForm = reactive<MessageSendRequest>(newSendForm())
   const userOptions = ref<SysUser[]>([])
+  let loadSequence = 0
+  let detailSequence = 0
+  let identityToken = localStorage.getItem('token') || ''
+  let identityEpoch = 0
+  let disposed = false
+  const controllers = new Set<AbortController>()
 
-  async function load() {
+  function isCurrent(token: string, sequence: number, current: number, epoch: number) {
+    return !disposed && token === (localStorage.getItem('token') || '') && sequence === current && epoch === identityEpoch
+  }
+
+  function handleIdentityChange(event: Event) {
+    const identity = (event as CustomEvent<{ identity: string }>).detail?.identity ?? ''
+    if (identity === identityToken) return
+    identityToken = identity
+    identityEpoch += 1
+    loadSequence += 1
+    detailSequence += 1
+    rows.value = []
+    total.value = 0
+    detail.data = undefined
+    detail.visible = false
+    for (const controller of controllers) controller.abort()
+    controllers.clear()
+  }
+
+  function refreshInbox() { void load(true) }
+  if (getCurrentInstance()) {
+    onMounted(() => {
+      window.addEventListener('message-inbox-changed', refreshInbox)
+      window.addEventListener('message-identity-changed', handleIdentityChange)
+    })
+    onBeforeUnmount(() => {
+      disposed = true
+      window.removeEventListener('message-inbox-changed', refreshInbox)
+      window.removeEventListener('message-identity-changed', handleIdentityChange)
+      for (const controller of controllers) controller.abort()
+      controllers.clear()
+    })
+  }
+
+  async function load(silentError = false) {
+    const token = localStorage.getItem('token') || ''
+    identityToken = token
+    const sequence = ++loadSequence
+    const epoch = identityEpoch
+    const controller = new AbortController()
+    controllers.add(controller)
     loading.value = true
     try {
-      const response = await pageMessages({ ...query })
-      rows.value = response.data.records ?? []
-      total.value = response.data.total ?? 0
+      const response = await pageMessages({ ...query }, { signal: controller.signal, silentError })
+      if (isCurrent(token, sequence, loadSequence, epoch) && (identityToken === token || identityToken.startsWith(`${token}:`))) {
+        rows.value = response.data.records ?? []
+        total.value = response.data.total ?? 0
+      }
     } finally {
-      loading.value = false
+      controllers.delete(controller)
+      if (sequence === loadSequence) loading.value = false
     }
   }
 
@@ -88,19 +140,28 @@ export function useMessageCenter() {
   }
 
   async function openDetail(row: SystemMessage) {
+    const token = localStorage.getItem('token') || ''
+    const sequence = ++detailSequence
+    const epoch = identityEpoch
+    const controller = new AbortController()
+    controllers.add(controller)
     detail.visible = true
     detail.loading = true
+    detail.data = undefined
     try {
-      const response = await getMessage(row.id)
+      const response = await getMessage(row.id, { signal: controller.signal })
+      if (!isCurrent(token, sequence, detailSequence, epoch)) return
       detail.data = response.data
-      if (response.data.readStatus === 0) {
-        await markMessageRead(row.id)
+      if (response.data.readStatus === 0 && userStore.hasPermission('system:message:read')) {
+        await markMessageRead(row.id, { signal: controller.signal })
+        if (!isCurrent(token, sequence, detailSequence, epoch)) return
         detail.data = { ...response.data, readStatus: 1 }
         notifyUnreadChanged()
         await load()
       }
     } finally {
-      detail.loading = false
+      controllers.delete(controller)
+      if (sequence === detailSequence) detail.loading = false
     }
   }
 
@@ -122,6 +183,8 @@ export function useMessageCenter() {
   async function remove(row: SystemMessage) {
     await ElMessageBox.confirm(`确认删除“${row.title}”吗？`, '删除消息', {
       type: 'warning',
+      confirmButtonText: '确认删除',
+      cancelButtonText: '取消',
     })
     await deleteMessage(row.id)
     ElMessage.success('消息已删除')
@@ -137,6 +200,7 @@ export function useMessageCenter() {
   }
 
   async function submitSend() {
+    if (sendDialog.loading) return
     const error = validateMessageSendForm(sendForm)
     if (error) {
       ElMessage.warning(error)
@@ -159,6 +223,7 @@ export function useMessageCenter() {
 
   function notifyUnreadChanged() {
     window.dispatchEvent(new CustomEvent('message-unread-changed'))
+    window.dispatchEvent(new CustomEvent('message-inbox-changed'))
   }
 
   return {

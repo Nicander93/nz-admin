@@ -1,4 +1,5 @@
 import request from '@/api/request'
+import type { RequestOptions } from '@/api/request'
 
 export type RealtimeTransport = 'SSE' | 'WEBSOCKET'
 
@@ -22,9 +23,17 @@ export interface RealtimeEnvelope {
   payload: unknown
 }
 
-export function getRealtimeTicket(transport: RealtimeTransport) {
+export function getRealtimeTicket(transport: RealtimeTransport, config?: RequestOptions) {
   return request.get<RealtimeTicket>('/api/system/realtime/ticket', {
-    params: { transport },
+    ...config,
+    params: { ...config?.params, transport },
+  })
+}
+
+export function getNotificationRealtimeTicket(config?: RequestOptions) {
+  return request.get<RealtimeTicket>('/api/system/realtime/notifications/ticket', {
+    ...config,
+    params: { ...config?.params, transport: 'SSE' },
   })
 }
 

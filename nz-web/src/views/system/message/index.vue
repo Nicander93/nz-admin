@@ -160,7 +160,9 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+
 import type { SystemMessage } from '@/api/system/message'
+
 import { messageCategoryLabels, useMessageCenter } from './hooks'
 
 const router = useRouter()

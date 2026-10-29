@@ -38,6 +38,13 @@ public class RealtimeController {
         return R.ok(realtimeService.issueTicket(transport));
     }
 
+    @GetMapping("/notifications/ticket")
+    @SaCheckPermission("system:message:list")
+    public R<RealtimeTicketVO> issueNotificationTicket(
+            @RequestParam(defaultValue = "SSE") RealtimeTransport transport) {
+        return R.ok(realtimeService.issueNotificationTicket(transport));
+    }
+
     @GetMapping("/stats")
     @SaCheckPermission("system:realtime:view")
     public R<RealtimeConnectionStats> stats() {

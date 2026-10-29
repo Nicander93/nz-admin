@@ -6,6 +6,7 @@ import com.nz.admin.framework.auth.core.LoginUserContext;
 import com.nz.admin.framework.realtime.config.RealtimeProperties;
 import com.nz.admin.framework.realtime.core.RealtimeConnectionStats;
 import com.nz.admin.framework.realtime.core.RealtimePrincipal;
+import com.nz.admin.framework.realtime.core.RealtimeScope;
 import com.nz.admin.framework.realtime.core.RealtimePublisher;
 import com.nz.admin.framework.realtime.core.RealtimeTicketService;
 import com.nz.admin.framework.realtime.core.RealtimeTransport;
@@ -51,6 +52,15 @@ class RealtimeServiceImplTest {
         assertThat(result.getTicket()).isEqualTo("ticket-1");
         assertThat(result.getPath()).isEqualTo("/realtime/ws");
         assertThat(result.getExpiresInSeconds()).isEqualTo(20);
+    }
+
+    @Test
+    void notificationEndpointUsesRestrictedScopeForCurrentIdentity() {
+        when(loginUserContext.getIdentityOrNull()).thenReturn(new IdentitySnapshot(7L, 3L, 2L, 4L));
+        TenantContextHolder.setTenantId(3L);
+        service.issueNotificationTicket(RealtimeTransport.SSE);
+        verify(ticketService).issue(new RealtimePrincipal(7L, 3L, 2L, 4L, RealtimeScope.USER_NOTIFICATIONS),
+                RealtimeTransport.SSE);
     }
 
     @Test
